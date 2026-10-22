@@ -1,0 +1,35 @@
+# CLAUDE.md
+
+Project: a phone-first website where a couple stores memories. Guests scan an NFC tag and the site opens. Working name and file prefix: `anni` (owner's choice; a better name will come later and the owner will rename the repo). PRD: `docs/anni_PRD.md`.
+
+Partner agent: Codex (plugin installed, signed in). Codex reads `AGENTS.md`; keep it in sync with this file. Process: `docs/process/HARNESS_PROCESS.md` (copied unchanged). PRD template: `docs/process/PRD_TEMPLATE.md` (written for research/ML, so drop sections that do not apply to a website).
+
+## Current phase
+
+Planning and design only. **No application code** until the owner approves the PRD and plan. Docs, `.gitignore` and design notes are allowed.
+
+## Restricted rules (always apply, to Claude and to Codex)
+
+1. **Network gate.** Before any login, install or download from a site: tell the owner the exact URL/host, validate it (official publisher, HTTPS, matches the vendor's own docs), and wait for approval. No exceptions, including package installs, CLI logins and dashboard sign-ins.
+2. **No git writes unless asked.** No commit, push or pull request unless the owner asks for it in that moment. Earlier approval does not carry over.
+3. **Privacy gate.** Treat the repo as public (visibility is not confirmed). Real names, dates, photos, messages, NFC tag UIDs, tokens and anything sensitive stay out of Git, docs, chats and other tools. Use placeholders (`[PARTNER_A]`, `[DATE]`, `placeholder.jpg`). Sensitive material goes in `.gitignore`. Check text for this before it leaves the machine, including anything sent to Codex.
+
+## Working agreement
+
+- Ask the owner when unsure. Never guess or assume. Unresolved points go to the PRD open-questions table with status and default, and a note on who answered what.
+- Follow `docs/process/HARNESS_PROCESS.md`: interview (§6) -> PRD -> owner review -> plan -> challenge the plan -> implement in small steps with a verification loop -> review -> finalize.
+- Files: `docs/<project>_PRD.md`, `docs/plans/<project>_plan.md`, `docs/<project>_progress.md`. Keep the progress file current after every step.
+- Challenge step (harness step 5): `/codex:adversarial-review` on the PRD and plan, only on privacy-gated (placeholder) text.
+- harness-os governance (`harness init`) writes `.claude/` and makes a commit. Do not run it without asking the owner first and saying it commits.
+- Frontend verification, once code exists: Playwright MCP. Look at what renders, check the console and key flows on a phone-sized viewport.
+
+## Tools and orchestration
+
+- harness-os: governance gates per unit of work, enabled only after PRD and plan approval (it commits, so ask first).
+- ruflo: orchestration helper, limited scope approved by the owner (PRD Q32). Plugin hooks and `npx` fallbacks count as downloads under rule 1: do not run `ruflo init`, `npx ...@latest`, or start the ruflo MCP server without approval. Its data folders stay git-ignored and are never sent to Codex.
+- Codex: independent review via `/codex:adversarial-review` (user-invoked) at plan gates.
+- Claude Code is the single writer of files and the only actor on git and network; other agents return findings.
+
+## Decisions and open questions
+
+Single source: `docs/anni_PRD.md` §12. Research facts: `docs/plans/anni_plan.md` §R. Do not restate them here.

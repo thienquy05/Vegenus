@@ -1,0 +1,67 @@
+# Privacy gate: treat this repo as PUBLIC. Nothing personal or secret is ever committed.
+# Real names, dates, photos and messages stay out; docs and seed data use placeholders.
+
+# Secrets and credentials
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+secrets/
+credentials*.json
+service-account*.json
+
+# Personal content (couple's real material)
+private/
+personal/
+content/private/
+uploads/
+media/
+photos/
+originals/
+*.heic
+*.heif
+*.jpg
+*.jpeg
+*.png
+*.webp
+*.mp4
+*.mov
+!docs/**/placeholder*.png
+!docs/**/placeholder*.jpg
+*.Zone.Identifier
+
+# NFC tag data (real tag UIDs / write payloads / URLs with tokens)
+nfc-private/
+tag-uids*
+nfc-secrets*
+
+# Database dumps and exports
+*.sql
+*.dump
+*.sqlite
+*.db
+exports/
+
+# Local tooling state (agent plugin runtime data, may hold memory databases)
+.claude-flow/
+.swarm/
+agentdb.rvf*
+.claude/settings.local.json
+.codex/
+.vercel/
+.supabase/
+
+# Dependencies and build output
+node_modules/
+.next/
+dist/
+build/
+coverage/
+.turbo/
+
+# OS / editor
+.DS_Store
+Thumbs.db
+.idea/
+*.log
