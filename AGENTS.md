@@ -19,3 +19,5 @@ Plugin hooks and `npx` fallbacks count as downloads under rule 1. Decisions live
 ## Process
 
 Read `docs/process/HARNESS_PROCESS.md` and follow it. Do not guess; list unknowns as open questions with a proposed default.
+
+Test-first: every unit of work and bug fix starts with a test seen failing for the expected reason (RED) before code makes it pass (GREEN). When reviewing, flag any change whose tests could not have failed. CI is a parallel GitHub Actions workflow behind one `gate` check (`docs/plans/anni_plan.md` §12).

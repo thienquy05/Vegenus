@@ -1,6 +1,6 @@
 # PRD: anni (working name), a memory-keeping site opened by NFC tap
 
-**Status:** DRAFT v0.4. Revised after the Codex adversarial challenge (findings and resolutions: `docs/plans/anni_plan.md` §11). Q29–Q32 are answered. Open items left: Q16, Q20 (after core). Ready for the owner gate. Nothing is implemented.
+**Status:** DRAFT v0.5. Owner said "the PRD looks good" (2026-10-21). v0.5 adds the test-first rule and parallel CI (§9.1, plan §12) and Q33–Q35 from the first two design drafts (`docs/design/`). Open items: Q16, Q20 (after core), Q33–Q35 (proposed defaults). Nothing is implemented.
 **Date:** 2026-10-21 (v0.1 written 2026-10-20)
 **Author:** Claude Code, from the owner interview (HARNESS_PROCESS.md §6)
 **Owner / decider:** the project owner (referred to as [OWNER])
@@ -179,7 +179,7 @@ Development on [OWNER]'s machine (WSL2). Hosting: Supabase free tier (database, 
 ## 9. Testing and QA
 
 ### 9.1 Approach and verification loop
-Tests and execution scripts are written before each step. Frontend work is verified with the Playwright MCP on a phone-sized viewport (rendering, console, key flows) and with browser performance traces and Lighthouse for the budgets. Privacy and isolation tests run after every change that touches data access.
+Tests and execution scripts are written before each step and must be **seen failing (RED) for the expected reason before the code is written**, then pass (GREEN); bugs start with a failing regression test (owner, 2026-10-21; plan §12.1). A GitHub Actions workflow runs lint, unit, database, end-to-end, accessibility/performance and privacy jobs **in parallel**, behind one required `gate` check (plan §12.2). Frontend work is verified with the Playwright MCP on a phone-sized viewport (rendering, console, key flows) and with browser performance traces and Lighthouse for the budgets. Privacy and isolation tests run after every change that touches data access.
 
 ### 9.2 Edge-case catalog (each row is a required task)
 | # | Case | Expected |
@@ -301,6 +301,9 @@ Ranked from the owner's stated concerns first.
 | Q30 | NEW (from Codex): accounts. Owner asked for our own login/sign-up pages with Google as fallback. Open sign-up without confirmed email allows pre-account takeover of the invited address | Closed registration: no public sign-up page now; the owner provisions the owner and co-editor accounts; Google works for those pre-created accounts when the verified Google email matches; the sign-up page is added when other couples are allowed | **Answered by owner** (2026-10-21): closed registration, owner-provisioned accounts. This replaces the earlier request for a sign-up page for now |
 | Q31 | NEW (from Codex): Supabase only "may pause" Free projects after 7 days of low activity; only a paid plan guarantees no pause. Accept best effort at $0? | Accept best effort plus alerts, uptime check, tested restore, event-day check; upgrade (from $25/month) only if the owner decides | **Answered by owner** (2026-10-21): accept best effort at $0 |
 | Q32 | NEW: ruflo as orchestrator next to harness-os (scope and settings in plan §8) | Limited scope: ruflo agents and local memory only; no `ruflo init`; add `RUFLO_MCP_SKIP_NPX=1` to the git-ignored local settings after the owner reviews the exact change; no ruflo MCP server or extra plugins until a host is approved | **Answered by owner** (2026-10-21): approved as proposed. Applied: `RUFLO_MCP_SKIP_NPX=1` in the git-ignored `.claude/settings.local.json` |
+| Q33 | NEW: CI/CD on GitHub. Owner asked for test-first work and a parallel CI workflow on GitHub (answered). Still open: deploy path, and the plan limits for a private repo | CI as in plan §12.2, with no secrets in CI and a local fake-data database. CD through Vercel's Git integration: a preview per PR that uses a separate development Supabase project, and production from `main` after `gate` is green and the owner merges. Actions minutes and branch protection on a private repo are **unverified** (plan §12.5) | **Partly answered by owner** (2026-10-21: test-first + parallel CI on GitHub). CD route and Vercel↔GitHub connection await owner approval |
+| Q34 | NEW (design 1–2): guest details. (a) Because only a hash of the token is stored, the link and QR can be shown **only once**; keep that, or store the token encrypted so the dashboard can show it again? (b) Guest cookie lifetime. (c) Guestbook limits. (d) Does the guest see their own pending message? | (a) Show once; lost link means rotate and rewrite the tag. (b) 30 days, not extended on use. (c) Name 1–40 characters, message 1–500, plain text; at most 3 posts per token per 10 minutes and 50 per page per day. (d) No; show the "waiting for approval" screen only | **OPEN**: proposed defaults, awaiting owner |
+| Q35 | NEW (design 1): how the co-editor gets a first login without email (closed registration, Q30; free email cannot reach them) | Co-editor signs in with Google; the owner pre-creates the account with that Google email. Email/password only if the owner sets a temporary password and hands it over in person, with a forced change on first login | **OPEN**: proposed default, awaiting owner |
 
 ## Appendices
 **Glossary:** *Tenant/page*: one site's data. *Token-only*: reachable only with the unguessable guest token, not indexed. *Fallback*: simpler experience when 3D cannot run.

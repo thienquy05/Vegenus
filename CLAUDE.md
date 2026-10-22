@@ -21,6 +21,7 @@ Planning and design only. **No application code** until the owner approves the P
 - Files: `docs/<project>_PRD.md`, `docs/plans/<project>_plan.md`, `docs/<project>_progress.md`. Keep the progress file current after every step.
 - Challenge step (harness step 5): `/codex:adversarial-review` on the PRD and plan, only on privacy-gated (placeholder) text.
 - harness-os governance (`harness init`) writes `.claude/` and makes a commit. Do not run it without asking the owner first and saying it commits.
+- Test-first (owner, 2026-10-21): every unit of work and every bug fix starts with a test that is run and seen failing for the expected reason (RED), then the code makes it pass (GREEN). Record the RED run in the progress file. CI is a parallel GitHub Actions workflow behind one `gate` check (plan §12).
 - Frontend verification, once code exists: Playwright MCP. Look at what renders, check the console and key flows on a phone-sized viewport.
 
 ## Tools and orchestration

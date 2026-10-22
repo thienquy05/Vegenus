@@ -1,6 +1,6 @@
 # Plan: anni (working name)
 
-**Status:** v0.2, revised after the Codex adversarial challenge (harness step 5). Derived from `docs/anni_PRD.md` v0.4. Awaiting the owner gate. No code is written.
+**Status:** v0.3. v0.2 was revised after the Codex adversarial challenge (harness step 5); v0.3 adds §12 (test-first rule and parallel CI on GitHub) and the cookie change from design 1. Derived from `docs/anni_PRD.md` v0.5. Awaiting the owner gate. No code is written.
 **Date:** 2026-10-21
 **Privacy:** placeholders only.
 **Single-source rule:** decisions and open questions live only in PRD §12; this plan links to them and never restates them. Research facts live only in §R of this plan.
@@ -30,7 +30,7 @@ Decisions that came out of the challenge (Codex finding → fix; see §11):
 - **No service role on guest paths.** Guest reads and the guestbook write go through a small set of `guest_*` Postgres functions callable by the anon role, which derive the page from the validated token inside the database and apply page, visibility, token-version, section-enabled and publication predicates there. The service-role key (which bypasses RLS: verified) stays server-only and is used only for admin jobs such as account provisioning. This makes RLS and function checks a real second boundary.
 - **Publication boundary.** Every content row has `status` (`draft` | `published`); guestbook rows have `pending` | `approved` | `rejected`. Guest predicates require `published`/`approved` and the section flag; media signing requires the media to belong to a published item.
 - **Media and revocation.** Signed URLs are valid until their expiry and cannot be revoked by us (verified; Supabase says to contact support). So revocation of media is "no new URLs after the change, issued URLs die within the expiry". Proposed expiry: 5 minutes, responses `Cache-Control: private, no-store` for the minting endpoint. The alternative, proxying every media request through our server, gives instant revocation but spends Vercel transfer and CPU, and video streaming through functions is a poor fit for the Hobby limits. Owner decision: PRD Q29.
-- **Token handling.** The token lives in the URL **fragment** (`#…`), which browsers do not send to servers, referrers or log lines; the page exchanges it for a signed, `HttpOnly`, `SameSite=Lax` guest session cookie bound to the token version, then clears the fragment. Fragment survival in Zalo/Facebook/Messenger browsers is **unverified** and must be tested on real devices. If cookies are blocked, the session lives in memory for that visit and the guest re-taps to return; the token is never put in a query string or path. A copied link or screenshot of the full URL **does** grant read and post access until the token is rotated; rotation means rewriting the tag and reprinting the QR, so the tag is never locked (Q16 open). Set `Referrer-Policy: no-referrer`, `X-Robots-Tag: noindex` on guest routes, and keep tokens out of analytics.
+- **Token handling.** The token lives in the URL **fragment** (`#…`), which browsers do not send to servers, referrers or log lines; the page exchanges it for an `HttpOnly`, `Secure`, `SameSite=Lax` guest cookie that carries the token itself, so the database re-checks it on every call and the anon-callable functions never accept a page ID (changed from "signed cookie bound to the token version"; reason in `docs/design/anni_token_flow.md` §4), then clears the fragment. Fragment survival in Zalo/Facebook/Messenger browsers is **unverified** and must be tested on real devices. If cookies are blocked, the session lives in memory for that visit and the guest re-taps to return; the token is never put in a query string or path. A copied link or screenshot of the full URL **does** grant read and post access until the token is rotated; rotation means rewriting the tag and reprinting the QR, so the tag is never locked (Q16 open). Set `Referrer-Policy: no-referrer`, `X-Robots-Tag: noindex` on guest routes, and keep tokens out of analytics.
 - **Accounts and the co-editor.** See PRD Q26 and Q30. Constraint from the vendor (verified): linking identities by an unverified email invites pre-account takeover, and the free built-in auth email only reaches project team members. Proposal: **closed registration**. Public sign-up is off; the owner creates or invites accounts. Google sign-in works for a pre-created account only when Google's verified email matches. A sign-up page is added only when the platform opens to other couples.
 - **Storage behind an interface** so media can move to Cloudflare R2 (10 GB free, no egress fee: verified) when the egress trigger in §3 fires.
 - **Keep-alive is best effort.** See §3.
@@ -139,8 +139,8 @@ Proposed scope until the owner says otherwise:
 
 | Phase | Weeks | Tasks | Tests first (PRD §9.2) | Gate |
 |---|---|---|---|---|
-| 0 Design | 1–2 | Design docs: sections, NFC flow, data model, theme system, 3D approach | — | Owner review of each |
-| 1 Foundations | 3–4 | Skeleton, CI, Supabase project, RLS + `guest_*` functions, auth (closed registration, Google), pages/memberships/tokens/invites, visibility, publication status, privacy scan | E4–E6, E21, E22, E27–E30 | Before harness-os / spend |
+| 0 Design | 1–2 | Design docs in `docs/design/`: 1 token flow (draft), 2 screens (draft), 3 data model, 4 theme system, 5 3D approach; CI spec (§12) | — | Owner review of each |
+| 1 Foundations | 3–4 | **First:** CI walking skeleton (§12.4). Then skeleton app, Supabase project, RLS + `guest_*` functions, auth (closed registration, Google), pages/memberships/tokens/invites, visibility, publication status, privacy scan | E4–E6, E21, E22, E27–E30 | Before harness-os / spend |
 | 2 Owner tools | 5–7 | Setup wizard, CRUD with draft/publish, media pipeline, usage meter and triggers, keep-alive + alerts | E7–E10, E15, E16, E23–E25 | Owner review |
 | 3 Guest (Static + Page shell) | 8–10 | Token exchange, guest views, EN/VI, guestbook queue, QR/NFC, mode selector | E1, E2, E11–E14, E17, E26 | Owner review |
 | 4 Themes + Page 3D | 10–13 | Four token sets, scene presets, per-section scenes, fallbacks | E18, E19 | Per theme |
@@ -148,11 +148,11 @@ Proposed scope until the owner says otherwise:
 | 6 Hardening | 15–16 | Rate limits, monitoring, restore drill, real tag/QR test, event-day check | all rows | Go/no-go |
 | After / last | — | Places map + chibi; legal + export/delete | E20 | — |
 
-**Verification loop per step:** write the test or script → implement → run → compare → debug → update `docs/anni_progress.md`. Frontend steps use Playwright MCP on a phone viewport and Lighthouse/performance traces.
+**Verification loop per step:** write the test → run it and **see it fail (RED)** → implement → run until it passes (GREEN) → refactor with tests green → CI green on GitHub → update `docs/anni_progress.md`. Details in §12. Frontend steps also use Playwright MCP on a phone viewport and Lighthouse/performance traces.
 
 ## 10. Open decisions
 
-See PRD §12 (single source). Q29–Q32 are answered (5-minute media window, closed registration, best-effort availability at $0, limited ruflo scope). Still open: Q16 (tag model, left open by the owner) and Q20 (chibi art tool, after core).
+See PRD §12 (single source). Q29–Q32 are answered (5-minute media window, closed registration, best-effort availability at $0, limited ruflo scope). Still open: Q16 (tag model, left open by the owner), Q20 (chibi art tool, after core), Q33 (CD route), Q34 (guest details), Q35 (co-editor first login).
 
 ## 11. Changes after the Codex challenge (2026-10-21)
 
@@ -167,6 +167,60 @@ All seven findings were checked against the vendor's own pages and held.
 | URL fallback keeps a reusable read-and-post credential exposed | high | Token moved to the URL fragment, exchanged for a session cookie and cleared; no query-string token; headers and log rules; PRD wording corrected to say leakage grants read access; fragment survival in in-app browsers to be tested (E30) |
 | Egress estimate overstated fivefold | medium | My arithmetic error. Corrected to ~100 visits per GB; added first-visit budget and warn/degrade/migrate triggers |
 | Daily cron treated as proof against pausing | medium | Reframed as best effort (Supabase "may pause"; only Pro guarantees); added alerts, uptime check, restore drill, event-day check; paid plan is Q31 |
+
+## 12. Test-first rule and parallel CI on GitHub (owner request, 2026-10-21)
+
+The owner asked: follow the harness, see a test fail before making it pass, and run a parallel CI/CD workflow on GitHub. Phase 0 only specifies this; no workflow file is written until Phase 1, and nothing is pushed unless the owner asks at that moment (CLAUDE.md rule 2).
+
+### 12.1 RED → GREEN for every unit of work
+
+1. **Spec.** One short spec per unit (what, which PRD rows, which design doc). With harness-os on, this is `create_spec` + `validate_spec`.
+2. **RED.** Write the test(s) and run them. They must fail **for the expected reason** (assertion fails or the function does not exist yet), not because of a typo or broken setup. Record the command and the failing test names in the progress file. With harness-os on, it observes the failing run and the gate will not open without it.
+3. **GREEN.** Write the least code that passes. Run the full local suite.
+4. **Refactor** with everything green.
+5. **Review** (`code-reviewer`, `security-reviewer` for anything touching tokens, RLS or media; Codex at phase gates).
+6. **CI green** on GitHub for the branch before the owner is asked to merge.
+
+Bugs follow the same rule: first a regression test that reproduces the bug and fails, then the fix.
+
+What CI can and cannot prove: an ordinary CI run only sees the final state, so it shows GREEN, not that RED happened. RED evidence comes from (a) the progress-file record, (b) harness-os once enabled, and (c) the optional **red-proof job** in §12.2, which runs the branch's new tests against the base branch's code and expects them to fail.
+
+### 12.2 Workflow layout (GitHub Actions, proposal)
+
+One workflow, `ci.yml`, on `pull_request` and on `push` to `main`. Jobs run **in parallel**; one final `gate` job depends on all of them and is the single required check.
+
+| Job | Runs | Covers | Needs |
+|---|---|---|---|
+| `lint-types` | ESLint, `tsc --noEmit`, a ban on `.only` / `.skip` in tests | Code quality; no silently disabled tests | Node |
+| `unit` | Vitest with coverage | Pure logic: counter dates (E14), Vietnamese text normalisation (E12), token format, i18n fallback (E13) | Node |
+| `db` | Local Supabase (Docker) + SQL tests for RLS and every `guest_*` function | Isolation and visibility: E3–E6, E28, E29 | Docker, Supabase CLI |
+| `e2e` | Playwright on phone viewports, WebKit (iPhone-like) and Chromium (Android-like), split into shards | Guest and owner flows from design 2; E1, E5, E21, E27, E30 | Built app + local Supabase |
+| `a11y-perf` | axe checks in Playwright; Lighthouse budget on the guest pages | WCAG 2.2 AA target; first visit ≤ 3 MB; first content budget | Built app |
+| `privacy-scan` | Repo script: no secrets, no real-looking emails, tokens or tag UIDs, no image files outside `docs/**/placeholder*` | CLAUDE.md rule 3 | Shell only |
+| `red-proof` (optional, advisory first) | Run the PR's new or changed tests against the `main` code; pass if they **fail** there | Evidence that new tests can fail | Node |
+| `gate` | `needs:` all of the above | One required status for merging | — |
+
+Hardening rules for the workflow:
+
+- `permissions: contents: read` at the top; raise per job only if needed.
+- Third-party actions pinned to a full commit SHA, not a tag. Each action is a download, so the list is approved under rule 1 before the file is written.
+- No `pull_request_target`; no secrets in CI at all. Tests use a local throw-away database with fake seed data, never the real Supabase project.
+- `concurrency` cancels older runs of the same branch to save minutes.
+- Caches for the package manager and Playwright browsers.
+
+### 12.3 CD (deployments)
+
+Proposal: Vercel's own Git integration creates a preview deployment for each PR and a production deployment from `main`. The preview must point at a separate **development** Supabase project with fake data, never at the real memories. The NFC tag and QR always point at the production address (Q19). Production deploys only after `gate` is green and the owner merges. Connecting Vercel to GitHub is a login and is approved under rule 1 when it happens. Decision: PRD Q33.
+
+### 12.4 Phase 1 starts with a walking skeleton
+
+The first unit of Phase 1 is CI itself: an empty app, one trivial test written to fail, a push (owner-approved) that shows CI **red** on GitHub, then the fix that turns it **green**. This proves the pipeline catches failures before any real feature depends on it.
+
+### 12.5 Facts to verify before writing the workflow (not researched; github.com not yet approved for reading)
+
+- Free GitHub Actions minutes and storage for a **private** repo on the owner's plan. Parallel jobs and browser matrices use minutes faster. **Unverified.**
+- Whether branch protection / required status checks are available for a private repo on the owner's plan. **Unverified.** If not, the rule becomes "owner merges only when `gate` is green", enforced by habit.
+- Whether the Supabase CLI and Docker run on GitHub-hosted Ubuntu runners as needed for the `db` and `e2e` jobs. **Unverified.**
 
 ---
 
