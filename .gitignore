@@ -65,3 +65,7 @@ coverage/
 Thumbs.db
 .idea/
 *.log
+
+# Owner-approved non-personal celestial artwork source sheets only
+!/assets/zodiac-sign/western/approved-atlas.png
+!/assets/zodiac-sign/vietnamese/approved-atlas.png

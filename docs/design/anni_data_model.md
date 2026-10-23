@@ -124,7 +124,7 @@ Partial unique index: one `home` item per page.
 - Before the start date has begun in that time zone, guests see no counter at all; the owner's dashboard shows "counter starts on [DATE]" (Q44).
 - A yearly anniversary on 29 February falls on **28 February** in other years (Q42). The same rule applies to reminder mail.
 
-**Zodiac art (Q39).** The owner's sign characters are content, not code: each is a `zodiac_sign` item with one image in `media`, stored in the private bucket and served through signed URLs like any memory photo. This keeps the art out of Git (rule 3) and lets the owner replace it from the dashboard. Budget proposal: ≤ 150 KB per image (display variant). Guests load only the images for the couple's signs in the system on screen (two images, two more if they switch systems), when the Zodiac section opens. Art can exist for both systems (12 Western signs, 12 Vietnamese animals). Until the owner uploads the art, a placeholder image ships with the app. The data the signs are computed from is in §3.10.
+**Zodiac art (Q39).** The owner's sign characters are content, not code: each is a `zodiac_sign` item with one image in `media`, stored in the private bucket and served through signed URLs like any memory photo. This keeps the art out of Git (rule 3) and lets the owner replace it from the dashboard. Budget proposal: ≤ 150 KB per image (display variant). Guests load only the images for the couple's signs in the system on screen (two images, two more if they switch systems), when the Zodiac section opens. Art can exist for both systems (12 Western signs, 12 Vietnamese animals). Until the owner uploads the art, built-in default art ships with the app from `assets/zodiac-sign/`: the final style is the two owner-approved source sheets (Western and Vietnamese, `source-sheets.json`, approved 2026-10-22), exported to one safe square SVG per sign (24, rules in the folder README); until those exist, the section shows sign names without art. These are the only image files the `privacy-scan` job allows outside placeholders (plan §12.2). The data the signs are computed from is in §3.10.
 
 ### 3.4 Media
 
@@ -305,7 +305,7 @@ The token exchange (`/api/guest/session`) keeps calling `guest_open` as `anon`. 
 | Calendar | Gregorian (solar) date | Vietnamese lunisolar calendar: the animal year starts at **Tết**, not 1 January, so a birthday in January or early February may belong to the previous animal year |
 | What is computed | Sun sign (12), its element (Fire, Earth, Air, Water) and modality | Year stem and branch (can chi, e.g. Giáp Tý), the animal (Vietnamese set: Trâu not Ox, Mèo not Rabbit), and the year's element by nạp âm (mệnh: Kim, Mộc, Thủy, Hỏa, Thổ) |
 | Inputs | Date; time and place for Moon and rising sign (below) | Date; time for the hour pillar (below) |
-| Boundary handling | Fixed conventional date table, with a cusp note on boundary days, since the real change can move by a day with the year and time (E41) | Tết date per year computed for Vietnam's time zone (UTC+7). Vietnam's Tết occasionally differs from China's (UTC+8) by a day or a month; the Chinese calendar must not be used (**unverified example years; check in research**) |
+| Boundary handling | The Sun's ecliptic longitude computed for that year, not a fixed date table (fixed tables are wrong in some years, e.g. 19 Feb); a cusp note only when the sign change falls inside the local birth day and no time is given (E41; `assets/zodiac-sign/research.md` §1) | Tết date per year computed in UTC+7 from 1968, UTC+8 before (Q51); southern births 1968-1975 in UTC+8 with a note. Vietnam's Tết can differ from China's by a day or a month (1985: 21 Jan vs 20 Feb). Cross-checked 1920-1967 and 1984-2030 (Q52; research §3) |
 | Relationship rules | Distance between the two signs on the wheel (same, 2 apart, 3, 4, 6 …) plus the element pair (e.g. Fire with Air, Earth with Water) | Branch relations: tam hợp (three harmonies), lục hợp (six pairs), tứ hành xung (four clashes), lục hại (six harms); plus the element relation between the two mệnh (sinh = nourishes, khắc = restrains, hòa = same) |
 
 **Birth place and optional birth time (owner, 2026-10-22, extends Q47).** Inputs per partner: date (required), place (required with the time, otherwise optional), time (optional). What they add:
@@ -314,7 +314,7 @@ The token exchange (`/api/guest/session`) keeps calling `guest_open` as `anon`. 
 |---|---|---|
 | Date only | Sun sign (above); Moon sign shown only when the Moon stays in one sign all day, otherwise "needs birth time" | Year, month and day pillars (can chi of each) |
 | Date + time + place | Moon sign; rising sign (ascendant), which needs the exact local time and the place's latitude, longitude and time zone | Hour pillar (giờ sinh: the twelve two-hour branches, giờ Tý … giờ Hợi), completing the four pillars (tứ trụ) |
-| Date + place | The "event on that day" line can use the place's country (Q50) | — |
+| Date + place (+ time) | The sky at birth (Q50): with a time, which planets and the Moon were above the horizon at the birthplace; without a time, values for local noon, marked approximate | — |
 
 - **Place is chosen from a list shipped with the app** (Vietnamese provinces and cities plus major world cities, each with latitude, longitude and IANA time zone). No outside geocoding service ever receives a birthplace. The list's data source and licence are part of the research step.
 - **Time** is stored as local clock time at the birthplace; historical time-zone changes (Vietnam has changed offset in the past) are resolved through the IANA database for that place and date (**to verify in research**).
@@ -326,7 +326,7 @@ The token exchange (`/api/guest/session`) keeps calling `guest_open` as `anon`. 
 | Level | Values | Default |
 |---|---|---|
 | Basic | Sun sign and its element; Vietnamese year animal and mệnh. Reveals the birth **year** and a window of dates (below) | Shown when the owner publishes. Z1 says plainly: "Guests can work out the birth year from the animal and element" |
-| Detailed | Moon sign, rising sign, month, day and hour pillars, the event line | **Hidden.** Each partner's detailed values are published only if the owner ticks "show details to guests", after a warning: "Together these can reveal the exact birthday" |
+| Detailed | Moon sign, rising sign, month, day and hour pillars, the sky at birth and its line (Q50) | **Hidden.** Each partner's detailed values are published only if the owner ticks "show details to guests", after a warning: "Together these can reveal the exact birthday" |
 
 **The basic window is not always a month (Codex round 10).** Tết falls between about 21 January and 20 February, inside the Aquarius window and sometimes the Capricorn or Pisces one. For a birthday in those weeks, the sun sign plus the animal tells a guest which side of Tết it was, which can shrink the window to a few days. So at Publish the server computes, for each partner, how many dates in the birth year match the basic snapshot:
 - **14 days or more** (proposal): publish as normal.
@@ -334,7 +334,7 @@ The token exchange (`/api/guest/session`) keeps calling `guest_open` as `anon`. 
 
 The relationship reading is composed from the published values only, so it never reveals more than the snapshot. The owner always sees everything in the dashboard.
 
-How the lunar date is computed: an astronomical new-moon and solar-term algorithm run in our server code for UTC+7, the method published by Hồ Ngọc Đức for the Vietnamese calendar (**to verify in research**), then checked by a unit test against an independent table of Tết dates for every year in the supported range (proposal 1920–2030). No outside service is called.
+How the lunar date is computed: an astronomical new-moon and solar-term algorithm run in our server code (new moons and solar terms from the astronomy library), with the rules in research §3: month 11 contains the winter solstice, the first month without a major solar term is the leap month. Reference offset UTC+8 before 1968 and UTC+7 from 1968 (Q51). Hồ Ngọc Đức's published description of this method could not be read (pages gone), so the rules come from research §3. Unit tests compare every Tết in 1920-1967 (Hong Kong Observatory tables, UTC+8) and 1984-2030 (Vietnamese table, UTC+7) with the calculator; years without a passing comparison, today UTC+7 years 1968-1983 (1976-1983 for southern births), show "calculated, not cross-checked" (Q52). Supported range 1920-2030. No outside service is called.
 
 **Display:** the section shows both systems; the owner picks which one opens first, and guests switch between them. All text is EN/VI and labelled "for fun / theo quan niệm dân gian".
 
@@ -353,9 +353,10 @@ How the lunar date is computed: an astronomical new-moon and solar-term algorith
 | `vn_month_can_chi`, `vn_day_can_chi` | text null | month and day pillars |
 | `vn_hour_chi` | enum (12) null | hour pillar branch; only with a time |
 | `vn_menh` | enum (`kim`, `moc`, `thuy`, `hoa`, `tho`) | year element by nạp âm |
-| `birthday_event` | text null | the "event on that day" line (Q50); NFC, ≤ 300 chars, EN and VI columns |
+| `birth_sky` | jsonb null | **the sky at birth** (Q50, owner clarification 2026-10-22), computed once at save from the date, time and place by the astronomy library and stored like the signs: Moon phase (one of 8 names), illumination %, waxing or waning, near-perigee flag ("supermoon"); ecliptic longitude and sign of the Sun, Moon, Mercury, Venus, Mars, Jupiter, Saturn, Uranus, Neptune; with a time and place, which of them were above the horizon; sky events near the date (rules in §3.11); `approximate: true` when there is no time. Contains no date or timestamp |
+| `birthday_event` | text null | the owner's own wording of the sky line, overriding the composed one; NFC, ≤ 300 chars, EN and VI columns; null = use the line composed from `birth_sky` and the reference texts |
 | `calc_version` | smallint | version of the calculation rules that produced the stored signs |
-| `published` | jsonb null | **the only thing guests read**: a snapshot of `label`, the **basic** values and `calc_version`; the detailed values and the event line are added only if the owner ticked "show details to guests" for that partner (Q50). Never contains the date, time or place |
+| `published` | jsonb null | **the only thing guests read**: a snapshot of `label`, the **basic** values and `calc_version`; the detailed values, `birth_sky` and the sky line (composed or the owner's, per language) are added only if the owner ticked "show details to guests" for that partner (Q50): planet positions alone pin the exact date. Guests render from the snapshot only, so a later draft change alters nothing until the next Publish. Never contains the date, time or place fields |
 | `show_details` | bool default false | the opt-in above; copied into the snapshot at Publish |
 | `published_at` | tstz null | null = nothing shown to guests yet |
 | `version`, `updated_at`, `updated_by` | | §1.6 |
@@ -381,6 +382,12 @@ The meanings are the same for every couple, so this is **reference data**, not p
 | `zodiac_ref_signs` | `(system, sign)` | Name, element, short traits; EN and VI |
 | `zodiac_ref_relations` | `(system, relation)` | One short text per relation kind; EN and VI. Western: one per wheel distance (0–6) and one per element pair. Vietnamese: tam hợp, lục hợp, tứ hành xung, lục hại, neutral; and sinh, khắc, hòa for the mệnh pair |
 | `zodiac_ref_sources` | `id` | Where each fact came from (title, URL, date read), so the content can be checked later |
+| `zodiac_ref_sky` | `(kind, key)` | Q50 texts we write: the 8 Moon phase names, one line per planet-in-sign style, one per sky-event kind (below); EN and VI, labelled "for fun" |
+| `zodiac_ref_meteor_showers` | `id` | Major annual showers (name EN/VI, active period, typical peak day, parent body), facts from the IMO-based list (research §5), our own wording; peaks move by a day or two between years, so the text says "around the peak" |
+
+**Sky events near the birth date (Q50 rules, computed at save):** lunar or solar eclipse within 14 days; a planet conjunction or opposition within 3 days; Mercury or Venus greatest elongation within 3 days; equinox or solstice within 1 day; full or new Moon near perigee ("supermoon") within 1 day; a meteor shower active on the date (peak within 2 days called out). The library computes all but the showers (research §6). The composed line uses the two most notable events plus the Moon phase.
+
+**3D (owner, 2026-10-22):** the sky at birth is the natural centre of the 3D scene (design 5): the Moon at its phase, the planets placed on the ecliptic ring at their stored longitudes, an eclipse or meteor shower as an effect. If design 5's phone budget fails, the simple version is the text line plus a 2D Moon-phase picture. Reduced motion always gets the still version.
 
 **How the reading is made "smart":** the server picks the relation kinds that apply to the two stored signs (for example "tam hợp" plus "Thủy sinh Mộc") and composes the reading from those texts in the guest's language. About 12 + 12 sign texts and about 30 relation texts cover every one of the 78 sign pairs in each system, instead of 156 hand-written pair essays. The owner can add a personal note under the reading as a normal item.
 
@@ -507,7 +514,8 @@ Written and **observed failing** before the migration that makes them pass (plan
 | Branch and element relations: every one of the 78 pairs in each system resolves to the expected relation kinds (table-driven) | Unit | Q48 |
 | Publication: saving or correcting Z1 (and a `calc_version` recompute) does not change what guests see until Publish; Publish updates both partners at once; Unpublish hides both | DB + E2E | E28 |
 | Time and place: rising sign and hour pillar exist only when time and place are given; a birth in a year when the place's UTC offset differed uses the historical offset; no network call is made for a place or a calculation | Unit + API | Q47 |
-| Event line and detailed values: absent from the snapshot unless "show details to guests" is ticked; the snapshot never contains date, time or place | DB + API | Q50, E40 |
+| Sky at birth, sky line and detailed values: absent from the snapshot unless "show details to guests" is ticked; the snapshot never contains date, time, place or any timestamp | DB + API | Q50, E40 |
+| Sky at birth: computed at save and stored; a page load never recomputes it; without a time it is marked approximate; changing the draft (or the owner's own line in one language) leaves the published sky and line unchanged until the next Publish; library results match an authoritative ephemeris for sample dates (Moon phase, planet signs, one eclipse) | Unit + DB | Q50 |
 | Disclosure check (synthetic data): for every date over a 60-year range, count the dates in the birth year consistent with the basic snapshot. Publish without the specific warning happens only when the count is ≥ 14; every date near Tết with a smaller count triggers the warning showing that exact count; hiding the animal restores a full sun-sign window. With details on, the count shown in the details warning matches the enumeration | Unit | E40, Q49 |
 | Reload: viewing the section decrypts nothing (no key access is logged on guest reads); raising `calc_version` recomputes once | DB + API | Q46 |
 | Reference tables: no `anon` select; only the Zodiac functions return their rows; seed files contain no personal data | DB + CI | E36, rule 3 |

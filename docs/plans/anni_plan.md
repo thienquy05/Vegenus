@@ -201,7 +201,7 @@ One workflow, `ci.yml`, on `pull_request` and on `push` to `master`. Jobs run **
 | `db` | Local Supabase (Docker) + SQL tests for RLS and every `guest_*` function | Isolation and visibility: E3–E6, E28, E29 | Docker, Supabase CLI |
 | `e2e` | Playwright on phone viewports, WebKit (iPhone-like) and Chromium (Android-like), split into shards | Guest and owner flows from design 2; E1, E5, E21, E27, E30 | Built app + local Supabase |
 | `a11y-perf` | axe checks in Playwright; Lighthouse budget on the guest pages | WCAG 2.2 AA target; first visit ≤ 3 MB; first content budget | Built app |
-| `privacy-scan` | Repo script: no secrets, no real-looking emails, tokens or tag UIDs, no image files outside `docs/**/placeholder*` | CLAUDE.md rule 3 | Shell only |
+| `privacy-scan` | Repo script: no secrets, no real-looking emails, tokens or tag UIDs, no image files outside `docs/**/placeholder*`, except (a) the built-in per-sign Zodiac SVGs listed in `assets/zodiac-sign/western/manifest.json` and `assets/zodiac-sign/vietnamese/manifest.json` (Q39), which must have no scripts, event handlers, external references or embedded raster content and must match the manifest checksums, and (b) the two owner-approved non-personal PNG source sheets listed in `assets/zodiac-sign/source-sheets.json`, checked for file type, dimensions and checksums (artwork handoff only, never runtime payloads) | CLAUDE.md rule 3 | Shell only |
 | `red-proof` (optional, advisory first) | Run the PR's new or changed tests against the `master` code; pass if they **fail** there | Evidence that new tests can fail | Node |
 | `gate` | `needs:` all of the above | One required status for merging | — |
 
@@ -233,6 +233,8 @@ The first unit of Phase 1 is CI itself: an empty app, one trivial test written t
 ---
 
 ## R. Research sources (read 2026-10-21; official pages unless stated)
+
+- Zodiac, read 2026-10-22 (owner approved `www.britannica.com` (403, not read), `vi.wikipedia.org`, `en.wikipedia.org`, `www.informatik.uni-leipzig.de` (404, not read)): sources and facts in `assets/zodiac-sign/research.md`. Second pass the same day under the owner's general read-only approval (no installs): `github.com` (Astronomy Engine, MIT), `download.geonames.org` (CC BY 4.0), `data.iana.org` (Vietnam zone), `www.hko.gov.hk` (Tết 1920-1983, UTC+8), web searches. Still open: Tết 1968-1983 for UTC+7, lục hợp and lục hại source, the library install (rule 1)
 
 - Supabase pricing https://supabase.com/pricing (Free: 500 MB DB, 1 GB storage, 50 MB per file, 5 GB egress + 5 GB cached, 50k MAU, pause after 1 week, 2 active projects; Pro from $25/mo)
 - Supabase file limits https://supabase.com/docs/guides/storage/uploads/file-limits · image transformations https://supabase.com/docs/guides/storage/serving/image-transformations (Pro and above) · auth email https://supabase.com/docs/guides/auth/auth-smtp (2/hour, team members only)

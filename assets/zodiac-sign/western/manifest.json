@@ -1,0 +1,134 @@
+[
+  {
+    "id": "aries",
+    "nameEn": "Aries",
+    "nameVi": "Bạch Dương",
+    "file": "aries.svg",
+    "width": 400,
+    "height": 400,
+    "bytes": 144316,
+    "gzipBytes": 43264,
+    "sha256": "5c29258ecfefb2ef6002d94c39d103808fabe8b99475b8194c00f08a650f07eb"
+  },
+  {
+    "id": "taurus",
+    "nameEn": "Taurus",
+    "nameVi": "Kim Ngưu",
+    "file": "taurus.svg",
+    "width": 400,
+    "height": 400,
+    "bytes": 127836,
+    "gzipBytes": 39150,
+    "sha256": "eaea0119383d6f1fce7e4706bb3fddb9dae6e534ff9b77505c82c0ee7319fbf1"
+  },
+  {
+    "id": "gemini",
+    "nameEn": "Gemini",
+    "nameVi": "Song Tử",
+    "file": "gemini.svg",
+    "width": 400,
+    "height": 400,
+    "bytes": 136609,
+    "gzipBytes": 41946,
+    "sha256": "fb4c0396c2506f0a95322b0a0936ca56692648fa5827f8145a74f3baf68c0a6e"
+  },
+  {
+    "id": "cancer",
+    "nameEn": "Cancer",
+    "nameVi": "Cự Giải",
+    "file": "cancer.svg",
+    "width": 400,
+    "height": 400,
+    "bytes": 130848,
+    "gzipBytes": 40583,
+    "sha256": "90eeea42ef7f8b2c3642037b06a66f16b006300c540d6920ffbac06f4e2193d4"
+  },
+  {
+    "id": "leo",
+    "nameEn": "Leo",
+    "nameVi": "Sư Tử",
+    "file": "leo.svg",
+    "width": 400,
+    "height": 400,
+    "bytes": 128102,
+    "gzipBytes": 39449,
+    "sha256": "33610ab4f90311815c52f5f376c1b9da2795541d41a101bbcdb718cb3a23fe79"
+  },
+  {
+    "id": "virgo",
+    "nameEn": "Virgo",
+    "nameVi": "Xử Nữ",
+    "file": "virgo.svg",
+    "width": 400,
+    "height": 400,
+    "bytes": 144715,
+    "gzipBytes": 45184,
+    "sha256": "13794d6a0fcd3fdd5c8b142dc58d1e67caa7cdba95dbd5f19c00aa56318bb243"
+  },
+  {
+    "id": "libra",
+    "nameEn": "Libra",
+    "nameVi": "Thiên Bình",
+    "file": "libra.svg",
+    "width": 400,
+    "height": 400,
+    "bytes": 102736,
+    "gzipBytes": 30741,
+    "sha256": "34b840e05adda2c684b53cb82a010a9e4a5635465aa9003407a4253b8c182489"
+  },
+  {
+    "id": "scorpio",
+    "nameEn": "Scorpio",
+    "nameVi": "Bọ Cạp",
+    "file": "scorpio.svg",
+    "width": 400,
+    "height": 400,
+    "bytes": 124331,
+    "gzipBytes": 38458,
+    "sha256": "39710e4505741ed30145a5c2bbdaa88259676fcd248698f8794d14106b17985b"
+  },
+  {
+    "id": "sagittarius",
+    "nameEn": "Sagittarius",
+    "nameVi": "Nhân Mã",
+    "file": "sagittarius.svg",
+    "width": 400,
+    "height": 400,
+    "bytes": 125349,
+    "gzipBytes": 39096,
+    "sha256": "d4fc211d4fb01a8d5fb6cb667f1bd5c135d022e7420138a6bcadc7b2d94f149f"
+  },
+  {
+    "id": "capricorn",
+    "nameEn": "Capricorn",
+    "nameVi": "Ma Kết",
+    "file": "capricorn.svg",
+    "width": 400,
+    "height": 400,
+    "bytes": 137349,
+    "gzipBytes": 41887,
+    "sha256": "cd3cf7e2a04836a8c6a042cd42ce5c03fa8fde51e64c0793b18cd3db71881cb5"
+  },
+  {
+    "id": "aquarius",
+    "nameEn": "Aquarius",
+    "nameVi": "Bảo Bình",
+    "file": "aquarius.svg",
+    "width": 400,
+    "height": 400,
+    "bytes": 107592,
+    "gzipBytes": 33161,
+    "sha256": "6663ff92deed0aa95bdd0e47e85b36fb1266e0aaabbf896b4d27e23bb8782a78"
+  },
+  {
+    "id": "pisces",
+    "nameEn": "Pisces",
+    "nameVi": "Song Ngư",
+    "file": "pisces.svg",
+    "width": 400,
+    "height": 400,
+    "bytes": 132079,
+    "gzipBytes": 41666,
+    "sha256": "7057addafe35cc20be16167de8db50136a136befb38b784ddccd02a13d2e206e"
+  }
+]
