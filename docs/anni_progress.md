@@ -2,8 +2,8 @@
 
 Live status only. Decisions and open questions: `docs/anni_PRD.md` §12 (single source). Research and tool findings: `docs/plans/anni_plan.md` §R and §8.
 
-## Status (2026-10-22)
-Phase 0 Planning & design. PRD v0.6 and plan v0.3 are written (Codex challenge findings and fixes: plan §11). Design 1 (token flow), design 2 (screens) and design 3 (data model) are drafts awaiting owner review. No application code. harness-os not enabled.
+## Status (2026-10-23)
+Phase 0 Planning & design. PRD v0.6 and plan v0.3 are written (Codex challenge findings and fixes: plan §11). Designs 1-3 approved by the owner (2026-10-23). Design 4 (theme system) is a draft on `docs/theme-system`. No application code. harness-os not enabled.
 
 ## Done
 - [x] Process docs in `docs/process/` (copied unchanged); `CLAUDE.md`, `AGENTS.md`, `.gitignore`
@@ -27,7 +27,7 @@ Phase 0 Planning & design. PRD v0.6 and plan v0.3 are written (Codex challenge f
 - [ ] Open: Q16 (tag model), Q37 domain (deferred)
 - [x] 2026-10-22: owner pre-approved creating/switching branches (rule 4); commits, pushes and PRs still on request
 - [ ] Owner may later replace the built-in Zodiac art through the dashboard. Design 3 §3.3: uploaded art is page media in the private bucket, not committed to Git; budget ≤ 150 KB per image after processing
-- [ ] Owner review of design 1 and design 2; answer Q33–Q35 (PRD §12)
+- [x] Owner review of design 1 and design 2 (approved 2026-10-23); Q33–Q35 answered (PRD §12)
 - [ ] Owner gate on plan v0.3 as a whole
 - [x] 2026-10-22 (branch `docs/data-model`): Design 3 draft `docs/design/anni_data_model.md`. Supersedes plan §4. One `items` table, `page_sections`, composite FKs per page, no `invites`, no birthday column, Zodiac art stored as page media (not in Git), operational tables, access matrix, retention, 20 tests to write first. Added PRD Q42-Q45; O3 gets a time-zone step. Docs only: no tests run (nothing to run yet), no git writes
 - [x] 2026-10-22: Q42-Q45 answered (28 Feb; per device + per IP with a guest-visible notice; day 1, hidden until it begins; retention defaults). Written into PRD §12, design 3, G6
@@ -57,8 +57,28 @@ Phase 0 Planning & design. PRD v0.6 and plan v0.3 are written (Codex challenge f
 - [x] 2026-10-22: owner removed the legacy constellation SVGs and `manifest.json` (in Git history, `ed249cd`); README rewritten for the final layout
 - [ ] Per-sign SVGs from the approved sheets: 24 safe square SVGs plus a manifest per folder (rules in `assets/zodiac-sign/README.md`); owner runs the Codex prompt
 - [ ] Kept for Phase 2, not now: storage facts marked unverified in design 3 §3.4 and the `anni_server` connection method in §3.9
-- [ ] Owner review of design 3
-- [ ] Then design 4 theme system, then 5 3D approach; each with an owner gate
+- [x] 2026-10-23: PR #4 (24 per-sign zodiac SVGs) merged by the owner. Owner: designs 1-3 approved; Zodiac art always on a night-sky panel; fonts self-hosted OFL; mood board may be read
+- [x] 2026-10-23 (branch `docs/theme-system`): Design 4 draft `docs/design/anni_theme_system.md`: token contract, values per theme from the mood board, Zodiac night panel, font rules, 9 tests to write first. Plan §6 now points to it. New PRD Q53-Q56
+  - Contrast check of the mood board (scratchpad script, not committed): RED, 3 pairs fail AA (A muted 4.21 and nav 3.22 on the rose end; C rust small text 4.27). GREEN after the proposed fixes (Q53): all 21 pairs pass
+  - Font Vietnamese coverage **not verified**: network down (DNS failure for `raw.githubusercontent.com`, GitHub API fetch failed). Q54 holds the from-memory status
+  - Codex round 1: needs-attention, 6 findings, all valid and fixed (v0.2): A accent 2.82 on the gradient end (now `#ff9cbf`); `--text-on-accent`, `--scrim`, nav tokens and `--nav-focus` given values (C page focus on C nav was 1:1); theme returned by `public_open` and `account_open` too (one line added to design 1 §5.1); E18 test covers WebGL/script motion and data/battery saver; font test checks the union of subset files per role and weight, NFC; E19 test compares content records. Contrast check extended to 41 pairs, all pass
+  - Codex round 2: needs-attention, 3 findings, all valid and fixed (v0.3): C/D muted text over a black photo 4.16/3.64 (recomputed; rule now: only `--text` on photos); `--radius-sm`, `--ease-enter`, fonts, spacing given values plus a neutral token set for G0 and `/app`; E19 snapshot covers every page-scoped row incl. `partner_profiles`
+  - Codex round 3: needs-attention, 2 findings, both valid and fixed (v0.4): E19 snapshot now includes `memberships`, `guest_tokens`, `guest_accounts` (only `pages.theme`/`version`/`updated_at` may change); rendered scan covers G0 and dashboard screens O1, O2, O3, O5, O7
+  - Codex round 4: needs-attention, 2 findings, both valid and fixed (v0.5): rendered scan covers every design 2 screen and state (guest screens in four themes, owner screens in the neutral set); E19 snapshot covers the tables present at each phase and grows with each migration
+  - Codex round 5: needs-attention, 1 finding, valid and fixed (v0.6): pre-theme screens (G0, G-E1 to G-E3) use and are tested in the neutral set; O3 and "view as guest" previews tested in all four themes
+  - Codex round 6: needs-attention, 2 findings, both valid and fixed (v0.7): tokens scoped to any `[data-theme]` element so the O3 and "view as guest" previews do not restyle the neutral dashboard (new test 10); E19 snapshot includes the `pages` row by `id`
+  - Codex round 7: needs-attention, 1 finding, valid and fixed (v0.8): G11 guest sign-in can be opened without a token, so it is neutral; the theme applies after `account_open`
+  - Codex round 8: needs-attention, 1 finding, valid and fixed (v0.9): rendered checks add 320 px width and 200 % text (WCAG 1.4.10, 1.4.4)
+  - Owner (2026-10-23): keep looping, but only on genuinely new issues, not fixes that create the next finding. Self-review pass before round 9 fixed 5 fix-induced inconsistencies (neutral set list, nav width, test 2 vs test 5 matrix, neutral focus test, test 5 restructured); status history moved here
+  - Codex round 9 (given full history; labels findings): needs-attention, 1 finding, labelled PRE-EXISTING, valid, fixed (v0.10): decor behind A's 40 % glass (white sparkle: nav text 2.53). A glass now 75 % (worst 6.82); one rule in §3: decor never directly behind text, contrast measured over the worst decor. Contrast check: 44 pairs, all pass. No fix-induced findings this round
+  - Codex round 10: needs-attention, 1 finding, PRE-EXISTING, valid: C accent graphic on mint decor 2.92. Same class as round 9 (my round-9 rule covered text only); fixed by widening that one rule to functional graphics, no new values
+  - Codex round 11: **approve, no material findings** distinct from rounds 1-10
+- [x] 2026-10-23: owner answers. Q53: Claude decides (fixes applied; owner judges on the product). Q54: Claude decides creative fonts. Q55: no. Q56: owner asked what `/app` is (it is the future logged-in editing part of the site, not a folder); still open
+  - Fonts verified (network back; read-only `raw.githubusercontent.com/google/fonts`, Google Fonts CSS in a local browser specimen): Outfit, Fredoka, Caveat have no Vietnamese (confirmed in metadata and visibly falling back in the render). Chosen: B body Be Vietnam Pro; C Grandstander / Baloo 2 / Patrick Hand. All 8 kept and new families are OFL with Vietnamese. Found: `document.fonts.check()` returns true even without coverage, so test 4 must read character maps. `.playwright-mcp/` added to `.gitignore`
+  - Codex round 12 (font change): **approve, no material findings**
+- [x] 2026-10-23: owner asked for a visual preview to brainstorm on while system design continues. Private design canvas "anni Theme Preview" on the owner's claude.ai account (not in Git; link in the session, not recorded here): Home ×4 themes, Zodiac night panel ×4 themes (sample art Aries, Libra, Thìn uploaded from `assets/zodiac-sign/`, not the couple's signs), Q56 options 1 (neutral) and 2 (themed). Vietnamese UI copy with placeholders only. Theme D nav drops uppercase for Vietnamese labels (stacked marks)
+- [ ] Owner: Q56 (dashboard look, see preview row 3); comments on the preview; then design 4 v0.11 ready to commit and PR on request
+- [ ] Then design 5 3D approach, with an owner gate
 - [ ] Before writing `ci.yml`: verify plan §12.5 facts and approve the pinned action list (rule 1)
 - [ ] Before implementation: owner approval for harness-os (commits) and for any login/install/download (rule 1)
 
