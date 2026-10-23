@@ -350,9 +350,10 @@ Ranked from the owner's stated concerns first.
 | Q53 | Four mood-board colours fail WCAG AA (design 4 §5): theme A muted text, nav labels and pink accent on the rose end of the gradient, theme C rust as small text. Accept the fixes? | Darken A's gradient end (`#a94a6b` → `#934060`), make A's nav and card glass dark at 75 % instead of white at 14 % (decor such as sparkles can sit behind it), lighten A's accent (`#ff7fab` → `#ff9cbf`), add a darker rust `#a3472e` for C's small text (decorative rust unchanged) | Answered (2026-10-23): owner asked Claude to decide; the fixes are applied. The owner will judge the colours on the real product |
 | Q54 | Fonts without Vietnamese: Outfit (B body), Fredoka and Caveat (C) | Replace them with creative fonts that match the theme and cover Vietnamese | Answered (2026-10-23): owner asked Claude to decide. Verified in the official `google/fonts` repo: Outfit, Fredoka and Caveat have no Vietnamese subset. Chosen after a rendered Vietnamese specimen: B body **Be Vietnam Pro**; C display **Grandstander**, body **Baloo 2**, handwriting **Patrick Hand** (all OFL with Vietnamese; design 4 §8.1) |
 | Q55 | Should each theme also follow the phone's light/dark setting? | No: A and B are night themes, C and D day themes; one scheme per theme (design 4 §10) | Answered (2026-10-23): no, only our themes |
-| Q56 | Look of the owner/co-editor dashboard (`/app`) | One fixed neutral look; the chosen theme is shown in the O3 preview and a "view as guest" preview (design 4 §9) | Open (2026-10-23). Owner: "I don't see app/". Clarified: `/app` is the future logged-in part of the website where the owner edits (design 2, O-screens), not a folder; nothing is built yet |
+| Q56 | Look of the owner/co-editor dashboard (`/app`) | One fixed neutral look; the chosen theme is shown in the O3 preview and a "view as guest" preview (design 4 §9) | Answered (2026-10-23). Owner first asked what `/app` is (the future logged-in editing part of the site, not a folder), then, on the preview canvas: "keep settings page with one unique theme or at least the same layout, just change the theme". Recorded: one fixed layout, one plain look; the page theme shows in the preview card. Owner also asked for Settings in the guest menu (design 4 §2) |
 | Q57 | 3D depth per theme and the order rich variants are built (design 5 §4.5) | Phase 4 base in all four themes (Home motif, section header bands, Zodiac scene, 2D versions); then rich variants one theme at a time (B → A → C → D: **not adopted**, replaced by the owner's answer) | Answered (2026-10-23): basic set first in all four themes, then improved during the work; the goal is rich versions in all four themes equally, no theme first (design 5 §4.5) |
 | Q58 | World mode navigation (design 5 §4.3) | A rail: tap a nav item or station, or swipe, and the camera flies to the next station; no joystick or free camera | Answered (2026-10-23): default accepted |
+| Q59 | Repo visibility vs CI limits and merge protection | Repo is private (read 2026-10-23). GitHub Free on a private repo gives 2,000 Actions min/month (blocked, not billed, without a payment method) and no protected branches, so "merge only when gate is green" is the owner's habit. Options: a) keep private (default), b) make public (free minutes, protected master with required gate; code and docs visible, real data already kept out by rule 3), c) GitHub Pro (price unverified). Design 6 §8 | **Answered by owner** (2026-10-23): b, make the repo public. Before switching: history scan (design 6 §8). After: protect master with required gate |
 
 ### 12.1 Question details (long text moved out of the table)
 Table rows above are summaries. Full wording of the earlier rows, kept verbatim:
@@ -394,7 +395,7 @@ Table rows above are summaries. Full wording of the earlier rows, kept verbatim:
 
 **Q33**
 - Question: CD route and the plan limits for a private repo
-- Default / decision: Vercel connected to GitHub: a preview site per pull request using a separate test database with fake data; the live site updates only after the `gate` check passes and the owner merges. Actions minutes and branch protection on a private repo are **unverified** (plan §12.5)
+- Default / decision: Vercel connected to GitHub: a preview site per pull request using a separate test database with fake data; the live site updates only after the `gate` check passes and the owner merges. Actions minutes and branch protection on a private repo: checked 2026-10-23, see design 6 §2 and Q59
 - Status: Answered (2026-10-22, confirmed). Connecting Vercel to GitHub still needs rule-1 approval of the exact hosts.
 
 **Q34**
@@ -436,6 +437,11 @@ Table rows above are summaries. Full wording of the earlier rows, kept verbatim:
 - Question: Email for the sign-in system itself (verify, password reset)
 - Default / decision: Supabase Auth can send through Resend (SMTP setting) once Q37 Phase B exists; until then only owner-provisioned accounts, as in Q30
 - Status: Answered (2026-10-22): approved; waits for Q37 phase B.
+
+**Q59**
+- Question: Repo visibility vs CI limits and merge protection
+- Default / decision: a) keep private. Source: docs.github.com (Actions billing, GitHub's plans, rulesets). Design 6 §8
+- Status: **Answered by owner** (2026-10-23): b, make the repo public. Before switching: history scan (design 6 §8). After: protect master with required gate
 
 ---
 

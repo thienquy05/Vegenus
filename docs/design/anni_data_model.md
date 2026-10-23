@@ -222,7 +222,7 @@ O10's meter shows used plus charged. Egress cannot be measured from the database
 | `account_id` | uuid null FK `guest_accounts` on delete set null | set when `author_kind = account` |
 | `moderated_at`, `moderated_by` | null | |
 
-Guests never read this table. `guest_guestbook_list` and `public_guestbook_list` return only `display_name`, `body`, `lang` and the approval date of `approved` rows; a guest does not see their own pending message (Q34d).
+Guests never read this table. `guest_guestbook_list`, `account_guestbook_list` and `public_guestbook_list` return only `display_name`, `body`, `lang` and the approval date of `approved` rows; a guest does not see their own pending message (Q34d).
 
 ### 3.6 Guest accounts (P1; phase B email, Q37/Q38)
 
@@ -446,7 +446,7 @@ Co-editor limits (Q15) are enforced by RLS, not only by hidden buttons: no updat
 
 | Query | Index |
 |---|---|
-| `guest_list` / `public_list` by section | `items (page_id, section, status, sort_order, id)` |
+| `guest_list` / `public_list` / `account_list` by section | `items (page_id, section, status, sort_order, id)` |
 | Approved wishes, newest first | `guestbook_entries (page_id, status, created_at desc, id)` |
 | Moderation queue (O7) | partial `guestbook_entries (page_id, created_at) where status = 'pending'` |
 | Media of an item | `media (item_id, position)` |

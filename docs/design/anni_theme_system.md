@@ -1,6 +1,6 @@
 # Design 4: Theme system
 
-**Status:** DRAFT v0.11 for owner review. Phase 0 design deliverable "theme system". Replaces the sketch in plan §6. No code. Codex adversarial review rounds 1-10: 20 findings, all fixed (round-by-round log in `docs/anni_progress.md`); v0.9 adds a consistency pass over those fixes; v0.10 adds the decor rule (rounds 9-10). v0.11: owner answers Q53-Q55 (2026-10-23); fonts verified and chosen (§8.1).
+**Status:** DRAFT v0.13 for owner review. Phase 0 design deliverable "theme system". Replaces the sketch in plan §6. No code. Codex adversarial review rounds 1-10: 20 findings, all fixed (round-by-round log in `docs/anni_progress.md`); v0.9 adds a consistency pass over those fixes; v0.10 adds the decor rule (rounds 9-10). v0.11: owner answers Q53-Q55 (2026-10-23); fonts verified and chosen (§8.1). v0.12 (branch `docs/theme-nav-icons`): per-theme icon families and a circular menu replace the bottom bar (owner, 2026-10-23; §2, menu tokens §4, test 12). v0.13: the menu moves to the top left and opens by stepping the page back as a card, so it covers no text; the dashboard uses it too (owner, 2026-10-23; §2, §4, §5, test 12).
 **Date:** 2026-10-23
 **Inputs:** PRD §4.1 (S2, S11, S21), §6.1-6.2, §7 (accessibility, language), E12, E18, E19, Q3, Q39; plan §6; design 2 (O3, G8, Z2); design 3 §3.1 (`pages.theme`); the owner's mood board (private artifact, read 2026-10-23 with the owner's approval; only colours, font names and layout notes are copied here).
 **Owner decisions used (2026-10-23):** designs 1-3 approved; Zodiac art always sits on a night-sky panel; fonts are self-hosted open-licence (OFL) files.
@@ -26,7 +26,17 @@ The mood board shows one phone home screen (390 × 844) per theme. Each has a ce
 | C Cozy & playful | Warm, toy-like, handmade | Cream with yellow and mint circles | Fredoka / Caveat (handwriting) | Stacked isometric toy blocks with a heart; polaroid photo |
 | D Elegant & minimal | Editorial, quiet | Warm off-white, black hairlines | Playfair Display / Inter | Thin-line wireframe sphere with one red dot |
 
-The nav is a bottom bar with four items in all four boards (Home, Memories, Together, Wishes = Guestbook). Zodiac (S21) adds a fifth item when enabled. Five items must fit at 320-390 px wide with 44 px targets (§11 test 5).
+**Navigation: a circular menu at the top left** (owner, 2026-10-23; replaces the bottom tab bar. First placed bottom right; moved top left the same day so it never sits on content or covers text). Items: Home, Memories, Together, Wishes (= Guestbook), Zodiac (S21, when enabled) and Settings (opens the G8 sheet).
+
+- **Closed:** a 56 px round button inside the safe area (16 px from the left and the top, plus `env(safe-area-inset-*)`), styled per theme (`--menu-button-*`, §4) with a menu glyph (three lines; A soft with a sparkle, B thin with a star, C chunky, D hairline with the red dot). The button sits in a reserved top bar, 88 px tall plus the top safe area: page headers keep 88 px clear on the button's side (from the left; from the right when G8 moves the button to the top right) and Home's hero art sits around it. The page scrolls only below that bar; once anything has scrolled, the bar takes the page ground (`--bg`) so scrolled content disappears under its lower edge and never shows beside or behind the button.
+- **Open:** the page steps back: it scales to 60 % and moves to the bottom right as a tilted card (`--menu-card-shadow`), uncovering the theme ground. The items fan out over that free ground on a quarter arc from the button, rightwards to downwards (radius 200 px, 52 px bubbles about 11 px apart), so no item or label lies on page text. Each item has a visible label on its own chip (`--menu-item-bg`, `--menu-item-border`, `--text`) that is part of its tap target; the current page is highlighted; the button shows ×. A faint ring traces the arc in the theme's style (A soft glow, B dashed orbit, C chunky dots, D hairline). With Zodiac disabled, five items spread over the same arc. The card itself is inert; a separate transparent layer over it (not focusable, hidden from assistive technology) closes the menu on tap, like ×, which stays the accessible way to close.
+- **Icons:** each theme has its own icon family (owner, 2026-10-23), 24 × 24 line icons in the theme's stroke style: A soft rounded with hearts, orbs and sparkles; B thin lines with constellations and planets; C chunky toy shapes; D hairline geometry with one red accent dot. Reviewed by Codex on rendered 22 px images (preview canvas, 2026-10-23).
+- **Behaviour and accessibility:** the button is a `<button>` with an accessible name ("Mở menu" / "Đóng menu") and `aria-expanded`. While open, the page card is inert (not reachable by keyboard or screen reader); the menu items and the × button stay reachable; focus moves to the first item, follows the arc order and ends on the × button; Escape or the × button closes the menu and focus returns to the button. Choosing an item closes the menu and lifts the inert state, then focus moves to the destination's main heading (Settings: the G8 sheet's first control). Reduced motion: the page card and items appear in place without the step-back or fly-out (§7).
+- **Fallback:** when the fan does not fit (any label would overlap or leave the screen, checked at 320 px and 200 % text), the menu opens as a labelled list sheet anchored top-left instead, over the page with `--scrim`.
+- **Reach:** a top corner is not reachable by the thumb when the phone is held in one hand; the owner chose the top left knowing this. A G8 option "Nút menu" moves the button and fan to the top right (mirrored). The items fan towards the middle of the screen, where the thumb reaches.
+- **Owner area:** the dashboard (`/app`, Q56) uses the same button and fan with its own items (Overview, Content, Wishes, Settings) in the neutral look.
+
+Tests: §11 tests 5 and 12.
 
 ## 3. Token contract
 
@@ -35,11 +45,11 @@ CSS custom properties on `[data-theme="<id>"]`, so any element can be a theme ro
 | Group | Tokens | Notes |
 |---|---|---|
 | Colour: ground | `--bg`, `--bg-image` (gradient or `none`), plus the theme's decor (orbs, sparkles, stars, circles) | **Decor never sits directly behind text or functional graphics** (icons, controls, focus rings, chart or counter marks); anything over decor needs a surface. Contrast is measured against the worst point of the gradient *and* the brightest (dark themes) or darkest (light themes) decor that can sit behind a surface |
-| Colour: surfaces | `--surface`, `--surface-border`, `--scrim` | Cards, nav, sheets; `--scrim` sits behind text placed over photos. **Only `--text` may sit on a photo** (on `--scrim`); muted, accent and small labels never do (C and D muted text fall to 4.16 and 3.64 over a black photo) |
+| Colour: surfaces | `--surface`, `--surface-border`, `--scrim` | Cards, sheets; `--scrim` sits behind text placed over photos. **Only `--text` may sit on a photo** (on `--scrim`); muted, accent and small labels never do (C and D muted text fall to 4.16 and 3.64 over a black photo) |
 | Colour: text | `--text`, `--text-muted`, `--text-on-accent` | `--text-muted` is still body text and must pass 4.5:1 |
 | Colour: accent | `--accent` (graphics, large text ≥ 24 px), `--accent-text` (small text, links) | Two tokens because a decorative accent may pass 3:1 but not 4.5:1 (theme C) |
 | Colour: lines and state | `--line`, `--focus`, `--danger`, `--success` | `--focus` ring: 2 px, ≥ 3:1 against every surface it can sit on (`--bg` at its worst point, `--surface`, cards, night panel) |
-| Colour: nav | `--nav-bg`, `--nav-text`, `--nav-text-active`, `--nav-focus` | The nav is its own surface, so its focus ring has its own token (theme C's nav is the same brown as its page focus colour) |
+| Colour: menu (§2) | `--menu-button-bg`, `--menu-button-fg`, `--menu-item-bg`, `--menu-item-border`, `--menu-item-fg`, `--menu-item-active-bg`, `--menu-item-active-fg`, `--menu-card-shadow`, `--menu-ring` | Replaces the bottom bar's `--nav-*` tokens (2026-10-23). Bubbles take the page `--focus` ring |
 | Scheme | `--color-scheme` → `color-scheme` (`dark` / `light`) | Native controls and scrollbars match the theme |
 | Type | `--font-display`, `--font-body`, `--font-hand` (C only, else = body), `--display-style` (normal/italic), `--display-weight`, scale `--fs-xs … --fs-display` | Scale is shared (§3.1); only the families and display style change |
 | Space and shape | `--space-1 … --space-8` = 4, 8, 12, 16, 24, 32, 48, 64 px; `--radius-sm`, `--radius-md`, `--radius-pill` | Spacing is shared; radius is per theme |
@@ -53,7 +63,7 @@ The mood board uses 11 px nav labels and 14 px body text. Raised here for readab
 
 | Token | Size | Use |
 |---|---|---|
-| `--fs-xs` | 12 px | Nav labels, eyebrow lines (uppercase, tracked) |
+| `--fs-xs` | 12 px | Eyebrow lines (uppercase, tracked); menu labels use 13 px semibold |
 | `--fs-sm` | 14 px | Captions, metadata |
 | `--fs-md` | 16 px | Body, inputs |
 | `--fs-lg` | 20 px | Section headings |
@@ -82,9 +92,10 @@ Values are from the mood board, except the changes marked **fix** (§5). `--dang
 | `--line` | white at 28 % | `#8fa0ff` | `#e9cfae` | `#1a1a1a` |
 | `--focus` | `#fff6f0` | `#ffe6a8` | `#4a2c1d` | `#b3402a` |
 | `--danger` / `--success` | `#ffb3b3` / `#b8f0c8` | `#ffb3b3` / `#b8f0c8` | `#a3262e` / `#2e6b3a` | `#a3262e` / `#2e6b3a` |
-| `--nav-bg` | `#24123a` at 75 % (glass), radius 24 | `#141a50` at 75 % (glass), radius 20 | `#4a2c1d` (solid), radius 24 | `#f4f1ec` with hairline top border |
-| `--nav-text` / `--nav-text-active` | `#ffd9e6` / `#fff6f0` | `#c6cbf5` / `#ffe6a8` | `#fff1de` / `#ffd36b` | `#555555` / `#1a1a1a` + accent underline |
-| `--nav-focus` | `#fff6f0` | `#ffe6a8` | `#ffd36b` | `#b3402a` |
+| `--menu-button-bg` / `-fg` | radial `#ffe3ee` → `#ff9cbf` → `#8e2f6b`, pink glow / `#24123a` | radial `#d6e4ff` → `#5b7cff` → `#101a63`, `#8fa0ff` edge / `#0a0e2e` | `#4a2c1d`, toy shadow / `#ffd36b` | `#1a1a1a` / `#f4f1ec` |
+| `--menu-item-bg` / `-border` / `-fg` | `#24123a` at 88 % / white at 35 % / `#ffd9e6` | `#0a0e2e` / `#8fa0ff` / `#c6cbf5` | `#fff1de` / `#4a2c1d` 2.5 px / `#4a2c1d` | `#f4f1ec` / `#1a1a1a` / `#1a1a1a` |
+| `--menu-item-active-bg` / `-fg` | `#ff9cbf` / `#24123a` | `#ffe6a8` / `#0a0e2e` | `#ffd36b` / `#4a2c1d` | `#1a1a1a` / `#f4f1ec` |
+| `--menu-card-shadow` / `--menu-ring` | white 1 px ring + `#ff9cbf` glow at 35 % / `#ffd9e6` at 30 % | `#8fa0ff` 1 px ring + `#5b7cff` glow at 40 % / `#8fa0ff` dashed | `#4a2c1d` 2.5 px ring + `0 10px 0 #e9cfae` / `#b9553a` dots | `#1a1a1a` 1 px ring + soft shadow / `#1a1a1a` at 45 % |
 | `--font-display` / `--font-body` / `--font-hand` | Cormorant Garamond / Nunito Sans / = body | Fraunces / Be Vietnam Pro / = body | Grandstander / Baloo 2 / Patrick Hand | Playfair Display / Inter / = body |
 | `--radius-sm` / `--radius-md` / `--radius-pill` | 12 / 24 / 999 | 10 / 20 / 999 | 6 (photo) / 24 / 999 | 0 / 0 / 0 |
 | `--shadow` | none (glow via blur) | none | `0 6px 0 #e9cfae` (flat "toy" shadow) | none |
@@ -107,7 +118,8 @@ Computed 2026-10-23 with a standard-library script (WCAG relative luminance; tra
 | C rust as small text | `#b9553a` on `#fff1de` | **4.27 fail** | `#a3472e`: 5.40 (rust `#b9553a` kept for graphics and large text: 4.27 ≥ 3) |
 | A accent graphic on gradient light end (Codex round 1) | `#ff7fab` on `#934060` | **2.82 fail** | `#ff9cbf`: 3.42 (dark end 8.80) |
 | Text on accent, all themes | see §4 | — | 4.75 (C) to 15.37 (B) |
-| Focus ring on bg, cards and nav, all themes | see §4 | — | 3.0 needed; lowest 5.06 (D); C nav uses `--nav-focus` 8.86 (page focus on C nav would be 1:1) |
+| Focus ring on bg, cards and menu bubbles, all themes | see §4 | — | 3.0 needed; lowest 5.06 (D) |
+| Menu (§2): icons on bubbles and active bubbles, button glyph (3:1); labels on their chips (4.5:1), including over decor on the uncovered ground (v0.13) | see §4 | B gold glyph on the blue button: **2.97 fail** | navy `#0a0e2e`: 5.18; all menu pairs pass; lowest label on its chip 13.68 (A, chip over a pink orb) |
 | `--text` on `--scrim` over a pure white and a pure black photo, all themes | see §4 | — | lowest 6.06 (A on white); muted text is not allowed on photos (§3, Codex round 2) |
 | B text, muted, eyebrow, gold, nav | — | 7.45 to 16.63 | — |
 | C text, muted, nav active/inactive, heart graphic | — | 3.48 (graphic) to 11.32 | — |
@@ -170,7 +182,7 @@ C now uses three families (one weight each for display and handwriting), so its 
 4. The owner/co-editor dashboard (`/app`) uses one fixed neutral look (Q56). The O3 wizard preview and the "view as guest" preview are containers with their own `data-theme`; they load that theme's token file and fonts, and the dashboard around them stays neutral.
 5. Changing the theme (E19) changes only `pages.theme`; no content is touched.
 
-**Adding a theme:** new enum value (migration), `tokens.css`, `scene.json`, its contrast pairs, its fonts (rule 1) and a preview. No component changes; if one is needed, the token contract is missing something.
+**Adding a theme:** new enum value (migration), `tokens.css`, `scene.json`, its contrast pairs, its fonts (rule 1), its six menu icons and menu tokens, and a preview. No component changes; if one is needed, the token contract is missing something.
 
 ## 10. Alternatives considered
 
@@ -196,3 +208,4 @@ C now uses three families (one weight each for display and handwriting), so its 
 9. Night panel: the Zodiac section uses theme B colour values in all four themes; the art files are byte-identical to the manifest.
 10. Preview isolation: switching the O3 preview through all four themes leaves the dashboard's computed tokens and fonts unchanged (neutral set).
 11. Theme on every entry path: `guest_open`, `public_open` and `account_open` each return the page's theme, and the first content screen renders in it.
+12. Circular menu (§2), in every theme: the button has an accessible name and `aria-expanded`; while open, Tab and the screen reader reach only the menu items (in arc order) and the × button, which can be reached and activated; Escape and the × button close it and focus returns to the button; activating each item closes the menu, the page is no longer inert, and focus lands on the destination's main heading (Settings: G8's first control); at 320 px and at 200 % text the list fallback is used and nothing overlaps or leaves the screen; while open, no menu item or label overlaps text on the page card (bounding boxes, every theme, on Home, the longest section page, Zodiac, the G8 sheet and both dashboard looks, including focus order there); a tap on the card closes the menu while the card stays inert; with the button in either corner, closed and after scrolling, no page text is under, beside or behind it; with reduced motion no step-back or fly-out runs; the "Nút menu" option mirrors it to the top right. Manual, Phase 4 on the test phones: taps on each item with the phone held normally, 20 taps; more than one miss means switching to a two-ring layout.
