@@ -89,14 +89,9 @@ Every table carries `page_id` (or, for per-user rows such as email preferences a
 
 Superseded by design 4 (`docs/design/anni_theme_system.md`): token contract, values per theme from the owner's mood board, contrast results, Zodiac night panel, self-hosted fonts, tests.
 
-## 7. 3D approach and performance budgets (proposals; set from a prototype on real phones)
+## 7. 3D approach and performance budgets
 
-- **Order (owner confirmed):** Static → Page → World. World is the preferred final experience, built after Page mode is evaluated; the deadline is flexible, so no feature is cut for time unless the owner says so.
-- **Assets:** glTF/GLB only; compress geometry (Draco or Meshopt) and textures (KTX2). All three can coexist on one loader; decoders should be self-hosted and the KTX2 loader set before loading (three.js forum threads, secondary source, **unverified**; the official manual URLs returned 404). Optimise with glTF-Transform (named in the same threads).
-- **Runtime:** lazy-load the 3D chunk after first content; cap device pixel ratio; render on demand where possible; instance repeated objects; limit draw calls; avoid synchronous GL queries (MDN, verified); handle `webglcontextlost`/`restored`; dispose resources when leaving sections.
-- **Starting budgets:** first content ≤ 3 s on a mid-range phone over 4G; steady ≥ 30 fps in World mode on the test phones; automatic downgrade when sustained frame time exceeds budget.
-- **Reach:** WebGL 2 on 97.13% of browsers, iOS Safari from 15 (verified); older goes to Static.
-- **Accessibility:** every 3D section has a DOM equivalent reachable by keyboard and screen reader.
+Superseded by design 5 (`docs/design/anni_3d_approach.md`): mode rules and runtime downgrade, one shared WebGL context, procedural theme motifs, the Zodiac sky scene, budgets, tests. The order Static → Page → World (owner confirmed) is unchanged.
 
 ## 8. Tools, MCP servers and orchestration
 
@@ -143,7 +138,7 @@ Proposed scope until the owner says otherwise:
 
 | Phase | Weeks | Tasks | Tests first (PRD §9.2) | Gate |
 |---|---|---|---|---|
-| 0 Design | 1–2 | Design docs in `docs/design/`: 1 token flow, 2 screens, 3 data model (all approved 2026-10-23), 4 theme system (draft), 5 3D approach; CI spec (§12) | — | Owner review of each |
+| 0 Design | 1–2 | Design docs in `docs/design/`: 1 token flow, 2 screens, 3 data model (all approved 2026-10-23), 4 theme system (draft), 5 3D approach (approved 2026-10-23); CI spec (§12) | — | Owner review of each |
 | 1 Foundations | 3–4 | **First:** CI walking skeleton (§12.4). Then route table + deny-by-default checks, skeleton app, Supabase project, RLS + `guest_*` functions, auth (closed registration, Google), pages/memberships/tokens/invites, visibility, publication status, privacy scan | E4–E6, E21, E22, E27–E37 | Before harness-os / spend |
 | 2 Owner tools | 5–7 | Setup wizard, CRUD with draft/publish, media pipeline, usage meter and triggers, keep-alive + alerts | E7–E10, E15, E16, E23–E25 | Owner review |
 | 3 Guest (Static + Page shell) | 8–10 | Token exchange, guest views, EN/VI, guestbook queue, QR/NFC, mode selector | E1, E2, E11–E14, E17, E26 | Owner review |
@@ -245,6 +240,7 @@ The first unit of Phase 1 is CI itself: an empty app, one trivial test written t
 - Cloudflare R2 pricing https://developers.cloudflare.com/r2/pricing/ (a subdomain of the approved cloudflare.com) · https://www.cloudflare.com/developer-platform/products/r2/ · Registrar https://www.cloudflare.com/products/registrar/
 - three.js https://github.com/mrdoob/three.js (MIT; WebGL and WebGPU renderers) · React Three Fiber https://github.com/pmndrs/react-three-fiber (MIT; v8↔React 18, v9↔React 19; docs.pmnd.rs redirected to pmndrs.github.io, a host not approved, so not followed) · Babylon.js https://www.babylonjs.com/ · PlayCanvas https://playcanvas.com/
 - MCP reference servers https://github.com/modelcontextprotocol/servers · Blender MCP https://github.com/ahujasid/blender-mcp · ruflo https://github.com/ruvnet/ruflo (npm page returned 403)
+- Design 5, read 2026-10-23 (owner's general read-only approval): MDN pages for `deviceMemory`, `saveData`, `getBattery`, `webglcontextlost`, `prefers-reduced-data` (developer.mozilla.org; their compatibility tables did not render, so support was read from MDN's own data, https://github.com/mdn/browser-compat-data files `api/Navigator.json`, `api/NetworkInformation.json`, `api/WebGL2RenderingContext.json`, `css/at-rules/media.json` on raw.githubusercontent.com); drei `View` and `PerformanceMonitor`, R3F `frameloop="demand"` (github.com/pmndrs docs through context7). Findings in design 5 §2-§3
 - WebGL 2 https://caniuse.com/webgl2 · WebGL best practices https://developer.mozilla.org/en-US/docs/Web/API/WebGL_API/WebGL_best_practices · Web NFC https://developer.mozilla.org/en-US/docs/Web/API/Web_NFC_API
 - iPhone background tag reading: Apple WWDC20 session 10209 via search summary https://developer.apple.com/videos/play/wwdc2020/10209/ (the documentation body could not be read: **unverified in detail**)
 - Compression guidance: three.js forum threads, e.g. https://discourse.threejs.org/t/how-to-add-both-ktx2loader-and-dracoloader-for-compressed-glb/46726 (secondary)
