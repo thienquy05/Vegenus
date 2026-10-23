@@ -26,7 +26,8 @@ Phase 0 Planning & design. PRD v0.5 and plan v0.3 are written (Codex challenge f
 - [x] 2026-10-22: Q34a (show once), Q36, Q37 docs read, Q20 answered. Codex review of the new designs: PROCEED WITH FIXES; all 7 findings applied (three access contracts `public_*`/`guest_*`/`account_*`, registration hardening, show-once recovery rules, sign vs birthday consent, drift fixes, `master` not `main`)
 - [ ] Open: Q16 (tag model), Q37 domain (deferred)
 - [x] 2026-10-22: owner pre-approved creating/switching branches (rule 4); commits, pushes and PRs still on request
-- [ ] Owner uploads Zodiac character art later: needs a privacy check and a file-size budget before it enters the repo
+- [x] 2026-10-22: Zodiac constellation artwork complete: 12 original square SVGs in `assets/zodic-sign/`, explicitly approved by owner for repo storage; source artwork has no personal content. Q39 records the production upload, motion, typography and privacy contract.
+- [ ] Zodiac dashboard upload, format handling, private storage and runtime integration (including loading all 12 images together); font selection and browser visual verification pending
 - [ ] Owner review of design 1 and design 2; answer Q33–Q35 (PRD §12)
 - [ ] Owner gate on plan v0.3 as a whole
 - [ ] Design 3 data model (from design 2), then 4 theme system, then 5 3D approach; each with an owner gate
@@ -36,3 +37,9 @@ Phase 0 Planning & design. PRD v0.5 and plan v0.3 are written (Codex challenge f
 ## Incidents
 - 2026-10-21 21:01: a ruflo plugin hook downloaded `ruflo@latest` (267 packages) into `~/.npm/_npx` without a rule-1 approval. Details and scope proposal: plan §8.2.
 - Ruflo runtime files appeared in the repo (`.claude-flow/`, `.swarm/`, `agentdb.rvf*`); all git-ignored.
+
+## Zodiac artwork verification (2026-10-22)
+- Branch: `docs/zodiac-sign-assets`, based on `origin/master`.
+- RED: pre-copy check failed as expected because the 12 SVG assets were missing.
+- GREEN: verified all 12 expected signs, square SVG dimensions, XML safety constraints, manifest checksums and file sizes below 150 KB. Total source bytes: 56,886.
+- No tools installed. No application code added. Browser visual verification remains pending (browser launch blocked in this environment).

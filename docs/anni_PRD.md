@@ -332,7 +332,7 @@ Ranked from the owner's stated concerns first.
 | Q36 | Visitor with no token | Visibility decides; anything that writes needs a token or account | Answered (2026-10-22): a visitor can read the Published page, read-only |
 | Q37 | Resend email | Assume a verified domain is needed for any sending (official docs, plan §R); decide the domain later | **Partly answered**: docs reading approved and done (2026-10-22); domain decision deferred. Owner-only sending without a domain is **unverified** |
 | Q38 | Guest accounts ("save my place") | Email-verified, cap 50, owner can remove | Answered (2026-10-22): approved. Email part waits for Q37 phase B |
-| Q39 | Zodiac section | Western signs, computed in browser, save only on opt-in; galaxy style; owner draws the sign characters | Answered (2026-10-22): approved. Owner will upload the character art later (placeholders until then) |
+| Q39 | Zodiac section | Western signs, computed in browser, save only on opt-in; galaxy style; constellation artwork complete in `assets/zodic-sign/`; runtime integration pending (Q39) | Answered (2026-10-22): approved. Constellation artwork complete in `assets/zodic-sign/`; production dashboard upload and integration pending (see Q39 detail below) |
 | Q40 | First-visit tour | 3-4 skippable steps, shown once | Answered (2026-10-22): approved |
 | Q41 | Sign-in emails (verify, reset) via Resend | Only after Q37 domain; until then owner-created accounts | Answered (2026-10-22): approved; waits for Q37 phase B (domain) |
 
@@ -406,8 +406,8 @@ Table rows above are summaries. Full wording of the earlier rows, kept verbatim:
 
 **Q39**
 - Question: Zodiac section: which system, what to store, how it looks
-- Default / decision: Western sun signs first (month and day only; computed in the browser; nothing stored unless a signed-in guest opts in, and then the sign, not the birthday). Option: Chinese/Vietnamese animal sign (needs the year). Encrypted birthday only if birthday emails are wanted. Animated constellation SVGs drawn in-repo; fun facts written by us in EN/VI, labelled "for fun". Zodiac also becomes the motif of Theme B (Cosmic / night sky)
-- Status: Answered (2026-10-22): approved; galaxy style; owner uploads the character art later.
+- Default / decision: Western sun signs first (month and day only; computed in the browser; nothing stored unless a signed-in guest opts in, and then the sign, not the birthday). Option: Chinese/Vietnamese animal sign (needs the year). Encrypted birthday only if birthday emails are wanted. Constellation artwork and delivery contract: see the Q39 artwork decision below; fun facts written by us in EN/VI, labelled "for fun". Zodiac also becomes the motif of Theme B (Cosmic / night sky)
+- Status: Answered (2026-10-22): galaxy style approved. **Constellation artwork complete:** 12 square, transparent SVGs in `assets/zodic-sign/` (owner explicitly requested repository storage, superseding the earlier keep-out-of-repo instruction for these non-personal source illustrations). Production images remain page-owned dashboard uploads in private storage (§3.3). Target approximately 150 KB or less per processed picture; existing SVGs are already smaller. Keep images static now; dynamic effects come during integration with reduced-motion support. Load all 12 pictures when the Zodiac screen opens and compute the result locally so asset selection never transmits the birthday or sign. No birthday/sign analytics or request parameters. Explicit opt-in profile saving remains separate. Preserve the celestial artwork and elegant serif direction; a matching licensed font still needs selection. See `assets/zodic-sign/README.md` for handoff and validation limits. Dashboard upload, image processing and runtime integration remain pending.
 
 **Q40**
 - Question: First-visit tour for guests and for the owner's first dashboard visit
