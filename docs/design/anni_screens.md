@@ -17,14 +17,13 @@ Rules for every screen: phone-first, one-hand use, touch targets ≥ 44 px, all 
 | G3 | Memory detail | Text (entry's language, optional second language), photos, short video (tap to play, poster first), voice note | Swipe between photos; play; language toggle for this entry | memory, media URLs (5 min) | Missing second language falls back (E13) |
 | G4 | Together | Timeline of milestones; anniversaries; counter. Later: places map | Open a milestone | milestones, anniversaries | Places map is after core (PRD §6.4) |
 | G5 | Guestbook | Approved messages, newest first; "Leave a wish" button | Open G6; load more | approved entries | Hidden if the section is disabled |
-| G6 | Leave a wish | Display name (required), message, language | Send | — | Name/text limits: Q34. Plain text only |
+| G6 | Leave a wish | Display name (required), message, language, one-line note that the network address is checked briefly to stop spam and not stored | Send | — | Name/text limits: Q34c; rate limits: Q43 (blocked = plain message with wait time). Plain text only |
 | G7 | Sent | "Thanks, it will appear after [OWNER] approves it" | Back to guestbook | — | Guest does not see their pending message (proposal, Q34) |
 | G8 | Settings sheet | Language EN/VI, mode World/Page/Static, reduce motion | Change; remembered on this device | — | Mode auto-chosen first (FR13) |
-| G9 | First-visit tour | 3-4 step pop-up over G1: what this is, what you can see, leave a wish, save your place and try Zodiac | Next, Back, Skip, Done | — | Once per device (once per account when signed in); `role=dialog`, focus trap, Esc, reduced motion; never delays G0; replay from G8 (S20, Q40) |
+| G9 | First-visit tour | 3-4 step pop-up over G1: what this is, what you can see, leave a wish, save your place | Next, Back, Skip, Done | — | Once per device (once per account when signed in); `role=dialog`, focus trap, Esc, reduced motion; never delays G0; replay from G8 (S20, Q40) |
 | G10 | Save my place | Email, optional display name, what an account gives | Send verification mail | `guest_register` (rate limited) | Only from a token session; needs email to guests (Q37 Phase B, Q38) |
 | G11 | Guest sign-in | Email link or password | Sign in | auth | Same generic errors as the owner login; no sign-up link without a token |
-| Z1 | Zodiac: enter birthday | Month and day (year optional, only if the animal sign is on), privacy note "calculated on your phone, nothing is saved unless you choose" | Show my sign | — | Validated; no network call (E40) |
-| Z2 | Zodiac: result | Galaxy-style animated scene (stars, glow, constellation lines) with the sign's character art (owner-drawn; placeholder until uploaded), sign name, element, short fun facts (EN/VI, "for fun"), cusp note when near a boundary | Try another date; save to my profile (signed-in only); share nothing by default | static assets | Reduced motion shows the still image (E41, S21) |
+| Z2 | Zodiac (guest view, read-only) | Galaxy-style animated scene (stars, glow, constellation lines) with the couple's signs as the owner's character art (placeholder until uploaded), each partner's label and signs, and the relationship reading (EN/VI, "for fun"). Never a birth date | Switch Western / Vietnamese (opens on the owner's default) | stored signs, sign art, reference texts | Guests do not enter a birthday. Shown when enabled, like every section (Q49). Systems: Q47; reading: Q48 (design 3 §3.10-3.11). Reduced motion shows the still image (E41, S21) |
 | G-E1 | No token | "Tap the tag or scan the QR code" | — | — | Same screen for wrong, rotated or private (no hints) |
 | G-E2 | Opened in an app that dropped the link | Steps to open in Safari/Chrome | — | — | E30 |
 | G-E3 | Not available / offline / database paused | Calm message, retry | Retry | — | E17, E23 |
@@ -35,7 +34,7 @@ Rules for every screen: phone-first, one-hand use, touch targets ≥ 44 px, all 
 |---|---|---|---|---|
 | O1 | Log in | Google button; email + password | Log in | Both. No sign-up link (closed registration, Q30) |
 | O2 | Dashboard | Empty state "Set up your page" or page overview: visibility, sections, pending guestbook count, usage meter | Go to setup, content, moderation, share | Both (co-editor sees no settings) |
-| O3 | Page setup wizard | Steps: theme (preview), default language, sections on/off, visibility (default Token-only) | Next/back; finish | Owner |
+| O3 | Page setup wizard | Steps: theme (preview), default language, time zone (prefilled from the browser; design 3 §3.1), sections on/off, visibility (default Token-only) | Next/back; finish | Owner |
 | O4 | Section content list | Items with draft/published badge, language, date | New; edit; publish/unpublish; reorder | Both |
 | O5 | Item editor | Title, date, text (language), optional second-language text, media list | Save draft; publish; delete | Both. "Changed by someone else" prompt instead of silent overwrite (E15) |
 | O6 | Media upload | Picker, compression progress, size/count caps, "location removed" note | Add; retry; cancel | Both. E7–E10 |
@@ -46,6 +45,7 @@ Rules for every screen: phone-first, one-hand use, touch targets ≥ 44 px, all 
 | O11 | Members | The one shared owner account (Q35). No co-editor screen until a second account is wanted | Change password; link Google | Owner |
 | O13 | First-run tour | 3 steps on the empty dashboard: set up the page, add the first memory, create the guest link | Next, Skip, replay from O12 | Owner (and partner) |
 | O14 | Email settings | Reminder lead time, wish digest on/off, last sends and failures | Save; send test to own address | Owner |
+| Z1 | Zodiac: our birth data | For each partner: label, birth date, birthplace (picked from a list), optional birth time; after saving, the computed Western sun/Moon/rising signs and Vietnamese pillars, animal and mệnh; the "event on that day" line; per partner a "show details to guests" switch with the warning that details can reveal the exact birthday (Q50); default system for guests; note that the date, time and place are encrypted and never shown, and that guests can work out the birth year from the basic signs; for a birthday near Tết, a warning with the number of days guests could narrow it to, and a choice to hide the Vietnamese animal for that partner; "changes not published" badge | Save; Publish; Unpublish | Owner. Design 3 §3.10, E40 |
 | O15 | Guest accounts | List of guest accounts for the page, with cap counter | Remove one; remove all | Owner |
 | O12 | Account | Language, log out | — | Both |
 
@@ -71,6 +71,6 @@ One Playwright flow per row, phone viewport, EN and VI:
 6. O5 opened in two sessions → second save shows the conflict prompt.
 7. G1 first visit shows G9 once; Skip closes it; second visit does not show it; replay from G8 works.
 8. Token holder → G10 → verification link → signed in; a visitor with no token cannot reach G10.
-9. Z1 → Z2 for a valid date makes no network request; an invalid date is rejected; reduced-motion shows a still image.
+9. Owner saves birth dates in Z1 → guest Z2 shows both signs and the reading, and the page source and network responses contain no date; an invalid date is rejected; reduced motion shows a still image.
 10. Unauthenticated visit to `/app`, `/app/anything`, `/home` shows login or not-found and no owner data.
 

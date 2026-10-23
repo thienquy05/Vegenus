@@ -31,7 +31,7 @@ A guest who taps the tag or scans the QR sees the enabled, published sections an
 | Co-editor | Same, account provisioned by the owner | RLS by `memberships`, role `co_editor` | Edit content, moderate guestbook (Q15) |
 | Guest with token | Guest cookie holding the token (§4) | Inside `guest_*` functions | Read published content of enabled sections; post one message to the queue at a time |
 | Visitor without token | None | `public_*` functions: Published pages only | Token-only or Private page: the "tap the tag" screen only. Published page: read published sections, read-only, posting actions hidden (Q14, Q36 confirmed) |
-| Guest account (optional, Q38) | Email-verified login bound to one page | `account_*` functions: validated identity + an active `guest_accounts` row for that page (§5.1) | Same reads as a token holder; post with a prefilled name; keep a Zodiac profile and email preferences |
+| Guest account (optional, Q38) | Email-verified login bound to one page | `account_*` functions: validated identity + an active `guest_accounts` row for that page (§5.1) | Same reads as a token holder; post with a prefilled name; keep email preferences |
 
 ## 3. Token
 
@@ -97,7 +97,7 @@ Tag/QR ──> https://<host>/g#<token>
 
 ## 5. Guest database functions (contract, not code)
 
-All are `SECURITY DEFINER`, take the token as the first argument, re-run the checks in §4 step 4, and return nothing for any failure.
+All are `SECURITY DEFINER`, take the token as the first argument, re-run the checks in §4 step 4, and return nothing for any failure. The read functions are callable by `anon`; `guest_guestbook_post` and `guest_register` are callable only by our server's `anni_server` role, so the per-device and per-IP limits cannot be skipped by calling the database directly (design 3 §3.9).
 
 | Function | Returns / does | Extra predicates |
 |---|---|---|
@@ -163,7 +163,7 @@ Each row is written and **observed failing** before the code that makes it pass 
 | `public_*` returns nothing for Token-only/Private pages, drafts, pending entries; media minting requires published; no posting path from `public_*` | DB + API | E31, E36, E28 |
 | `account_*`: removed account, Private page, other page's ID all return nothing; guest cannot write `memberships`/`guest_accounts` | DB | E33 |
 | Pending registration: expiry purge, atomic cap under concurrent verify, generic response for all outcomes, rotation invalidates pending | DB + API | E38 |
-| Birthday: invalid date rejected; no network call unless opt-in; stored value is ciphertext; no log line contains it | API + DB | E40 |
+| Partner birth date (Zodiac): invalid date rejected; stored value is ciphertext; guest functions never return it; no log line contains it (design 3 §9) | API + DB | E40 |
 
 ## 9. Deny by default: no unauthenticated bypass
 
@@ -196,7 +196,7 @@ G1 (token session) → "Save my place" → email (+ optional display name)
   → later visits: tag tap still works; or sign in with the emailed link / password
 ```
 
-- The account gives identity (prefilled name, "my wishes"), a saved Zodiac sign (opt-in) and email preferences. It does **not** give edit rights; the role is checked in the database (§5.1).
+- The account gives identity (prefilled name, "my wishes") and email preferences. It does **not** give edit rights; the role is checked in the database (§5.1).
 - **Registration hardening (Codex finding 3):**
   - A `pending_registrations` row (address hash, page, token version at request time, expiry 30 min) is created per request; unverified rows expire and are purged. The verification link is single-use and bound to that page and row.
   - **Atomic cap:** account creation counts and inserts in one transaction; concurrent verifications cannot exceed the cap (default 50).
@@ -216,5 +216,5 @@ G1 (token session) → "Save my place" → email (+ optional display name)
 - **Which mail:** welcome (after verification), anniversary reminder to the owner (N days before, from the page's anniversaries), new-wish digest to the owner (once a day, not one mail per wish), wish-approved thank-you to a guest account that posted, verify and reset mail.
 - **Idempotency:** the vendor supports an `Idempotency-Key` header kept for 24 hours (plan §R), so a retry in that window cannot double-send; our own `email_log` dedupe key covers longer gaps.
 - **Scheduling:** reuse the daily keep-alive job to dispatch reminders (the host's cron limits on the free plan are **unverified**).
-- **Zodiac:** the sign is computed from month and day in the browser. By default nothing leaves the device. A signed-in guest may opt in to save the sign. **Saving a sign and saving a birthday are separate consents.** The Zodiac feature as approved (Q39) saves, on opt-in, only the **sign**; the birthday column stays empty and the browser sends the sign, not the date. A birthday is stored only by a future feature that needs it (birthday mail), with its own consent and its own PRD row. If that happens, the design must first specify: AES-256-GCM with a unique random nonce per value, key id and user id as associated data, key backup and rotation, behaviour when the key is missing, server-side validation, consent withdrawal, and removal from queues and backups under a stated retention. An environment variable is where the key lives, not a key-management plan. Browser-only calculation also means analytics, error reports and session recordings must not capture the field; month/day input has no "future" check (leap day 29 Feb maps to Pisces on a normal-year basis, shown with the cusp note).
+- **Zodiac (corrected by the owner 2026-10-22):** the section is about the **couple**. Guests never enter a birthday. The owner enters the partners' birth dates in the dashboard; the server computes the signs and stores the dates encrypted (design 3 §3.10, Q46-Q49). Before that table exists, the design must specify: AES-256-GCM with a unique random nonce per value, key id and user id as associated data, key backup and rotation, behaviour when the key is missing, server-side validation, consent withdrawal, and removal from queues and backups under a stated retention. An environment variable is where the key lives, not a key-management plan. Analytics, error reports and session recordings must not capture the date field.
 
