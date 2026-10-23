@@ -113,7 +113,7 @@ All are `SECURITY DEFINER`, take the token as the first argument, re-run the che
 |---|---|---|---|
 | `public_*` (`public_open`, `public_list`, `public_guestbook_list`, `public_media_url`) | Anyone, no credential | Page `visibility = published`; section enabled; item `published` / entry `approved`; media belongs to such an item | Read only. No posting. Media URLs 5 min (Q29) |
 | `guest_*` (above) | Holder of the current token | Active token, current version, page visibility ≠ private, plus the same publication predicates | Read; post to the queue |
-| `account_*` (`account_open`, `account_list`, `account_guestbook_post`, `account_profile_get/set`) | Signed-in guest account | Validated identity (`auth.uid()`), an **active** `guest_accounts` row bound to one page, page visibility ≠ private, plus the publication predicates | Read; post to the queue under the account's attribution; read/write own profile and email preferences only |
+| `account_*` (`account_open`, `account_list`, `account_guestbook_list`, `account_media_url`, `account_guestbook_post`, `account_profile_get/set`; `account_guestbook_list` and `account_media_url` added 2026-10-23, found missing while specifying a G1 draft) | Signed-in guest account | Validated identity (`auth.uid()`), an **active** `guest_accounts` row bound to one page, page visibility ≠ private, plus the publication predicates | Read; post to the queue under the account's attribution; read/write own profile and email preferences only |
 
 `public_open` and `account_open` return the same page summary as `guest_open`: enabled sections, theme, default language (design 4 §9, 2026-10-23).
 
