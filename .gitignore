@@ -67,5 +67,5 @@ Thumbs.db
 *.log
 
 # Owner-approved non-personal celestial artwork source sheets only
-!/zodiac-sign/western/approved-atlas.png
-!/zodiac-sign/vietnamese/approved-atlas.png
+!/assets/zodiac-sign/western/approved-atlas.png
+!/assets/zodiac-sign/vietnamese/approved-atlas.png

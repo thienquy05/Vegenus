@@ -1,6 +1,6 @@
 # Approved celestial Zodiac artwork
 
-The owner approved these two final blue collections for upload to `docs/zodiac-sign-assets-v2`, under `zodiac-sign/`. These are original, non-personal generated illustrations. Existing Western SVG defaults in `assets/zodic-sign/` are preserved.
+The owner approved these two final blue collections (2026-10-22). They are original, non-personal illustrations generated with OpenAI's image model; each PNG carries a C2PA "content credentials" chunk naming the generator (ChatGPT / gpt-image), timestamps and certificate authorities, and no account or personal data (checked 2026-10-22; kept so the checksums and AI-origin label stay intact). The earlier constellation SVGs were removed on 2026-10-22; per-sign SVGs cut from these sheets are pending (rules in [README.md](README.md)). Manifest for these sheets: `source-sheets.json`.
 
 ## Western collection
 
@@ -20,7 +20,7 @@ Approved changes: faint engraved figures behind bright constellations; legendary
 Twelve animals in four columns, read left to right:
 - Tý – Chuột; Sửu – Trâu; Dần – Hổ; Mão – Mèo
 - Thìn – Rồng; Tỵ – Rắn; Ngọ – Ngựa; Mùi – Dê
-- Thân – Khỉ; Dậu – Gà; Tuất – Chó; Hợi – Heo
+- Thân – Khỉ; Dậu – Gà; Tuất – Chó; Hợi – Heo (Lợn in northern usage; the research notes use Lợn)
 
 Approved direction: blue/silver celestial linh vật, sculptural horns, flowing cloud and fur motifs, noble animal expressions and luminous star signatures. Contemporary fantasy interpretations; no claim that these are historical sacred designs. Mão is a cat and Sửu is a water buffalo. Vietnamese star maps are invented decorative motifs.
 
@@ -42,7 +42,7 @@ Keep Western and Vietnamese artwork in distinct collections with stable namespac
 
 This delivery changes artwork only. It does not change the current couple-only Zodiac data model or introduce a guest birthday form. Guests continue to view only the owner-authorized published data. The current PRD and design 3 remain authoritative; earlier chat examples about guest-entered dates are not product requirements.
 
-Production must avoid result-dependent image requests: load all 12 images for the displayed system independently of the private date/result. Do not expose birth data or computed sign in asset URLs, logs or analytics. Page-owned replacement uploads stay in private storage as defined by design 3 §3.3; this repository exception is limited to these explicitly approved non-personal built-in source illustrations.
+Image loading follows design 3 §3.3: guests load only the art for the couple's **published** signs in the system on screen. Those signs are already in the published snapshot, so the image requests reveal nothing more; the birth date never appears in asset URLs, logs or analytics. (An earlier version of this note said to load all 12 images; that came from the superseded guest-birthday flow.) Page-owned replacement uploads stay in private storage as defined by design 3 §3.3; this repository exception is limited to these explicitly approved non-personal built-in source illustrations.
 
 ## Verification
 
