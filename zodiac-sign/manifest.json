@@ -1,0 +1,193 @@
+{
+  "status": "owner-approved raster source sheets; individual web exports pending",
+  "schemaVersion": 1,
+  "style": "icy-blue celestial linh vat, bright stars and engraved spirit figures",
+  "sources": [
+    {
+      "collection": "western",
+      "file": "western/approved-atlas.png",
+      "format": "png",
+      "width": 1536,
+      "height": 1024,
+      "bytes": 2529318,
+      "sha256": "56a49a8bfaa37c08cf7ae1d5b1de978c4b1c5256c8a7f2f43959ab9ecb6fe1ff",
+      "layout": {
+        "columns": 4,
+        "rows": 3
+      },
+      "signs": [
+        {
+          "id": "aries",
+          "name": "Aries",
+          "row": 1,
+          "column": 1
+        },
+        {
+          "id": "taurus",
+          "name": "Taurus",
+          "row": 1,
+          "column": 2
+        },
+        {
+          "id": "gemini",
+          "name": "Gemini",
+          "row": 1,
+          "column": 3
+        },
+        {
+          "id": "cancer",
+          "name": "Cancer",
+          "row": 1,
+          "column": 4
+        },
+        {
+          "id": "leo",
+          "name": "Leo",
+          "row": 2,
+          "column": 1
+        },
+        {
+          "id": "virgo",
+          "name": "Virgo",
+          "row": 2,
+          "column": 2
+        },
+        {
+          "id": "libra",
+          "name": "Libra",
+          "row": 2,
+          "column": 3
+        },
+        {
+          "id": "scorpio",
+          "name": "Scorpio",
+          "row": 2,
+          "column": 4
+        },
+        {
+          "id": "sagittarius",
+          "name": "Sagittarius",
+          "row": 3,
+          "column": 1
+        },
+        {
+          "id": "capricorn",
+          "name": "Capricorn",
+          "row": 3,
+          "column": 2
+        },
+        {
+          "id": "aquarius",
+          "name": "Aquarius",
+          "row": 3,
+          "column": 3
+        },
+        {
+          "id": "pisces",
+          "name": "Pisces",
+          "row": 3,
+          "column": 4
+        }
+      ]
+    },
+    {
+      "collection": "vietnamese",
+      "file": "vietnamese/approved-atlas.png",
+      "format": "png",
+      "width": 1448,
+      "height": 1086,
+      "bytes": 3356328,
+      "sha256": "6413cced32b78c3ace8bc013c6c04861ce6f69235093498a143d62bc936fee9c",
+      "layout": {
+        "columns": 4,
+        "rows": 3
+      },
+      "signs": [
+        {
+          "branch": "Tý",
+          "name": "Chuột",
+          "englishName": "Rat",
+          "row": 1,
+          "column": 1
+        },
+        {
+          "branch": "Sửu",
+          "name": "Trâu",
+          "englishName": "Water buffalo",
+          "row": 1,
+          "column": 2
+        },
+        {
+          "branch": "Dần",
+          "name": "Hổ",
+          "englishName": "Tiger",
+          "row": 1,
+          "column": 3
+        },
+        {
+          "branch": "Mão",
+          "name": "Mèo",
+          "englishName": "Cat",
+          "row": 1,
+          "column": 4
+        },
+        {
+          "branch": "Thìn",
+          "name": "Rồng",
+          "englishName": "Dragon",
+          "row": 2,
+          "column": 1
+        },
+        {
+          "branch": "Tỵ",
+          "name": "Rắn",
+          "englishName": "Snake",
+          "row": 2,
+          "column": 2
+        },
+        {
+          "branch": "Ngọ",
+          "name": "Ngựa",
+          "englishName": "Horse",
+          "row": 2,
+          "column": 3
+        },
+        {
+          "branch": "Mùi",
+          "name": "Dê",
+          "englishName": "Goat",
+          "row": 2,
+          "column": 4
+        },
+        {
+          "branch": "Thân",
+          "name": "Khỉ",
+          "englishName": "Monkey",
+          "row": 3,
+          "column": 1
+        },
+        {
+          "branch": "Dậu",
+          "name": "Gà",
+          "englishName": "Rooster",
+          "row": 3,
+          "column": 2
+        },
+        {
+          "branch": "Tuất",
+          "name": "Chó",
+          "englishName": "Dog",
+          "row": 3,
+          "column": 3
+        },
+        {
+          "branch": "Hợi",
+          "name": "Heo",
+          "englishName": "Pig",
+          "row": 3,
+          "column": 4
+        }
+      ]
+    }
+  ]
+}

@@ -47,7 +47,7 @@ Phase 0 Planning & design. PRD v0.6 and plan v0.3 are written (Codex challenge f
   - Codex adversarial review of this change: **approve, no material findings**
 - [ ] Q50 (event on the birthday): ask the owner where suggestions come from and whether guests may see the line
 - [ ] Zodiac research (design 3 §3.10-3.11): list exact hosts first and wait for approval (proposed `www.informatik.uni-leipzig.de`, `en.wikipedia.org`, `vi.wikipedia.org`). Verify the UTC+7 new-moon and solar-term method plus an independent Tết table (1920-2030, including years where Vietnam and China differ); Vietnam's historical UTC offsets in the IANA database; Western sign boundaries, cusps, Moon and ascendant; an offline astronomy library with a fitting licence (install needs rule 1); the birthplace list's source and licence; nạp âm, branch relations and element cycles. Then write our own EN/VI reference texts with sources, labelled "for fun / theo quan niệm dân gian"
-- [ ] Vietnamese animal artwork: 12 square transparent SVGs in the same style, prefixed ids, same safety checks, own manifest
+- [x] Owner-approved Vietnamese and Western celestial linh vật artwork source sheets delivered in `zodiac-sign/` with a manifest and handoff README.\n- [ ] Individual production exports: 12 square images per system within the processed-image budget; SVG/vector deliverables remain pending if required. The approved source sheets are raster PNGs, not finished standalone SVGs.
 - [ ] Kept for Phase 2, not now: storage facts marked unverified in design 3 §3.4 and the `anni_server` connection method in §3.9
 - [ ] Owner review of design 3
 - [ ] Then design 4 theme system, then 5 3D approach; each with an owner gate
@@ -57,3 +57,11 @@ Phase 0 Planning & design. PRD v0.6 and plan v0.3 are written (Codex challenge f
 ## Incidents
 - 2026-10-21 21:01: a ruflo plugin hook downloaded `ruflo@latest` (267 packages) into `~/.npm/_npx` without a rule-1 approval. Details and scope proposal: plan §8.2.
 - Ruflo runtime files appeared in the repo (`.claude-flow/`, `.swarm/`, `agentdb.rvf*`); all git-ignored.
+
+## Approved celestial artwork delivery
+
+- Owner approved the final blue Western and Vietnamese linh vật collections and requested upload to `docs/zodiac-sign-assets-v2`.
+- Delivered `zodiac-sign/western/approved-atlas.png`, `zodiac-sign/vietnamese/approved-atlas.png`, checksums/sign-order manifest and handoff README. Existing Western SVG defaults remain intact.
+- Current couple-only Zodiac model and publication/privacy rules are unchanged. No guest birthday form or runtime switching implementation was added.
+- RED: pre-upload branch inventory was missing both approved images and the new manifest, as expected. GREEN: both images decode, dimensions and exact-byte hashes match the manifest, and remote tree/blob identities are verified after upload.
+- Artwork/source-sheet delivery is done; individual square optimized images, any required editable vectors, font selection and runtime integration remain pending. Full source sheets are not website payloads and exceed the per-image production budget.
