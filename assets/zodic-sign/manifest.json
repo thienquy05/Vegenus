@@ -1,0 +1,134 @@
+[
+  {
+    "sign": "aries",
+    "name": "Aries",
+    "element": "Fire",
+    "src": "aries.svg",
+    "width": 400,
+    "height": 400,
+    "bytes": 3941,
+    "gzipBytes": 1033,
+    "sha256": "9610041e33d1612c36ac903ac73af2fb0e26c1777619d82e7348b7a4b73ab6bc"
+  },
+  {
+    "sign": "taurus",
+    "name": "Taurus",
+    "element": "Earth",
+    "src": "taurus.svg",
+    "width": 400,
+    "height": 400,
+    "bytes": 4696,
+    "gzipBytes": 1123,
+    "sha256": "4fafd2b6f0cfced5a389ab2cc31535b1745365ce9413cbcf68ae2bd83eb76e32"
+  },
+  {
+    "sign": "gemini",
+    "name": "Gemini",
+    "element": "Air",
+    "src": "gemini.svg",
+    "width": 400,
+    "height": 400,
+    "bytes": 5198,
+    "gzipBytes": 1146,
+    "sha256": "d6bb1eb5c5b420b306c43d32ebd8043d287ae141671d74cc6f72afe26446f330"
+  },
+  {
+    "sign": "cancer",
+    "name": "Cancer",
+    "element": "Water",
+    "src": "cancer.svg",
+    "width": 400,
+    "height": 400,
+    "bytes": 4319,
+    "gzipBytes": 1083,
+    "sha256": "b472c29d6e97d5fa50199782718fd8c3157f1d46d65d89183156e15196013e5a"
+  },
+  {
+    "sign": "leo",
+    "name": "Leo",
+    "element": "Fire",
+    "src": "leo.svg",
+    "width": 400,
+    "height": 400,
+    "bytes": 4546,
+    "gzipBytes": 1113,
+    "sha256": "a14b7fc64663b899e51f7fc9206399d2f1374ef167467e4611d2b49b8a8f2bb5"
+  },
+  {
+    "sign": "virgo",
+    "name": "Virgo",
+    "element": "Earth",
+    "src": "virgo.svg",
+    "width": 400,
+    "height": 400,
+    "bytes": 5193,
+    "gzipBytes": 1171,
+    "sha256": "f6ccbe95b8b39498d2f362550cb24b4e9dc0e12196c8ffe7931db28dc5db4336"
+  },
+  {
+    "sign": "libra",
+    "name": "Libra",
+    "element": "Air",
+    "src": "libra.svg",
+    "width": 400,
+    "height": 400,
+    "bytes": 4584,
+    "gzipBytes": 1071,
+    "sha256": "b7887951341b1d563505e1f73c1144c1c390b0f640988aca91dc33c095390af3"
+  },
+  {
+    "sign": "scorpio",
+    "name": "Scorpio",
+    "element": "Water",
+    "src": "scorpio.svg",
+    "width": 400,
+    "height": 400,
+    "bytes": 4571,
+    "gzipBytes": 1110,
+    "sha256": "eece2ca98de04b70137005e9bee71e78e59e476ffcf23a6640b42023a66f5ba2"
+  },
+  {
+    "sign": "sagittarius",
+    "name": "Sagittarius",
+    "element": "Fire",
+    "src": "sagittarius.svg",
+    "width": 400,
+    "height": 400,
+    "bytes": 5229,
+    "gzipBytes": 1168,
+    "sha256": "5884d90f601b6857301c70173832d8864baf96065b791e934058bff808ba424d"
+  },
+  {
+    "sign": "capricorn",
+    "name": "Capricorn",
+    "element": "Earth",
+    "src": "capricorn.svg",
+    "width": 400,
+    "height": 400,
+    "bytes": 4593,
+    "gzipBytes": 1109,
+    "sha256": "dabd8c72b143afd7522527f147838d6266f0aa156a5e23f005831bc8cb3954b8"
+  },
+  {
+    "sign": "aquarius",
+    "name": "Aquarius",
+    "element": "Air",
+    "src": "aquarius.svg",
+    "width": 400,
+    "height": 400,
+    "bytes": 5065,
+    "gzipBytes": 1151,
+    "sha256": "1247dece01f454ac19e1363d7972c305c4b5d0492a50a9e57785b8140a77223a"
+  },
+  {
+    "sign": "pisces",
+    "name": "Pisces",
+    "element": "Water",
+    "src": "pisces.svg",
+    "width": 400,
+    "height": 400,
+    "bytes": 4951,
+    "gzipBytes": 1136,
+    "sha256": "37e9481fd31d980cdf1e69d450f3ad23ccb401926b3125aae53ee607260d9630"
+  }
+]
