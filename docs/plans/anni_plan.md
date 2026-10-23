@@ -138,7 +138,7 @@ Proposed scope until the owner says otherwise:
 
 | Phase | Weeks | Tasks | Tests first (PRD §9.2) | Gate |
 |---|---|---|---|---|
-| 0 Design | 1–2 | Design docs in `docs/design/`: 1 token flow, 2 screens, 3 data model (all approved 2026-10-23), 4 theme system (draft), 5 3D approach (approved 2026-10-23); CI spec (§12) | — | Owner review of each |
+| 0 Design | 1–2 | Design docs in `docs/design/`: 1 token flow, 2 screens, 3 data model (all approved 2026-10-23), 4 theme system (draft), 5 3D approach (approved 2026-10-23); CI spec: design 6 (draft) | — | Owner review of each |
 | 1 Foundations | 3–4 | **First:** CI walking skeleton (§12.4). Then route table + deny-by-default checks, skeleton app, Supabase project, RLS + `guest_*` functions, auth (closed registration, Google), pages/memberships/tokens/invites, visibility, publication status, privacy scan | E4–E6, E21, E22, E27–E37 | Before harness-os / spend |
 | 2 Owner tools | 5–7 | Setup wizard, CRUD with draft/publish, media pipeline, usage meter and triggers, keep-alive + alerts | E7–E10, E15, E16, E23–E25 | Owner review |
 | 3 Guest (Static + Page shell) | 8–10 | Token exchange, guest views, EN/VI, guestbook queue, QR/NFC, mode selector | E1, E2, E11–E14, E17, E26 | Owner review |
@@ -187,6 +187,8 @@ What CI can and cannot prove: an ordinary CI run only sees the final state, so i
 
 ### 12.2 Workflow layout (GitHub Actions, proposal)
 
+**Refined by design 6** (`docs/design/anni_ci_spec.md`, 2026-10-23): its job list, triggers (no `push`), docs-only skip and `gate` rule replace the table below where they differ. The `privacy-scan` definition below stays the source.
+
 One workflow, `ci.yml`, on `pull_request` and on `push` to `master`. Jobs run **in parallel**; one final `gate` job depends on all of them and is the single required check.
 
 | Job | Runs | Covers | Needs |
@@ -216,14 +218,9 @@ Proposal: Vercel's own Git integration creates a preview deployment for each PR 
 
 The first unit of Phase 1 is CI itself: an empty app, one trivial test written to fail, a push (owner-approved) that shows CI **red** on GitHub, then the fix that turns it **green**. This proves the pipeline catches failures before any real feature depends on it.
 
-### 12.5 Facts to verify before writing the workflow (not researched; github.com not yet approved for reading)
+### 12.5 Facts to verify before writing the workflow
 
-- **Resend** (docs read 2026-10-22, see §R): still **unverified**: whether `onboarding@resend.dev` can send to the owner's own address without a domain (the pages read do not mention it; the domains page says a domain must be added and verified to send), data location and DPA, and the exact DNS records. Test only after the owner creates an account (rule 1).
-- **Vercel Hobby cron** frequency limits (recollection: daily at most, **unverified**) versus a Supabase scheduled job.
-- **Next.js** middleware-bypass advisory (2025) and fixed versions, once the framework host is approved for reading.
-- Free GitHub Actions minutes and storage for a **private** repo on the owner's plan. Parallel jobs and browser matrices use minutes faster. **Unverified.**
-- Whether branch protection / required status checks are available for a private repo on the owner's plan. **Unverified.** If not, the rule becomes "owner merges only when `gate` is green", enforced by habit.
-- Whether the Supabase CLI and Docker run on GitHub-hosted Ubuntu runners as needed for the `db` and `e2e` jobs. **Unverified.**
+Checked 2026-10-23: results in design 6 §2 (private repo; 2,000 Actions minutes and no protected branches on GitHub Free, PRD Q59; Supabase CLI and Docker on runners; Next.js advisories, floor 16.4.1; Vercel cron already in §R). Still **unverified**: Resend sending without a domain, data location and DPA, DNS records (test only after the owner creates an account, rule 1).
 
 ---
 
@@ -241,6 +238,7 @@ The first unit of Phase 1 is CI itself: an empty app, one trivial test written t
 - three.js https://github.com/mrdoob/three.js (MIT; WebGL and WebGPU renderers) · React Three Fiber https://github.com/pmndrs/react-three-fiber (MIT; v8↔React 18, v9↔React 19; docs.pmnd.rs redirected to pmndrs.github.io, a host not approved, so not followed) · Babylon.js https://www.babylonjs.com/ · PlayCanvas https://playcanvas.com/
 - MCP reference servers https://github.com/modelcontextprotocol/servers · Blender MCP https://github.com/ahujasid/blender-mcp · ruflo https://github.com/ruvnet/ruflo (npm page returned 403)
 - Design 5, read 2026-10-23 (owner's general read-only approval): MDN pages for `deviceMemory`, `saveData`, `getBattery`, `webglcontextlost`, `prefers-reduced-data` (developer.mozilla.org; their compatibility tables did not render, so support was read from MDN's own data, https://github.com/mdn/browser-compat-data files `api/Navigator.json`, `api/NetworkInformation.json`, `api/WebGL2RenderingContext.json`, `css/at-rules/media.json` on raw.githubusercontent.com); drei `View` and `PerformanceMonitor`, R3F `frameloop="demand"` (github.com/pmndrs docs through context7). Findings in design 5 §2-§3
+- Design 6 (CI), read 2026-10-23 (owner's general read-only approval): docs.github.com (Actions billing, GitHub's plans, about protected branches, about rulesets), github.com/pricing, github.com/actions/runner-images (Ubuntu 24.04 readme), GitHub API (read-only: repo visibility, `vercel/next.js` security advisories, latest releases and tag commits of the pinned actions), supabase.com/docs (testing overview, managing environments, CLI `supabase start`). The GitHub API stopped answering before the Supabase CLI release was read. Findings in design 6 §2, §7
 - WebGL 2 https://caniuse.com/webgl2 · WebGL best practices https://developer.mozilla.org/en-US/docs/Web/API/WebGL_API/WebGL_best_practices · Web NFC https://developer.mozilla.org/en-US/docs/Web/API/Web_NFC_API
 - iPhone background tag reading: Apple WWDC20 session 10209 via search summary https://developer.apple.com/videos/play/wwdc2020/10209/ (the documentation body could not be read: **unverified in detail**)
 - Compression guidance: three.js forum threads, e.g. https://discourse.threejs.org/t/how-to-add-both-ktx2loader-and-dracoloader-for-compressed-glb/46726 (secondary)

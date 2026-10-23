@@ -55,6 +55,8 @@ agentdb.rvf*
 
 # Dependencies and build output
 node_modules/
+.npm-cache/
+.venv/
 .next/
 dist/
 build/
