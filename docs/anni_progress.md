@@ -73,3 +73,12 @@ Phase 0 Planning & design. PRD v0.6 and plan v0.3 are written (Codex challenge f
 - Current couple-only Zodiac model and publication/privacy rules are unchanged. No guest birthday form or runtime switching implementation was added.
 - RED: pre-upload branch inventory was missing both approved images and the new manifest, as expected. GREEN: both images decode, dimensions and exact-byte hashes match the manifest, and remote tree/blob identities are verified after upload.
 - Artwork/source-sheet delivery is done; individual square optimized images, any required editable vectors, font selection and runtime integration remain pending. Full source sheets are not website payloads and exceed the per-image production budget.
+
+## Per-sign Zodiac SVG extraction — visual approval pending
+
+- On `docs/zodiac-sign-assets-v2`, created 12 Western SVGs, 12 Vietnamese SVGs and a manifest per set under `assets/zodiac-sign/`. Paths contain true vector contours from the approved figures, with no embedded raster.
+- RED before creating outputs: the temporary checker failed with 26 issues (24 missing SVGs and 2 missing manifests), on the requested branch.
+- GREEN: all 24 names, XML, square viewBox/dimensions, prohibited elements/attributes/URIs, prefixed IDs, local references, manifest bytes/gzip sizes/checksums and the 150,000-byte ceiling passed. Total uncompressed SVG bytes: 3,252,094.
+- Rendered every SVG with the installed Inkscape and checked 400 × 400 output and transparent corners. Reviewed two source-versus-vector contact sheets and enlarged difficult figures; these review artifacts and the checker are outside the repo.
+- Finite-palette tracing has visible tonal banding compared with raster source shading, particularly for Vietnamese figures; owner visual approval is pending. Technical GREEN does not approve visual fidelity.
+- The two approved PNGs and `source-sheets.json` are byte-for-byte unchanged. No installation, application code, authored commit or push. Branch retrieval was explicitly approved by the owner; the existing remote snapshot was imported via the GitHub connector because shell fetching could not reach its proxy.

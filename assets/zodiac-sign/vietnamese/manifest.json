@@ -1,0 +1,134 @@
+[
+  {
+    "id": "ty",
+    "nameEn": "Rat",
+    "nameVi": "Tý (Chuột)",
+    "file": "ty.svg",
+    "width": 400,
+    "height": 400,
+    "bytes": 137167,
+    "gzipBytes": 42235,
+    "sha256": "394d4577be59207ee71fc113d6ceb695b738fd4c79d9a986699472bdd86af57a"
+  },
+  {
+    "id": "suu",
+    "nameEn": "Water buffalo",
+    "nameVi": "Sửu (Trâu)",
+    "file": "suu.svg",
+    "width": 400,
+    "height": 400,
+    "bytes": 136313,
+    "gzipBytes": 43847,
+    "sha256": "06751306f393e130a4f741ccbf1d8ab7e77db6149d801e089b843bc7ad5463d5"
+  },
+  {
+    "id": "dan",
+    "nameEn": "Tiger",
+    "nameVi": "Dần (Hổ)",
+    "file": "dan.svg",
+    "width": 400,
+    "height": 400,
+    "bytes": 139944,
+    "gzipBytes": 44703,
+    "sha256": "ce131418aa142636bc7eea4b9100001561bafea8740b6198ec2cb7b24fe927a6"
+  },
+  {
+    "id": "mao",
+    "nameEn": "Cat",
+    "nameVi": "Mão (Mèo)",
+    "file": "mao.svg",
+    "width": 400,
+    "height": 400,
+    "bytes": 142340,
+    "gzipBytes": 44129,
+    "sha256": "fe01bb6ddb1423717e484d304dd787d0d590338daf873cfdd26491b9d8fc16fe"
+  },
+  {
+    "id": "thin",
+    "nameEn": "Dragon",
+    "nameVi": "Thìn (Rồng)",
+    "file": "thin.svg",
+    "width": 400,
+    "height": 400,
+    "bytes": 148203,
+    "gzipBytes": 49042,
+    "sha256": "bcfbcf86fcab0a9360f97dbb30098421c29f703489ae8d2ca7934cffd4457c30"
+  },
+  {
+    "id": "ti",
+    "nameEn": "Snake",
+    "nameVi": "Tỵ (Rắn)",
+    "file": "ti.svg",
+    "width": 400,
+    "height": 400,
+    "bytes": 148256,
+    "gzipBytes": 47869,
+    "sha256": "42966acd5f2a8bc1ed43e4ce3204fbc1fd8a8a838aaf0c73e129a5a7d7d49f82"
+  },
+  {
+    "id": "ngo",
+    "nameEn": "Horse",
+    "nameVi": "Ngọ (Ngựa)",
+    "file": "ngo.svg",
+    "width": 400,
+    "height": 400,
+    "bytes": 148436,
+    "gzipBytes": 49827,
+    "sha256": "e629a21278605d79c7029435026df1a18fdf014875cb88ae8ea9eaf21a7858dc"
+  },
+  {
+    "id": "mui",
+    "nameEn": "Goat",
+    "nameVi": "Mùi (Dê)",
+    "file": "mui.svg",
+    "width": 400,
+    "height": 400,
+    "bytes": 138375,
+    "gzipBytes": 45155,
+    "sha256": "406c644fd80e8975462c9ce3125b0eab6e31ed80eb81a0753868893216e7b705"
+  },
+  {
+    "id": "than",
+    "nameEn": "Monkey",
+    "nameVi": "Thân (Khỉ)",
+    "file": "than.svg",
+    "width": 400,
+    "height": 400,
+    "bytes": 145783,
+    "gzipBytes": 45134,
+    "sha256": "ab1fe240fc9f48666282ec0c75b68db4b7aaa50bc86f2d876cfcc817283938b0"
+  },
+  {
+    "id": "dau",
+    "nameEn": "Rooster",
+    "nameVi": "Dậu (Gà)",
+    "file": "dau.svg",
+    "width": 400,
+    "height": 400,
+    "bytes": 142102,
+    "gzipBytes": 47019,
+    "sha256": "6c3421fd3c1d5007bbaf63bdd9472d704998eea94d7a2477258d25a92b7917f4"
+  },
+  {
+    "id": "tuat",
+    "nameEn": "Dog",
+    "nameVi": "Tuất (Chó)",
+    "file": "tuat.svg",
+    "width": 400,
+    "height": 400,
+    "bytes": 139982,
+    "gzipBytes": 45050,
+    "sha256": "b7fa5a86d614ff0dd82c9619d4538264c3e01473639fb023eb702a890028de33"
+  },
+  {
+    "id": "hoi",
+    "nameEn": "Pig",
+    "nameVi": "Hợi (Heo)",
+    "file": "hoi.svg",
+    "width": 400,
+    "height": 400,
+    "bytes": 143331,
+    "gzipBytes": 44673,
+    "sha256": "d4e135ce0a4c9842d9e8dc998830787a08d786801ad7e170df9e79f4a7eb466f"
+  }
+]
