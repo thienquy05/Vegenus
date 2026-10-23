@@ -51,6 +51,7 @@ agentdb.rvf*
 .codex/
 .vercel/
 .supabase/
+.playwright-mcp/
 
 # Dependencies and build output
 node_modules/

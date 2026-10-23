@@ -1,6 +1,6 @@
 # Design 1: NFC/QR guest token flow and access model
 
-**Status:** DRAFT v0.2 for owner review (v0.2, 2026-10-22: token lifecycle and rotation §3.1, show-once discussion §3.2, deny-by-default §9, guest accounts §10, email and Zodiac data rules §11) (Phase 0 design deliverable "NFC flow"). No code.
+**Status:** v0.2, **approved by the owner 2026-10-23** (v0.2, 2026-10-22: token lifecycle and rotation §3.1, show-once discussion §3.2, deny-by-default §9, guest accounts §10, email and Zodiac data rules §11) (Phase 0 design deliverable "NFC flow"). No code.
 **Date:** 2026-10-21
 **Inputs:** PRD §4, §9.2, §12 (Q12, Q14, Q16, Q19, Q26, Q29, Q30); plan §1, §4, §5.
 **Privacy:** placeholders only. `<host>` = the free `*.vercel.app` address (Q19). `<token>` is never a real value.
@@ -114,6 +114,8 @@ All are `SECURITY DEFINER`, take the token as the first argument, re-run the che
 | `public_*` (`public_open`, `public_list`, `public_guestbook_list`, `public_media_url`) | Anyone, no credential | Page `visibility = published`; section enabled; item `published` / entry `approved`; media belongs to such an item | Read only. No posting. Media URLs 5 min (Q29) |
 | `guest_*` (above) | Holder of the current token | Active token, current version, page visibility ≠ private, plus the same publication predicates | Read; post to the queue |
 | `account_*` (`account_open`, `account_list`, `account_guestbook_post`, `account_profile_get/set`) | Signed-in guest account | Validated identity (`auth.uid()`), an **active** `guest_accounts` row bound to one page, page visibility ≠ private, plus the publication predicates | Read; post to the queue under the account's attribution; read/write own profile and email preferences only |
+
+`public_open` and `account_open` return the same page summary as `guest_open`: enabled sections, theme, default language (design 4 §9, 2026-10-23).
 
 Rules for accounts: they do not depend on the token or its version. Removal of the `guest_accounts` row or setting the page Private stops access on the next call. Guests have no insert or update rights on `memberships`, `guest_accounts` role or page fields (accounts are created only by the verification function in §10, never from client-submitted metadata or an email match). Account-authored guestbook entries store `account_id` and show the account's display name; they are still `pending` until approved. Private pages return nothing on all three contracts.
 

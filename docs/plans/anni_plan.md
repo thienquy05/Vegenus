@@ -87,7 +87,7 @@ Every table carries `page_id` (or, for per-user rows such as email preferences a
 
 ## 6. Theme system
 
-Design tokens (CSS variables): colour roles, type scale with Vietnamese-capable fonts, spacing, radius, motion curves/durations, 3D parameters (palette, fog/ambient, particle style). A theme = token file + scene preset. Components and scenes read tokens only. Adding a theme = two files and a preview. Contrast checks run per theme.
+Superseded by design 4 (`docs/design/anni_theme_system.md`): token contract, values per theme from the owner's mood board, contrast results, Zodiac night panel, self-hosted fonts, tests.
 
 ## 7. 3D approach and performance budgets (proposals; set from a prototype on real phones)
 
@@ -143,7 +143,7 @@ Proposed scope until the owner says otherwise:
 
 | Phase | Weeks | Tasks | Tests first (PRD §9.2) | Gate |
 |---|---|---|---|---|
-| 0 Design | 1–2 | Design docs in `docs/design/`: 1 token flow (draft), 2 screens (draft), 3 data model, 4 theme system, 5 3D approach; CI spec (§12) | — | Owner review of each |
+| 0 Design | 1–2 | Design docs in `docs/design/`: 1 token flow, 2 screens, 3 data model (all approved 2026-10-23), 4 theme system (draft), 5 3D approach; CI spec (§12) | — | Owner review of each |
 | 1 Foundations | 3–4 | **First:** CI walking skeleton (§12.4). Then route table + deny-by-default checks, skeleton app, Supabase project, RLS + `guest_*` functions, auth (closed registration, Google), pages/memberships/tokens/invites, visibility, publication status, privacy scan | E4–E6, E21, E22, E27–E37 | Before harness-os / spend |
 | 2 Owner tools | 5–7 | Setup wizard, CRUD with draft/publish, media pipeline, usage meter and triggers, keep-alive + alerts | E7–E10, E15, E16, E23–E25 | Owner review |
 | 3 Guest (Static + Page shell) | 8–10 | Token exchange, guest views, EN/VI, guestbook queue, QR/NFC, mode selector | E1, E2, E11–E14, E17, E26 | Owner review |
