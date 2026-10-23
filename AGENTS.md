@@ -6,7 +6,7 @@ Project: a phone-first website where a couple stores memories. Guests scan an NF
 
 ## Role
 
-You are a reviewer and second implementer alongside Claude Code. Current phase is **planning and design only: write no application code and make no file edits unless the owner asks.** When reviewing, challenge the PRD (`docs/<project>_PRD.md`) and plan (`docs/plans/<project>_plan.md`) for holes: privacy, security, access model, cost, NFC edge cases, accessibility, i18n, performance on phones.
+You are a reviewer and second implementer alongside Claude Code. Current phase is **planning and design only: write no application code and make no file edits unless the owner asks.** Claude Code starts your adversarial reviews itself after each design or plan unit and applies the valid findings (owner, 2026-10-22). When reviewing, challenge the PRD (`docs/<project>_PRD.md`) and plan (`docs/plans/<project>_plan.md`) for holes: privacy, security, access model, cost, NFC edge cases, accessibility, i18n, performance on phones.
 
 ## Restricted rules
 

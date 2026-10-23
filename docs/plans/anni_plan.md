@@ -71,6 +71,8 @@ Decision is the owner's; nothing below is installed.
 
 ## 4. Data model (sketch; refined in the design deliverable)
 
+**Superseded by design 3, `docs/design/anni_data_model.md` (2026-10-22).** Its §2 lists what changed from this sketch (one `items` table, `page_sections`, no `invites`, no birthday column, operational tables). The sketch below is kept for history only.
+
 `users` (Supabase Auth) · `pages` (id, theme, default_lang, visibility ∈ {private, token_only, published}, enabled_sections, vanity_name?) · `memberships` (page_id, user_id, role ∈ {owner, co_editor}; one co-editor per page) · `invites` (page_id, email, token_hash, expires_at, consumed_at; consumed atomically) · `guest_tokens` (page_id, token_hash, version, active, rotated_at) · `guest_accounts` (user_id, page_id, role=guest, created_at, tour_seen_version) · `email_prefs` (user_id, reminders, digest) · `email_log` (dedupe_key unique, template, recipient_hash, status, sent_at) · `profiles_zodiac` (user_id, sign, birthday_enc nullable, key_id) · `memories`, `milestones`, `anniversaries`, later `places` (each: page_id, `status` draft|published, text in `lang` plus optional `text_alt`, `lang_alt`) · `guestbook_entries` (page_id, display_name required, text, status pending|approved|rejected, token_version, created_at) · `media` (page_id, owner_item_id, kind, bytes, variants, storage_key, alt_text, status inherited from its item).
 
 Every table carries `page_id` (or, for per-user rows such as email preferences and the saved sign, a user bound to exactly one page through `guest_accounts`). Guests reach data through the `public_*`, `guest_*` and `account_*` contracts (design 1 §5.1). Guests never receive table access; they reach data only through the `guest_*` functions in §1.

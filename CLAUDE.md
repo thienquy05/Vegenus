@@ -29,7 +29,7 @@ Planning and design only. **No application code** until the owner approves the P
 
 - harness-os: governance gates per unit of work, enabled only after PRD and plan approval (it commits, so ask first).
 - ruflo: orchestration helper, limited scope approved by the owner (PRD Q32). Plugin hooks and `npx` fallbacks count as downloads under rule 1: do not run `ruflo init`, `npx ...@latest`, or start the ruflo MCP server without approval. Its data folders stay git-ignored and are never sent to Codex.
-- Codex: independent review via `/codex:adversarial-review` (user-invoked) at plan gates.
+- Codex: independent review via `/codex:adversarial-review`. **Standing rule (owner, 2026-10-22): Claude runs the Codex review itself after each design or plan unit, fixes every valid finding without asking, and gives the owner a summary (what, why, how).** Rules 1-4 still apply: the privacy gate before anything goes to Codex, and no git writes unless asked.
 - Claude Code is the single writer of files and the only actor on git and network; other agents return findings.
 
 ## Decisions and open questions
