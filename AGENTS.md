@@ -13,6 +13,7 @@ You are a reviewer and second implementer alongside Claude Code. Current phase i
 1. **Network gate.** Before any login, install or download from a site, state the exact URL/host and why, confirm it is the official publisher over HTTPS and matches vendor docs, and wait for the owner's approval.
 2. **No git writes.** No commit, push or pull request unless the owner asks.
 3. **Privacy gate.** Treat the repo as public. No real names, dates, photos, messages, NFC tag UIDs, tokens or secrets in output or files. Use placeholders.
+4. **Branch and PR flow (owner, 2026-10-22).** Never work on `master`. Each unit of work, including docs, goes on its own branch named `docs/<name>`, `feature/<name>` or `chore/<name>` (bug fixes: `fix/<name>`). Work is opened as a pull request against `master` and **waits for the owner's approval; only the owner merges** (no agent merges, no force-push, no direct push to `master`). The CI `gate` check (plan §12) must be green before the owner is asked to approve the merge. Creating and switching local branches is **pre-approved**: start every unit of work on a correctly named branch off `master` automatically, without asking (owner, 2026-10-22). This does not loosen the rest of rule 2: each commit, push and PR still happens only when the owner asks in that moment. Add `branch protection on master` if the owner's GitHub plan allows (plan §12.5, unverified).
 
 Plugin hooks and `npx` fallbacks count as downloads under rule 1. Decisions live only in `docs/anni_PRD.md` §12.
 

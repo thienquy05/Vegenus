@@ -31,7 +31,9 @@ Decisions that came out of the challenge (Codex finding → fix; see §11):
 - **Publication boundary.** Every content row has `status` (`draft` | `published`); guestbook rows have `pending` | `approved` | `rejected`. Guest predicates require `published`/`approved` and the section flag; media signing requires the media to belong to a published item.
 - **Media and revocation.** Signed URLs are valid until their expiry and cannot be revoked by us (verified; Supabase says to contact support). So revocation of media is "no new URLs after the change, issued URLs die within the expiry". Proposed expiry: 5 minutes, responses `Cache-Control: private, no-store` for the minting endpoint. The alternative, proxying every media request through our server, gives instant revocation but spends Vercel transfer and CPU, and video streaming through functions is a poor fit for the Hobby limits. Owner decision: PRD Q29.
 - **Token handling.** The token lives in the URL **fragment** (`#…`), which browsers do not send to servers, referrers or log lines; the page exchanges it for an `HttpOnly`, `Secure`, `SameSite=Lax` guest cookie that carries the token itself, so the database re-checks it on every call and the anon-callable functions never accept a page ID (changed from "signed cookie bound to the token version"; reason in `docs/design/anni_token_flow.md` §4), then clears the fragment. Fragment survival in Zalo/Facebook/Messenger browsers is **unverified** and must be tested on real devices. If cookies are blocked, the session lives in memory for that visit and the guest re-taps to return; the token is never put in a query string or path. A copied link or screenshot of the full URL **does** grant read and post access until the token is rotated; rotation means rewriting the tag and reprinting the QR, so the tag is never locked (Q16 open). Set `Referrer-Policy: no-referrer`, `X-Robots-Tag: noindex` on guest routes, and keep tokens out of analytics.
-- **Accounts and the co-editor.** See PRD Q26 and Q30. Constraint from the vendor (verified): linking identities by an unverified email invites pre-account takeover, and the free built-in auth email only reaches project team members. Proposal: **closed registration**. Public sign-up is off; the owner creates or invites accounts. Google sign-in works for a pre-created account only when Google's verified email matches. A sign-up page is added only when the platform opens to other couples.
+- **Deny by default (owner, 2026-10-22).** Route table + per-handler checks + RLS + private storage; design in `docs/design/anni_token_flow.md` §9, requirement in PRD §4.3 and E31-E37. Middleware is never the only check.
+- **Email (owner, 2026-10-22).** Resend, server-side only, behind a small `sendEmail` interface so the vendor can change. Needs Q37 (docs approval, sending domain). Reminders ride on the daily keep-alive job. Supabase Auth can use Resend as its SMTP once a domain exists (Q41).
+- **Accounts and the co-editor.** See PRD Q26, Q30 and Q35 (2026-10-22: both partners may share one login; Google is a fallback). Constraint from the vendor (verified): linking identities by an unverified email invites pre-account takeover, and the free built-in auth email only reaches project team members. Proposal: **closed registration**. Public sign-up is off; the owner creates or invites accounts. Google sign-in works for a pre-created account only when Google's verified email matches. A sign-up page is added only when the platform opens to other couples.
 - **Storage behind an interface** so media can move to Cloudflare R2 (10 GB free, no egress fee: verified) when the egress trigger in §3 fires.
 - **Keep-alive is best effort.** See §3.
 
@@ -69,9 +71,9 @@ Decision is the owner's; nothing below is installed.
 
 ## 4. Data model (sketch; refined in the design deliverable)
 
-`users` (Supabase Auth) · `pages` (id, theme, default_lang, visibility ∈ {private, token_only, published}, enabled_sections, vanity_name?) · `memberships` (page_id, user_id, role ∈ {owner, co_editor}; one co-editor per page) · `invites` (page_id, email, token_hash, expires_at, consumed_at; consumed atomically) · `guest_tokens` (page_id, token_hash, version, active, rotated_at) · `memories`, `milestones`, `anniversaries`, later `places` (each: page_id, `status` draft|published, text in `lang` plus optional `text_alt`, `lang_alt`) · `guestbook_entries` (page_id, display_name required, text, status pending|approved|rejected, token_version, created_at) · `media` (page_id, owner_item_id, kind, bytes, variants, storage_key, alt_text, status inherited from its item).
+`users` (Supabase Auth) · `pages` (id, theme, default_lang, visibility ∈ {private, token_only, published}, enabled_sections, vanity_name?) · `memberships` (page_id, user_id, role ∈ {owner, co_editor}; one co-editor per page) · `invites` (page_id, email, token_hash, expires_at, consumed_at; consumed atomically) · `guest_tokens` (page_id, token_hash, version, active, rotated_at) · `guest_accounts` (user_id, page_id, role=guest, created_at, tour_seen_version) · `email_prefs` (user_id, reminders, digest) · `email_log` (dedupe_key unique, template, recipient_hash, status, sent_at) · `profiles_zodiac` (user_id, sign, birthday_enc nullable, key_id) · `memories`, `milestones`, `anniversaries`, later `places` (each: page_id, `status` draft|published, text in `lang` plus optional `text_alt`, `lang_alt`) · `guestbook_entries` (page_id, display_name required, text, status pending|approved|rejected, token_version, created_at) · `media` (page_id, owner_item_id, kind, bytes, variants, storage_key, alt_text, status inherited from its item).
 
-Every table carries `page_id`. Guests never receive table access; they reach data only through the `guest_*` functions in §1.
+Every table carries `page_id` (or, for per-user rows such as email preferences and the saved sign, a user bound to exactly one page through `guest_accounts`). Guests reach data through the `public_*`, `guest_*` and `account_*` contracts (design 1 §5.1). Guests never receive table access; they reach data only through the `guest_*` functions in §1.
 
 ## 5. NFC and QR flow (design deliverable outline)
 
@@ -140,7 +142,7 @@ Proposed scope until the owner says otherwise:
 | Phase | Weeks | Tasks | Tests first (PRD §9.2) | Gate |
 |---|---|---|---|---|
 | 0 Design | 1–2 | Design docs in `docs/design/`: 1 token flow (draft), 2 screens (draft), 3 data model, 4 theme system, 5 3D approach; CI spec (§12) | — | Owner review of each |
-| 1 Foundations | 3–4 | **First:** CI walking skeleton (§12.4). Then skeleton app, Supabase project, RLS + `guest_*` functions, auth (closed registration, Google), pages/memberships/tokens/invites, visibility, publication status, privacy scan | E4–E6, E21, E22, E27–E30 | Before harness-os / spend |
+| 1 Foundations | 3–4 | **First:** CI walking skeleton (§12.4). Then route table + deny-by-default checks, skeleton app, Supabase project, RLS + `guest_*` functions, auth (closed registration, Google), pages/memberships/tokens/invites, visibility, publication status, privacy scan | E4–E6, E21, E22, E27–E37 | Before harness-os / spend |
 | 2 Owner tools | 5–7 | Setup wizard, CRUD with draft/publish, media pipeline, usage meter and triggers, keep-alive + alerts | E7–E10, E15, E16, E23–E25 | Owner review |
 | 3 Guest (Static + Page shell) | 8–10 | Token exchange, guest views, EN/VI, guestbook queue, QR/NFC, mode selector | E1, E2, E11–E14, E17, E26 | Owner review |
 | 4 Themes + Page 3D | 10–13 | Four token sets, scene presets, per-section scenes, fallbacks | E18, E19 | Per theme |
@@ -152,7 +154,7 @@ Proposed scope until the owner says otherwise:
 
 ## 10. Open decisions
 
-See PRD §12 (single source). Q29–Q32 are answered (5-minute media window, closed registration, best-effort availability at $0, limited ruflo scope). Still open: Q16 (tag model, left open by the owner), Q20 (chibi art tool, after core), Q33 (CD route), Q34 (guest details), Q35 (co-editor first login).
+See PRD §12 (single source). Q29–Q32 are answered (5-minute media window, closed registration, best-effort availability at $0, limited ruflo scope). Added 2026-10-22: Q36-Q41 (visitor rules, Resend, guest accounts, Zodiac, tour, auth email). Answered 2026-10-22: Q33 (CD route), Q34a-d (show once, 30 days, limits, hidden pending), Q35 (one shared account), Q36, Q38-Q41, Q20 (optional, owner supplies art). Still open: Q16 (tag model, left open by the owner) and the Q37 domain (deferred).
 
 ## 11. Changes after the Codex challenge (2026-10-21)
 
@@ -179,7 +181,8 @@ The owner asked: follow the harness, see a test fail before making it pass, and 
 3. **GREEN.** Write the least code that passes. Run the full local suite.
 4. **Refactor** with everything green.
 5. **Review** (`code-reviewer`, `security-reviewer` for anything touching tokens, RLS or media; Codex at phase gates).
-6. **CI green** on GitHub for the branch before the owner is asked to merge.
+6. **CI green** on GitHub for the branch before the owner is asked to approve the **merge** (a first push to run CI is a separate owner request, rule 2).
+7. **Branch and PR** (CLAUDE.md rule 4): work on `docs/`, `feature/`, `chore/` or `fix/<name>`, open a PR to `master`, owner approves and merges.
 
 Bugs follow the same rule: first a regression test that reproduces the bug and fails, then the fix.
 
@@ -187,7 +190,7 @@ What CI can and cannot prove: an ordinary CI run only sees the final state, so i
 
 ### 12.2 Workflow layout (GitHub Actions, proposal)
 
-One workflow, `ci.yml`, on `pull_request` and on `push` to `main`. Jobs run **in parallel**; one final `gate` job depends on all of them and is the single required check.
+One workflow, `ci.yml`, on `pull_request` and on `push` to `master`. Jobs run **in parallel**; one final `gate` job depends on all of them and is the single required check.
 
 | Job | Runs | Covers | Needs |
 |---|---|---|---|
@@ -197,7 +200,7 @@ One workflow, `ci.yml`, on `pull_request` and on `push` to `main`. Jobs run **in
 | `e2e` | Playwright on phone viewports, WebKit (iPhone-like) and Chromium (Android-like), split into shards | Guest and owner flows from design 2; E1, E5, E21, E27, E30 | Built app + local Supabase |
 | `a11y-perf` | axe checks in Playwright; Lighthouse budget on the guest pages | WCAG 2.2 AA target; first visit ≤ 3 MB; first content budget | Built app |
 | `privacy-scan` | Repo script: no secrets, no real-looking emails, tokens or tag UIDs, no image files outside `docs/**/placeholder*` | CLAUDE.md rule 3 | Shell only |
-| `red-proof` (optional, advisory first) | Run the PR's new or changed tests against the `main` code; pass if they **fail** there | Evidence that new tests can fail | Node |
+| `red-proof` (optional, advisory first) | Run the PR's new or changed tests against the `master` code; pass if they **fail** there | Evidence that new tests can fail | Node |
 | `gate` | `needs:` all of the above | One required status for merging | — |
 
 Hardening rules for the workflow:
@@ -210,7 +213,7 @@ Hardening rules for the workflow:
 
 ### 12.3 CD (deployments)
 
-Proposal: Vercel's own Git integration creates a preview deployment for each PR and a production deployment from `main`. The preview must point at a separate **development** Supabase project with fake data, never at the real memories. The NFC tag and QR always point at the production address (Q19). Production deploys only after `gate` is green and the owner merges. Connecting Vercel to GitHub is a login and is approved under rule 1 when it happens. Decision: PRD Q33.
+Proposal: Vercel's own Git integration creates a preview deployment for each PR and a production deployment from `master`. The preview must point at a separate **development** Supabase project with fake data, never at the real memories. The NFC tag and QR always point at the production address (Q19). Production deploys only after `gate` is green and the owner merges. Connecting Vercel to GitHub is a login and is approved under rule 1 when it happens. Decision: PRD Q33.
 
 ### 12.4 Phase 1 starts with a walking skeleton
 
@@ -218,6 +221,9 @@ The first unit of Phase 1 is CI itself: an empty app, one trivial test written t
 
 ### 12.5 Facts to verify before writing the workflow (not researched; github.com not yet approved for reading)
 
+- **Resend** (docs read 2026-10-22, see §R): still **unverified**: whether `onboarding@resend.dev` can send to the owner's own address without a domain (the pages read do not mention it; the domains page says a domain must be added and verified to send), data location and DPA, and the exact DNS records. Test only after the owner creates an account (rule 1).
+- **Vercel Hobby cron** frequency limits (recollection: daily at most, **unverified**) versus a Supabase scheduled job.
+- **Next.js** middleware-bypass advisory (2025) and fixed versions, once the framework host is approved for reading.
 - Free GitHub Actions minutes and storage for a **private** repo on the owner's plan. Parallel jobs and browser matrices use minutes faster. **Unverified.**
 - Whether branch protection / required status checks are available for a private repo on the owner's plan. **Unverified.** If not, the rule becomes "owner merges only when `gate` is green", enforced by habit.
 - Whether the Supabase CLI and Docker run on GitHub-hosted Ubuntu runners as needed for the `db` and `e2e` jobs. **Unverified.**
@@ -239,3 +245,4 @@ The first unit of Phase 1 is CI itself: an empty app, one trivial test written t
 - iPhone background tag reading: Apple WWDC20 session 10209 via search summary https://developer.apple.com/videos/play/wwdc2020/10209/ (the documentation body could not be read: **unverified in detail**)
 - Compression guidance: three.js forum threads, e.g. https://discourse.threejs.org/t/how-to-add-both-ktx2loader-and-dracoloader-for-compressed-glb/46726 (secondary)
 - Local inspection (this machine): ruflo-core plugin scripts and manifest under `~/.claude/plugins/cache/ruflo/`; the npx cache `~/.npm/_npx/2ed56890c96f58f7`; a scratch-directory run of `ruflo init`.
+- Resend, read 2026-10-22 (owner approved `resend.com/docs`, read only, no sign-in; fetched through a summarizer, so quotes are the summarizer's): pricing https://resend.com/pricing (Free: 3,000 emails/month, 100/day, 3 custom domains; says nothing about the domain requirement) · domains https://resend.com/docs/dashboard/domains/introduction ("You must add and verify at least one domain to send emails with Resend") · Supabase SMTP https://resend.com/docs/send-with-supabase-smtp (host `smtp.resend.com`, port 465, user `resend`, password = API key; needs a verified domain and a sender address) · idempotency https://resend.com/docs/dashboard/emails/idempotency-keys (`Idempotency-Key` header, 1-256 chars, kept 24 hours) · send API https://resend.com/docs/api-reference/emails/send-email (max 50 recipients in `to`). Vercel cron limits were not re-read (listed above).

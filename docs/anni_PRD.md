@@ -1,6 +1,6 @@
 # PRD: anni (working name), a memory-keeping site opened by NFC tap
 
-**Status:** DRAFT v0.5. Owner said "the PRD looks good" (2026-10-21). v0.5 adds the test-first rule and parallel CI (§9.1, plan §12) and Q33–Q35 from the first two design drafts (`docs/design/`). Open items: Q16, Q20 (after core), Q33–Q35 (proposed defaults). Nothing is implemented.
+**Status:** DRAFT v0.6. Owner said "the PRD looks good" (2026-10-21). v0.5 added the test-first rule and parallel CI (§9.1, plan §12). v0.6 (2026-10-22) records the owner's answers to Q34-Q35, and adds: deny-by-default access (§4.3, E31-E37), Resend email (S18), optional guest accounts (S19), first-visit tour (S20), Zodiac section (S21), and Q36-Q41. Open items: Q16, Q20 (after core), Q34a, Q36, Q37 (domain and docs approval). Q33, Q35, Q38-Q41 answered 2026-10-22. Nothing is implemented.
 **Date:** 2026-10-21 (v0.1 written 2026-10-20)
 **Author:** Claude Code, from the owner interview (HARNESS_PROCESS.md §6)
 **Owner / decider:** the project owner (referred to as [OWNER])
@@ -83,12 +83,17 @@ Memories stay scattered and unshared. For the build: an unplanned launch risks p
 | S15 | Account data export and delete; privacy policy, terms, minimum age, takedown path | P2, last phase, required before publishing to other people |
 | S16 | World mode: the whole site as one navigable 3D world, with automatic capability checks and a visible switch to page mode | P1, built after Page mode is evaluated (owner's preferred final experience; see §6.5) |
 | S17 | Proposed extra sections (not adopted): Time capsule, Songs, "Open when…" letters, Bucket list, Guest photo upload (moderated), Event info / RSVP | Not scheduled |
+| S18 | Email through Resend: welcome, anniversary reminder, new-wish digest, wish-approved thank-you, and account emails (verify, reset). Server-side only, templates in EN/VI, opt-out link on non-account mail, never contains a guest token or private memory text | P1; needs Q37 (sending domain) |
+| S19 | Optional guest account: a token holder can "save my place" (verified email), so later visits need no tap; can post with a prefilled name, and keep a Zodiac profile. Closed to people without a valid token session | P1; needs Q38 |
+| S20 | First-visit tour: a skippable pop-up walkthrough for new guests (once per device, or once per account) and for the owner's first dashboard visit; replayable from settings | P1 (small); Q40 |
+| S21 | Zodiac section in a galaxy style: guest enters a birthday, sees their sign as the owner's own character art on an animated star scene, plus fun facts. Calculated in the browser; stored only if the guest opts in, and then encrypted | P1, after core; Q39 |
+| S22 | Deny-by-default access: every route, server action, database table and storage object is closed unless a rule opens it (§4.3, E31-E37) | **P0** |
 
 ### 3.2 Out of scope (for now)
 Public signup and other couples; payments and plans; public discovery across owners; native mobile apps; auto-translation; languages beyond EN/VI; live chat; more than one co-editor; real-time collaboration; uploading real photos to any external tool (until a specific host is approved).
 
 ### 3.3 MVP by [DEADLINE] (owner: "core only")
-S1–S6, S9–S14, with S10 and S16 as defined in §6.5. S7–S8 (map and chibi) follow after the deadline. S15 comes last and is only required before publishing to others.
+S1–S6, S9–S14, S22, with S10 and S16 as defined in §6.5. S7–S8 (map and chibi) follow after the deadline. S15 comes last and is only required before publishing to others. S18-S21 are P1 proposals (owner decides in Q37-Q40) and follow core unless the owner moves them up.
 
 ### 3.4 Learning goals
 Can one content model drive both a 3D world and a normal page? Does the 3D stay smooth on budget phones and in in-app browsers? Does the free tier hold up (storage, bandwidth, inactivity pause, email)?
@@ -114,6 +119,9 @@ FR1 accounts and sessions. FR2 tenancy: every record belongs to one page; access
 ### 4.3 Non-functional requirements
 - **Privacy:** Token-only and Private pages send `noindex`; tokens are unguessable (long random values), never derived from names or sequences; only Published pages are indexable. Any third-party service that receives owner content must be named and approved first. Privacy policy, terms and minimum age are required before the site is published to others (last phase).
 - **Security:** server-side authorization on every request; input validation; stored-XSS-safe rendering of guest text; rate limiting on login, upload and token-gated posting; secrets only in environment variables (never in Git). A leaked token or full link grants guest **read** access (enabled, published sections) and post-to-queue access until it is rotated; it never allows edits. Guests reach data only through narrow database functions, never through table access or the service-role key (plan §1).
+- **Deny by default (no unauthenticated bypass):** a person with no session and no token can reach only an allow-list (landing, `/g` shell, login, health check, static files). Every other route returns a login redirect or a generic not-found with no data in the response. Four independent layers, so one miss is not a breach: (1) a single route table that classifies every route and fails the build if one is unclassified; (2) an auth check inside every page, route handler and server action (middleware alone is never trusted); (3) row-level security on every table with no anon table access, only the narrow `guest_*` functions; (4) private storage with signed URLs minted after the same checks. Design and tests: `docs/design/anni_token_flow.md` §9.
+- **Guest powers by credential:** no token = read only what a Published page shows (through `public_*`, no posting), and nothing on a Token-only or Private page; valid token = read enabled published sections and post to the moderation queue; guest account = same plus saved profile and email preferences; owner or co-editor = edit and moderate. Interactions that write anything (guestbook, profile, email opt-in) always need a token session or an account (Q36).
+- **Personal data (birthdays, emails):** collect the minimum (month and day; year only if a Chinese-zodiac option needs it), compute in the browser where possible, store only with opt-in, encrypt birthdays at application level (AES-256-GCM, key in an environment variable, never in Git or CI), keep them out of logs, analytics, emails and Git, delete them with the account. Emails need the address in readable form to send, so they rely on row-level security and the vendor's at-rest encryption (**unverified**), not on application encryption.
 - **Performance (proposals, to be measured):** content-first loading; 3D lazy-loaded; asset and GPU budgets set in the plan; automatic downgrade from world mode to page mode to 2D when WebGL2 is missing, memory is low, frame rate drops, data saver or battery saver is on, or `prefers-reduced-motion` is set.
 - **Accessibility:** WCAG 2.2 AA target; touch targets at least 44 px; contrast checked in all four themes; a non-3D, keyboard- and screen-reader-friendly path always exists.
 - **Language:** fonts must render Vietnamese diacritics correctly; text normalized consistently.
@@ -214,6 +222,18 @@ Tests and execution scripts are written before each step and must be **seen fail
 | E28 | Draft items, unapproved guestbook entries or their media inside an enabled section | Never returned to guests, including through media URL minting |
 | E29 | Attacker registers the invited co-editor's email before they do | Registration is closed, so the attacker cannot create the account; legitimate provisioning and login still work |
 | E30 | In-app browser drops the URL fragment or blocks cookies | The visit still works in memory or shows a clear "open in your browser" message; the token never moves to a query string |
+| E31 | Unauthenticated request to any owner route (`/app`, `/app/anything`, an API route, a server action), or to a token-only guest route without a token (a Published page is readable without a token, read-only, through `public_*`) | Redirect to login or generic not-found; no page data, no hint whether the record exists; response `no-store` |
+| E32 | A new route or server action is added without an access rule | Build and CI fail: the route table must classify every route (default deny) |
+| E33 | Logged-in guest account or co-editor tries an owner-only action or another page's ID | Refused by row-level security and the handler's role check; same generic result |
+| E34 | After log out, the back button or a cached page | No private content shown; authenticated responses are `no-store`; session cookie cleared |
+| E35 | Login `next` parameter points to another site | Only relative paths on our own host are followed |
+| E36 | Anonymous call straight to the database API with the public key | Tables return nothing; `guest_*` answers only with a valid token, `account_*` only for an active guest account, `public_*` only for Published pages (design 1 §5.1) |
+| E37 | Direct URL guess such as `/home`, `/admin`, `/dashboard` | Not-found for unknown paths; login redirect for owner paths; nothing about the owner area is revealed to a guest |
+| E38 | Guest account registration abused with a leaked link (many emails, or someone else's address) | Needs a valid token session, email verification, per-IP and per-address rate limits, a per-page cap; owner can list and remove guest accounts; rotation closes the registration door |
+| E39 | Email provider down, quota reached, or bounce | Send is queued and retried once; a daily cap guards the free quota; a bounce disables that address; the app never blocks on email |
+| E40 | Birthday typed by a guest | Month and day validated (real calendar day; 29 Feb handled by an explicit rule); calculated in the browser; the opt-in saves the **sign only**, never the date; the field is excluded from analytics and error reports. Storing a birthday needs its own consent and PRD row (design 1 §11) |
+| E41 | Zodiac cusp dates and year boundaries (sign changes depend on year and time) | Show the sign for the stated date and a note that cusp dates vary by a day; Chinese-zodiac year changes at the lunar new year, not 1 January |
+| E42 | Tour pop-up shown on every visit, traps focus, or blocks the token exchange | Shown once; skippable; focus trap with Esc; never delays the token check; replay from settings |
 
 ### 9.3 Acceptance checklist (tick per phase)
 - [ ] §1.5 metrics measured and recorded
@@ -258,6 +278,9 @@ Ranked from the owner's stated concerns first.
 | Free database pauses after inactivity (Supabase "may pause"; only a paid plan guarantees otherwise) | High | High | Best-effort daily keep-alive, missed-run alerts, external uptime check, tested restore, event-day check; paid plan is Q31 |
 | Issued media URLs outlive a revocation (vendor cannot revoke them) | Med | Med | Short expiry, minting only after checks; owner picks window or proxying (Q29) |
 | Auth emails (invite, reset) blocked by the free email limit; pre-registered accounts | High | Med | Closed registration with owner-provisioned accounts; Google only for pre-created accounts (Q30) |
+| Resend free plan cannot send to guests without a verified sending domain (**unverified**; needs DNS records on a domain the owner controls, which the free `*.vercel.app` address is not) | High | Med | Q37: start owner-only (own address), add a domain after the rename decision; the app works without email |
+| Personal data (guest emails, birthdays) held and sent to a third party | Med | High | Minimum data, opt-in, application-level encryption of birthdays, no PII in logs/Git/CI, vendor named and approved before use (Q37), delete with account |
+| An authorization gap (a route or action without a check) exposes owner data | Med | High | Deny-by-default layers (§4.3), route table build check, crawler test, database tests as the anon role |
 | NFC URL tied to a domain that later changes | Med | Med | Decide domain before writing the tag (Q19); keep the tag re-pointable or use a redirect on a domain the owner controls |
 | NFC tag model limits (capacity, locking, iPhone support) | Med | Med | Verify the model on the product page (Q16 left open); QR fallback |
 | Legal obligations if the site is ever published to others | Low now | High later | Last phase; revisit before any publishing |
@@ -287,23 +310,116 @@ Ranked from the owner's stated concerns first.
 | Q17 | Media and storage | Supabase free tier; photos and short video | **Answered in principle**; limits in §8 and plan; caps for video to be set by the owner |
 | Q18 | Cost ceiling | $0 | **Answered by owner** (2026-10-21) |
 | Q19 | Domain name, and whether it is worth paying for (NFC URL depends on it) | Undecided; use `anni` in docs. A free `*.vercel.app` address costs $0 but ties the tag to it | **Answered by owner** (2026-10-21): free `*.vercel.app` address; the tag and QR URL are tied to it |
-| Q20 | Chibi characters: art source and photo handling | Owner will upload photos; no photo leaves the machine until a specific host is approved | **PARTLY ANSWERED**; art tool and host OPEN (after core) |
+| Q20 | Chibi characters: art source and photo handling | Optional feature. The owner generates anime or chibi pictures with an AI tool of their choice and uploads the results; a real photo is allowed but never required. Nothing is sent to any external tool by us | **Answered by owner** (2026-10-22): optional; owner supplies the art. No art tool needed from us (after core) |
 | Q21 | Places map / "full 3D" | Both World mode and Page mode, with automatic fallback (§6.5) | **Answered by owner** (2026-10-21) |
 | Q22 | Legal pages, minimum age, data location | Last phase | **Answered by owner:** low priority, at the end |
 | Q23 | Repo visibility | Private now; docs still use placeholders | **Answered by owner** |
 | Q24 | Extra sections (S17) | None | **Answered by owner:** not yet |
 | Q25 | Deadline | Target 14 Feb 2027, core scope only | **Answered by owner** (2026-10-21): "deadline is flexible", so 14 Feb 2027 is a target, not a hard date |
-| Q26 | NEW: Email for co-editor invite and password reset (free built-in email goes only to project team members, 2/hour) | Owner: the co-editor is invited by email address; when they log in with that correct email, they gain the co-editor permissions. Design consequence: the role is granted only if the login's email is verified. Google sign-in verifies it. Email/password sign-up needs a confirmation email, which the free built-in email cannot send to a non-team address, so the co-editor should use Google unless a custom email service is approved. Owner's later answer: build our own login/sign-up pages on our database, with Google as fallback. My first safeguard (a one-time invite link with email confirmation off) was rejected by the Codex challenge, because the vendor documents pre-account takeover through unverified emails; replaced by the proposal in Q30 | **Answered by owner** (2026-10-21); safeguard superseded, see Q30 |
-| Q27 | NEW: Video limits within 50 MB per file and 1 GB total | Owner: keep the proposal. Short clips of about 25 MB, never over 50 MB per file, compressed on the phone before upload, with count and size caps shown in the UI | **Answered by owner** (2026-10-21, "keep it like that for now") |
-| Q28 | NEW: World-mode go/no-go and theme depth (§6.5) | Owner prefers World mode as the final experience; build Page mode first to see how it works, then decide on World. Owner confirmed the cut order stays: World last and optional, and the deadline is flexible | **Answered by owner** (2026-10-21) |
+| Q26 | Co-editor invite and password-reset email | Superseded by Q30 and Q35 | Answered (2026-10-21); superseded |
+| Q27 | Video limits | About 25 MB clips, 50 MB max per file, compressed before upload | Answered (2026-10-21) |
+| Q28 | World mode go/no-go | Page mode first, then decide on World; World last and optional | Answered (2026-10-21) |
+| Q29 | Media links cannot be revoked: accept a window? | 5-minute window | Answered (2026-10-21): 5 minutes |
+| Q30 | Accounts: open sign-up or closed? | Closed; owner creates the accounts | Answered (2026-10-21) |
+| Q31 | Free database may pause | Best effort at $0, with alerts and a restore test | Answered (2026-10-21): accept |
+| Q32 | ruflo scope | Agents and local memory only; no `ruflo init` | Answered (2026-10-21); setting applied |
+| Q33 | Deploy route | Vercel + GitHub; preview per pull request; live after `gate` and owner merge | Answered (2026-10-22). Hosts approved when connecting |
+| Q34a | Show the guest link once, or store it to view again? | Show once, hash only; printing optional with a warning; recovery rules in design 1 §3.2 | Answered (2026-10-22): owner delegated; Claude and Codex chose show once |
+| Q34b | Guest cookie lifetime | 30 days | Answered (2026-10-22) |
+| Q34c | Guestbook limits | Name 40, message 500, 3 posts per 10 min per link | Answered (2026-10-22). My extra 50 per page per day is still a proposal |
+| Q34d | Guest sees own pending message? | No, only after approval | Answered (2026-10-22) |
+| Q35 | Login for the partner | One shared account for both; Google as fallback | Answered (2026-10-22), confirmed |
+| Q36 | Visitor with no token | Visibility decides; anything that writes needs a token or account | Answered (2026-10-22): a visitor can read the Published page, read-only |
+| Q37 | Resend email | Assume a verified domain is needed for any sending (official docs, plan §R); decide the domain later | **Partly answered**: docs reading approved and done (2026-10-22); domain decision deferred. Owner-only sending without a domain is **unverified** |
+| Q38 | Guest accounts ("save my place") | Email-verified, cap 50, owner can remove | Answered (2026-10-22): approved. Email part waits for Q37 phase B |
+| Q39 | Zodiac section | Western signs, computed in browser, save only on opt-in; galaxy style; owner draws the sign characters | Answered (2026-10-22): approved. Owner will upload the character art later (placeholders until then) |
+| Q40 | First-visit tour | 3-4 skippable steps, shown once | Answered (2026-10-22): approved |
+| Q41 | Sign-in emails (verify, reset) via Resend | Only after Q37 domain; until then owner-created accounts | Answered (2026-10-22): approved; waits for Q37 phase B (domain) |
 
-| Q29 | NEW (from Codex): media URLs cannot be revoked once issued. Accept a bounded window, or proxy all media through our server? | Accept a 5-minute window with short-lived URLs minted only after checks; proxying costs Vercel transfer and CPU and suits video poorly | **Answered by owner** (2026-10-21): up to 5 minutes |
-| Q30 | NEW (from Codex): accounts. Owner asked for our own login/sign-up pages with Google as fallback. Open sign-up without confirmed email allows pre-account takeover of the invited address | Closed registration: no public sign-up page now; the owner provisions the owner and co-editor accounts; Google works for those pre-created accounts when the verified Google email matches; the sign-up page is added when other couples are allowed | **Answered by owner** (2026-10-21): closed registration, owner-provisioned accounts. This replaces the earlier request for a sign-up page for now |
-| Q31 | NEW (from Codex): Supabase only "may pause" Free projects after 7 days of low activity; only a paid plan guarantees no pause. Accept best effort at $0? | Accept best effort plus alerts, uptime check, tested restore, event-day check; upgrade (from $25/month) only if the owner decides | **Answered by owner** (2026-10-21): accept best effort at $0 |
-| Q32 | NEW: ruflo as orchestrator next to harness-os (scope and settings in plan §8) | Limited scope: ruflo agents and local memory only; no `ruflo init`; add `RUFLO_MCP_SKIP_NPX=1` to the git-ignored local settings after the owner reviews the exact change; no ruflo MCP server or extra plugins until a host is approved | **Answered by owner** (2026-10-21): approved as proposed. Applied: `RUFLO_MCP_SKIP_NPX=1` in the git-ignored `.claude/settings.local.json` |
-| Q33 | NEW: CI/CD on GitHub. Owner asked for test-first work and a parallel CI workflow on GitHub (answered). Still open: deploy path, and the plan limits for a private repo | CI as in plan §12.2, with no secrets in CI and a local fake-data database. CD through Vercel's Git integration: a preview per PR that uses a separate development Supabase project, and production from `main` after `gate` is green and the owner merges. Actions minutes and branch protection on a private repo are **unverified** (plan §12.5) | **Partly answered by owner** (2026-10-21: test-first + parallel CI on GitHub). CD route and Vercel↔GitHub connection await owner approval |
-| Q34 | NEW (design 1–2): guest details. (a) Because only a hash of the token is stored, the link and QR can be shown **only once**; keep that, or store the token encrypted so the dashboard can show it again? (b) Guest cookie lifetime. (c) Guestbook limits. (d) Does the guest see their own pending message? | (a) Show once; lost link means rotate and rewrite the tag. (b) 30 days, not extended on use. (c) Name 1–40 characters, message 1–500, plain text; at most 3 posts per token per 10 minutes and 50 per page per day. (d) No; show the "waiting for approval" screen only | **OPEN**: proposed defaults, awaiting owner |
-| Q35 | NEW (design 1): how the co-editor gets a first login without email (closed registration, Q30; free email cannot reach them) | Co-editor signs in with Google; the owner pre-creates the account with that Google email. Email/password only if the owner sets a temporary password and hands it over in person, with a forced change on first login | **OPEN**: proposed default, awaiting owner |
+### 12.1 Question details (long text moved out of the table)
+Table rows above are summaries. Full wording of the earlier rows, kept verbatim:
+
+**Q26**
+- Question: NEW: Email for co-editor invite and password reset (free built-in email goes only to project team members, 2/hour)
+- Default / decision: Owner: the co-editor is invited by email address; when they log in with that correct email, they gain the co-editor permissions. Design consequence: the role is granted only if the login's email is verified. Google sign-in verifies it. Email/password sign-up needs a confirmation email, which the free built-in email cannot send to a non-team address, so the co-editor should use Google unless a custom email service is approved. Owner's later answer: build our own login/sign-up pages on our database, with Google as fallback. My first safeguard (a one-time invite link with email confirmation off) was rejected by the Codex challenge, because the vendor documents pre-account takeover through unverified emails; replaced by the proposal in Q30
+- Status: **Answered by owner** (2026-10-21); safeguard superseded, see Q30
+
+**Q27**
+- Question: NEW: Video limits within 50 MB per file and 1 GB total
+- Default / decision: Owner: keep the proposal. Short clips of about 25 MB, never over 50 MB per file, compressed on the phone before upload, with count and size caps shown in the UI
+- Status: **Answered by owner** (2026-10-21, "keep it like that for now")
+
+**Q28**
+- Question: NEW: World-mode go/no-go and theme depth (§6.5)
+- Default / decision: Owner prefers World mode as the final experience; build Page mode first to see how it works, then decide on World. Owner confirmed the cut order stays: World last and optional, and the deadline is flexible
+- Status: **Answered by owner** (2026-10-21)
+
+**Q29**
+- Question: NEW (from Codex): media URLs cannot be revoked once issued. Accept a bounded window, or proxy all media through our server?
+- Default / decision: Accept a 5-minute window with short-lived URLs minted only after checks; proxying costs Vercel transfer and CPU and suits video poorly
+- Status: **Answered by owner** (2026-10-21): up to 5 minutes
+
+**Q30**
+- Question: NEW (from Codex): accounts. Owner asked for our own login/sign-up pages with Google as fallback. Open sign-up without confirmed email allows pre-account takeover of the invited address
+- Default / decision: Closed registration: no public sign-up page now; the owner provisions the owner and co-editor accounts; Google works for those pre-created accounts when the verified Google email matches; the sign-up page is added when other couples are allowed
+- Status: **Answered by owner** (2026-10-21): closed registration, owner-provisioned accounts. This replaces the earlier request for a sign-up page for now
+
+**Q31**
+- Question: NEW (from Codex): Supabase only "may pause" Free projects after 7 days of low activity; only a paid plan guarantees no pause. Accept best effort at $0?
+- Default / decision: Accept best effort plus alerts, uptime check, tested restore, event-day check; upgrade (from $25/month) only if the owner decides
+- Status: **Answered by owner** (2026-10-21): accept best effort at $0
+
+**Q32**
+- Question: NEW: ruflo as orchestrator next to harness-os (scope and settings in plan §8)
+- Default / decision: Limited scope: ruflo agents and local memory only; no `ruflo init`; add `RUFLO_MCP_SKIP_NPX=1` to the git-ignored local settings after the owner reviews the exact change; no ruflo MCP server or extra plugins until a host is approved
+- Status: **Answered by owner** (2026-10-21): approved as proposed. Applied: `RUFLO_MCP_SKIP_NPX=1` in the git-ignored `.claude/settings.local.json`
+
+**Q33**
+- Question: CD route and the plan limits for a private repo
+- Default / decision: Vercel connected to GitHub: a preview site per pull request using a separate test database with fake data; the live site updates only after the `gate` check passes and the owner merges. Actions minutes and branch protection on a private repo are **unverified** (plan §12.5)
+- Status: Answered (2026-10-22, confirmed). Connecting Vercel to GitHub still needs rule-1 approval of the exact hosts.
+
+**Q34**
+- Question: Guest details: (a) show the link and QR once, or store the token so it can be shown again; (b) cookie lifetime; (c) guestbook limits; (d) does the guest see their own pending message
+- Default / decision: (a) Show once, plus a printable QR sheet at creation; a lost link means rotate and rewrite the tag. Discussion in `docs/design/anni_token_flow.md` §3.2
+- Status: See the table: Q34a answered (show once), Q34b-d answered 2026-10-22.
+
+**Q35**
+- Question: How the co-editor gets a first login without email
+- Default / decision: Superseded: see below
+- Status: Answered (2026-10-22): one shared account for both partners, confirmed.
+
+**Q36**
+- Question: Visitor with no token: you said they "may view everything but not post", and also "no one can open /home without authentication"
+- Default / decision: Visibility decides: Token-only and Private pages show a visitor only the "tap the tag" screen; a Published page shows its published sections read-only, never drafts. Anyone who writes (wish, profile, email) needs a token session or account
+- Status: Answered (2026-10-22): a visitor can read the Published page, read-only.
+
+**Q37**
+- Question: Resend for email (welcome, anniversary reminder, wishes, thank-you). Needs: approval to read the vendor docs (`https://resend.com/docs`, official, HTTPS) and later to sign in; a sending domain to reach anyone but the owner; reminder timing needs a daily scheduler
+- Default / decision: Approve research only now. Phase A (free, no domain): emails to the owner's own address only (reminders, wish digest). Phase B: guest emails after the owner owns a domain, ideally after the rename. Free plan limits **unverified** until docs are read
+- Status: Partly answered: docs reading approved and done 2026-10-22 (plan §R); domain decision deferred. Owner-only sending without a domain is unverified.
+
+**Q38**
+- Question: Guest accounts: after a valid token, a guest may "save my place" so they can sign in later without the tag. Possible: yes
+- Default / decision: Email-verified account (link in email), passwordless sign-in by emailed link or password; cap 50 per page; owner can list and remove; rotation stops new sign-ups through the old link but does not remove existing guest accounts; Private page blocks them. Needs Q37 Phase B (email to guests)
+- Status: Answered (2026-10-22): approved; email part waits for Q37 phase B.
+
+**Q39**
+- Question: Zodiac section: which system, what to store, how it looks
+- Default / decision: Western sun signs first (month and day only; computed in the browser; nothing stored unless a signed-in guest opts in, and then the sign, not the birthday). Option: Chinese/Vietnamese animal sign (needs the year). Encrypted birthday only if birthday emails are wanted. Animated constellation SVGs drawn in-repo; fun facts written by us in EN/VI, labelled "for fun". Zodiac also becomes the motif of Theme B (Cosmic / night sky)
+- Status: Answered (2026-10-22): approved; galaxy style; owner uploads the character art later.
+
+**Q40**
+- Question: First-visit tour for guests and for the owner's first dashboard visit
+- Default / decision: 3-4 skippable steps, once per device (once per account when signed in), replay in settings, EN/VI, accessible
+- Status: Answered (2026-10-22): approved.
+
+**Q41**
+- Question: Email for the sign-in system itself (verify, password reset)
+- Default / decision: Supabase Auth can send through Resend (SMTP setting) once Q37 Phase B exists; until then only owner-provisioned accounts, as in Q30
+- Status: Answered (2026-10-22): approved; waits for Q37 phase B.
+
+---
 
 ## Appendices
 **Glossary:** *Tenant/page*: one site's data. *Token-only*: reachable only with the unguessable guest token, not indexed. *Fallback*: simpler experience when 3D cannot run.

@@ -1,6 +1,6 @@
 # Design 2: Screen inventory (low fidelity, no visuals)
 
-**Status:** DRAFT v0.1 for owner review. Purpose: fix *what each screen shows and lets you do*, so the data model (design 3) can be drawn from it. Colours, type, layout and 3D come later (theme system, 3D approach).
+**Status:** DRAFT v0.2 for owner review (v0.2, 2026-10-22: tour, guest account, Zodiac, email settings added). Purpose: fix *what each screen shows and lets you do*, so the data model (design 3) can be drawn from it. Colours, type, layout and 3D come later (theme system, 3D approach).
 **Date:** 2026-10-21
 **Inputs:** PRD §3.1, §4.1, §6; design 1 (`anni_token_flow.md`).
 **Privacy:** placeholders only.
@@ -20,6 +20,11 @@ Rules for every screen: phone-first, one-hand use, touch targets ≥ 44 px, all 
 | G6 | Leave a wish | Display name (required), message, language | Send | — | Name/text limits: Q34. Plain text only |
 | G7 | Sent | "Thanks, it will appear after [OWNER] approves it" | Back to guestbook | — | Guest does not see their pending message (proposal, Q34) |
 | G8 | Settings sheet | Language EN/VI, mode World/Page/Static, reduce motion | Change; remembered on this device | — | Mode auto-chosen first (FR13) |
+| G9 | First-visit tour | 3-4 step pop-up over G1: what this is, what you can see, leave a wish, save your place and try Zodiac | Next, Back, Skip, Done | — | Once per device (once per account when signed in); `role=dialog`, focus trap, Esc, reduced motion; never delays G0; replay from G8 (S20, Q40) |
+| G10 | Save my place | Email, optional display name, what an account gives | Send verification mail | `guest_register` (rate limited) | Only from a token session; needs email to guests (Q37 Phase B, Q38) |
+| G11 | Guest sign-in | Email link or password | Sign in | auth | Same generic errors as the owner login; no sign-up link without a token |
+| Z1 | Zodiac: enter birthday | Month and day (year optional, only if the animal sign is on), privacy note "calculated on your phone, nothing is saved unless you choose" | Show my sign | — | Validated; no network call (E40) |
+| Z2 | Zodiac: result | Galaxy-style animated scene (stars, glow, constellation lines) with the sign's character art (owner-drawn; placeholder until uploaded), sign name, element, short fun facts (EN/VI, "for fun"), cusp note when near a boundary | Try another date; save to my profile (signed-in only); share nothing by default | static assets | Reduced motion shows the still image (E41, S21) |
 | G-E1 | No token | "Tap the tag or scan the QR code" | — | — | Same screen for wrong, rotated or private (no hints) |
 | G-E2 | Opened in an app that dropped the link | Steps to open in Safari/Chrome | — | — | E30 |
 | G-E3 | Not available / offline / database paused | Calm message, retry | Retry | — | E17, E23 |
@@ -35,10 +40,13 @@ Rules for every screen: phone-first, one-hand use, touch targets ≥ 44 px, all 
 | O5 | Item editor | Title, date, text (language), optional second-language text, media list | Save draft; publish; delete | Both. "Changed by someone else" prompt instead of silent overwrite (E15) |
 | O6 | Media upload | Picker, compression progress, size/count caps, "location removed" note | Add; retry; cancel | Both. E7–E10 |
 | O7 | Guestbook queue | Pending entries | Approve; reject | Both |
-| O8 | Share | Link and QR (shown **once** after creation/rotation, unless Q34 decides otherwise), print QR, tag-writing steps | Copy; download QR; rotate token | Owner |
+| O8 | Share | Link and QR (shown **once** after creation/rotation: Q34a decided), optional QR download with a "this is a live credential" warning, tag-writing steps, "link not shown yet" state with Rotate again, note that rotation keeps guest accounts | Copy; download QR; rotate token | Owner |
 | O9 | Visibility and sections | Private / Token-only / Published; section toggles | Change (with a confirm for Private and Published) | Owner |
 | O10 | Usage | Storage and egress against free limits; warnings at 60% and 80% | — | Owner |
-| O11 | Members | Owner and co-editor; add or remove co-editor | Provision (Q35); remove | Owner |
+| O11 | Members | The one shared owner account (Q35). No co-editor screen until a second account is wanted | Change password; link Google | Owner |
+| O13 | First-run tour | 3 steps on the empty dashboard: set up the page, add the first memory, create the guest link | Next, Skip, replay from O12 | Owner (and partner) |
+| O14 | Email settings | Reminder lead time, wish digest on/off, last sends and failures | Save; send test to own address | Owner |
+| O15 | Guest accounts | List of guest accounts for the page, with cap counter | Remove one; remove all | Owner |
 | O12 | Account | Language, log out | — | Both |
 
 ## What this tells the data model (input to design 3)
@@ -48,6 +56,7 @@ Rules for every screen: phone-first, one-hand use, touch targets ≥ 44 px, all 
 - Milestones and anniversaries need a date and a recurrence flag for anniversaries.
 - Guestbook entries need display name, text, language, status, token version, created time.
 - Page needs theme, default language, visibility, section flags, and a `token_shown_at` timestamp for O8.
+- Account, consent and email entities (guest accounts, pending registrations, email preferences, email log, saved sign) belong to design 3 and each carries `page_id` or a user bound to one page.
 - Every editable row needs `updated_at` (or a version number) for the overwrite check in O5.
 
 ## Tests derived from screens (written failing first)
@@ -60,3 +69,8 @@ One Playwright flow per row, phone viewport, EN and VI:
 4. O1 → O2 empty state → O3 → O8 shows the link once.
 5. O9 set Private → open guest tab shows G-E1 on next action.
 6. O5 opened in two sessions → second save shows the conflict prompt.
+7. G1 first visit shows G9 once; Skip closes it; second visit does not show it; replay from G8 works.
+8. Token holder → G10 → verification link → signed in; a visitor with no token cannot reach G10.
+9. Z1 → Z2 for a valid date makes no network request; an invalid date is rejected; reduced-motion shows a still image.
+10. Unauthenticated visit to `/app`, `/app/anything`, `/home` shows login or not-found and no owner data.
+

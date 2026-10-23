@@ -2,7 +2,7 @@
 
 Live status only. Decisions and open questions: `docs/anni_PRD.md` §12 (single source). Research and tool findings: `docs/plans/anni_plan.md` §R and §8.
 
-## Status (2026-10-21)
+## Status (2026-10-22)
 Phase 0 Planning & design. PRD v0.5 and plan v0.3 are written (Codex challenge findings and fixes: plan §11). Design 1 (token flow) and design 2 (screens) are drafts awaiting owner review. No application code. No commits. harness-os not enabled.
 
 ## Done
@@ -18,7 +18,15 @@ Phase 0 Planning & design. PRD v0.5 and plan v0.3 are written (Codex challenge f
 - [x] Design 1 draft: `docs/design/anni_token_flow.md` (changes plan §1: the guest cookie carries the token so the database checks it on every call)
 - [x] Design 2 draft: `docs/design/anni_screens.md`
 
+- [x] 2026-10-22 owner round: answered Q34 b/c/d (30 days, limits, hidden own message) and Q35 (Google fallback, shared partner login, to confirm); Q33 route accepted. Added deny-by-default (S22, E31-E37), Resend email (S18), guest accounts (S19), tour (S20), Zodiac (S21), Q36-Q41. Updated PRD v0.6, design 1 v0.2, design 2 v0.2, plan. Also added rule 4 (branch + PR + owner merge) to CLAUDE.md and AGENTS.md. No code, no network, no git writes.
+
 ## Next
+- [x] 2026-10-22: Q35 confirmed (one shared account), Q33 confirmed, Q37 domain deferred by owner
+- [x] 2026-10-22: Q38-Q41 approved (guest accounts, Zodiac in galaxy style with owner-drawn characters, tour, auth email after domain)
+- [x] 2026-10-22: Q34a (show once), Q36, Q37 docs read, Q20 answered. Codex review of the new designs: PROCEED WITH FIXES; all 7 findings applied (three access contracts `public_*`/`guest_*`/`account_*`, registration hardening, show-once recovery rules, sign vs birthday consent, drift fixes, `master` not `main`)
+- [ ] Open: Q16 (tag model), Q37 domain (deferred)
+- [x] 2026-10-22: owner pre-approved creating/switching branches (rule 4); commits, pushes and PRs still on request
+- [ ] Owner uploads Zodiac character art later: needs a privacy check and a file-size budget before it enters the repo
 - [ ] Owner review of design 1 and design 2; answer Q33–Q35 (PRD §12)
 - [ ] Owner gate on plan v0.3 as a whole
 - [ ] Design 3 data model (from design 2), then 4 theme system, then 5 3D approach; each with an owner gate
