@@ -3,7 +3,7 @@
 Live status only. Decisions and open questions: `docs/anni_PRD.md` §12 (single source). Research and tool findings: `docs/plans/anni_plan.md` §R and §8.
 
 ## Status (2026-10-23)
-Phase 0 Planning & design. PRD v0.6 and plan v0.3 are written (Codex challenge findings and fixes: plan §11). Designs 1-3 approved by the owner (2026-10-23). Design 4 (theme system) is a draft on `docs/theme-system`. No application code. harness-os not enabled.
+Phase 0 Planning & design. PRD v0.6 and plan v0.3 are written (Codex challenge findings and fixes: plan §11). Designs 1-3 approved by the owner (2026-10-23). Design 4 (theme system) is a draft. Design 5 (3D approach) approved by the owner (2026-10-23), on `docs/3d-approach`. No application code. harness-os not enabled.
 
 ## Done
 - [x] Process docs in `docs/process/` (copied unchanged); `CLAUDE.md`, `AGENTS.md`, `.gitignore`
@@ -78,7 +78,25 @@ Phase 0 Planning & design. PRD v0.6 and plan v0.3 are written (Codex challenge f
   - Codex round 12 (font change): **approve, no material findings**
 - [x] 2026-10-23: owner asked for a visual preview to brainstorm on while system design continues. Private design canvas "anni Theme Preview" on the owner's claude.ai account (not in Git; link in the session, not recorded here): Home ×4 themes, Zodiac night panel ×4 themes (sample art Aries, Libra, Thìn uploaded from `assets/zodiac-sign/`, not the couple's signs), Q56 options 1 (neutral) and 2 (themed). Vietnamese UI copy with placeholders only. Theme D nav drops uppercase for Vietnamese labels (stacked marks)
 - [ ] Owner: Q56 (dashboard look, see preview row 3); comments on the preview; then design 4 v0.11 ready to commit and PR on request
-- [ ] Then design 5 3D approach, with an owner gate
+- [x] 2026-10-23 (branch `docs/3d-approach`): Design 5 draft `docs/design/anni_3d_approach.md`: mode rules (pure function) and runtime downgrade, one shared WebGL context (drei `View`), procedural theme motifs from tokens, Zodiac basic scene and geocentric sky-at-birth ring with a DOM equivalent, budgets, tests to write first. Plan §7 now points to it. New PRD Q57, Q58, E43; E18 clarified
+  - Research (read-only, owner's general approval): MDN pages and MDN browser-compat-data. `deviceMemory` and `saveData` are Chromium only; `prefers-reduced-data` ships nowhere; `getBattery` is Chromium only and has no battery-saver flag. So on iPhones the mode relies on WebGL 2, reduced motion and the measured frame rate. drei `View`, `PerformanceMonitor` and R3F `frameloop="demand"` confirmed in their docs (context7)
+  - Codex round 1: needs-attention, 4 findings, all valid and fixed (v0.2): an unrestored context loss now settles on Static after a timeout and records the cap; no horizon line (it needs the place and time, which guests never get), bodies below the horizon only dimmed; nearby events (eclipse within 14 days, etc.) named in text only, never drawn as if at birth (design 3 §3.11 line aligned); budget test sums texture bytes from sizes, since `renderer.info` only counts textures, and covers every theme and World station
+  - Codex round 2: needs-attention, 2 findings, both PRE-EXISTING, valid and fixed (v0.3): the G8 reduce-motion switch, once set by the guest, overrides the device setting on that device (so "turn it off to use 3D" works); a stored World choice counts as Page when the release does not offer World
+  - Codex round 3: needs-attention, 2 findings, both PRE-EXISTING, valid and fixed (v0.4): an opaque night panel would hide the scene drawn behind it, so a layer rule (View boxes have transparent ancestors; the scene paints the panel's ground in its box; new test 13); the frame-rate monitor runs only while a scene animates, so on-demand rest is not read as slowness (test 4 extended)
+  - Codex round 4: **approve, no material findings**
+- [x] 2026-10-23: owner answered Q57 (basic set in all four themes first, then improve during the work towards rich versions in all four equally; no theme order) and Q58 (default: rail). Design 5 v0.5, PRD §6.5, risk row and Q57/Q58 updated
+  - Codex round 5: needs-attention, 1 finding, FIX-INDUCED, valid and fixed: the old Q57 default (B → A → C → D) is now marked "not adopted"
+  - Codex round 6: needs-attention, 1 finding (labelled FIX-INDUCED; the swipe rule dates from v0.1, so it was missed earlier), valid and fixed: station swipes only when no sheet is open; sheets own their gestures (G3 photo swipe); new test 14
+  - Codex round 7: needs-attention, 1 finding, FIX-INDUCED (from round 6), valid and fixed: the sheet that opens on arrival now has a close button and a drag handle, and Back closes it, so the open scene where station swipes work can be reached; test 14 covers the path
+  - Codex round 8: needs-attention, 1 finding, FIX-INDUCED (from round 7), valid and fixed with the simplest contract: closing a sheet changes neither URL nor history (Back as in Page mode, refresh reopens the sheet); the round-7 "Back closes the sheet" rule removed
+  - Codex round 9: needs-attention, 1 finding (labelled FIX-INDUCED; it comes from the round-3 warm-up rule), valid and fixed: an own frame-time sampler replaces drei `PerformanceMonitor`. It samples only consecutive animation frames, adds up across short flights, and skips warm-up once per mount; test 4 adds repeated slow flights
+  - Codex round 10: needs-attention, 1 finding, FIX-INDUCED (from round 9), valid and fixed: a downgrade is decided only on a full 120-sample window, so isolated stalls cannot trigger one (test 4)
+  - Codex round 11: needs-attention, 1 finding, FIX-INDUCED (from round 8), valid and fixed: every station change (tap or swipe) navigates to that section's URL with a history entry; test 14 checks URL, refresh and Back after a swipe
+  - Codex round 12: needs-attention, 1 finding, FIX-INDUCED (overlapping flights). Rounds 7, 8, 11 and 12 were each caused by the previous fix (loop-guard rule), so §4.3 was simplified instead of patched again: the route is the only state, the camera and sheet follow it, and the latest navigation wins; open or closed sheet is screen state. Test 14 rewritten
+  - Codex round 13: needs-attention, 1 finding (detail routes such as G3 had no station), valid and fixed inside the same rule: every guest route belongs to one section's station and the sheet renders the exact route; test 14 extended
+  - Codex round 14: needs-attention, 1 finding, PRE-EXISTING, valid and fixed: unsent input (a half-written wish) survives a mode switch, including an automatic downgrade; test 6 extended
+  - Codex round 15: **approve, no material findings**
+- [x] 2026-10-23: owner approved design 5 (v0.5); owner commits and merges it
 - [ ] Before writing `ci.yml`: verify plan §12.5 facts and approve the pinned action list (rule 1)
 - [ ] Before implementation: owner approval for harness-os (commits) and for any login/install/download (rule 1)
 

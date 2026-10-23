@@ -279,7 +279,7 @@ These are facts, stored in our own wording with the source in `zodiac_ref_source
 
 **Privacy:** planet positions together pin the exact date, so the whole sky block is a detailed value, published only with the per-partner opt-in.
 
-**3D:** the owner prefers 3D for this (design 5). Inputs it needs are already in `birth_sky`: Moon phase angle, ecliptic longitudes, event kinds.
+**3D:** the owner prefers 3D for this (design 5). Inputs it needs are already in `birth_sky`: ecliptic longitudes (the Moon is lit from the Sun's longitude, so its phase follows), illumination, event kinds. Scene: design 5 §5.
 
 ## 6. Libraries, data sets and what is still open
 

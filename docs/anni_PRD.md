@@ -172,7 +172,7 @@ A 3D map the guest selects and zooms by tapping a place; the chosen place shows 
 | Page | Normal scrolling layout with a 3D scene per section | Default fallback; mid-range phones; in-app browsers if World fails the check |
 | Static | 2D layout with no WebGL | No WebGL2, low memory, reduced motion, data/battery saver |
 
-One content model feeds all modes. Build order (owner confirmed): Static and Page first, because they carry the content and are the fallback; evaluate Page mode; then World, the owner's preferred final experience. The deadline is flexible. Design tokens for all four themes come first, with rich 3D scene variants added theme by theme in the order the owner picks.
+One content model feeds all modes. Build order (owner confirmed): Static and Page first, because they carry the content and are the fallback; evaluate Page mode; then World, the owner's preferred final experience. The deadline is flexible. Design tokens for all four themes come first, then a basic 3D set in all four; the 3D is then improved during the work towards rich versions in all four themes equally (owner, Q57; design 5 §4.5).
 
 ---
 
@@ -209,7 +209,7 @@ Tests and execution scripts are written before each step and must be **seen fail
 | E15 | Co-editor and owner edit the same item | No silent overwrite |
 | E16 | Co-editor removed, or owner deletes the page | Access ends; data and media deleted per policy |
 | E17 | WebGL context loss, low memory, slow 3G, offline | Downgrade or retry message; no blank screen |
-| E18 | `prefers-reduced-motion`, data saver, battery saver | Motion and 3D reduced or off |
+| E18 | `prefers-reduced-motion`, data saver, battery saver | Motion and 3D reduced or off. Reduced motion forces Static; data saver (where the browser exposes it) picks Static unless the guest chooses 3D; battery saver is not exposed by browsers, so the frame-rate check (E43) covers it (design 5 §3) |
 | E19 | Theme switched after content exists | Content intact; contrast still passes |
 | E20 | Place with no photo or backdrop (after core) | Sensible default scene |
 | E21 | Token-only or Private page crawled by a search engine | `noindex`; not in sitemap |
@@ -234,6 +234,7 @@ Tests and execution scripts are written before each step and must be **seen fail
 | E40 | Partner birth date entered by the owner (Zodiac) | Validated (real calendar day); encrypted in our server before storage (Q46); guests see signs and the reading, never the date; the date never appears in logs, analytics, error reports or emails; a missing key shows "date unavailable" (design 3 §3.10) |
 | E41 | Zodiac cusp dates and year boundaries (sign changes depend on year and time) | Show the sign for the stated date and a note that cusp dates vary by a day; Chinese-zodiac year changes at the lunar new year, not 1 January |
 | E42 | Tour pop-up shown on every visit, traps focus, or blocks the token exchange | Shown once; skippable; focus trap with Esc; never delays the token check; replay from settings |
+| E43 | Frame rate drops mid-visit (slow phone, heat, battery saver; no browser exposes battery saver) | Resolution lowers first, then the mode steps down once (World → Page → Static), is announced once and remembered on this device; content and position kept (design 5 §3.3) |
 
 ### 9.3 Acceptance checklist (tick per phase)
 - [ ] §1.5 metrics measured and recorded
@@ -273,7 +274,7 @@ Ranked from the owner's stated concerns first.
 | Privacy leak of personal memories (wrong tenant, leaked token, indexed page, GPS in photos) | Med | High | Server-side checks, hashed unguessable tokens, noindex, EXIF stripping, isolation tests, default Token-only, one-click rotation |
 | Surprise cost or throttling (video, bandwidth, viral link) | Med | High | Free-tier limits as design constraints, caps, lazy media, alerts; Supabase restricts the project when quotas are exceeded, so the failure mode is downtime, not a bill |
 | Abuse of the token-gated guestbook (spam, harmful text) | Med | Med | Moderation queue, rate limits, token rotation |
-| Scope: 4 themes × 3 modes | High | Med | Deadline is flexible (owner); Page/Static first, World after Page mode is evaluated, theme tokens first and 3D variants per theme later |
+| Scope: 4 themes × 3 modes | High | Med | Deadline is flexible (owner); Page/Static first, World after Page mode is evaluated, theme tokens first, a basic 3D set in all four themes, then rich versions improved in all four equally (Q57) |
 | 3D slow or hot on budget phones and in in-app browsers | Med | Med | Capability detection, budgets, automatic downgrade, test on real devices |
 | Free database pauses after inactivity (Supabase "may pause"; only a paid plan guarantees otherwise) | High | High | Best-effort daily keep-alive, missed-run alerts, external uptime check, tested restore, event-day check; paid plan is Q31 |
 | Issued media URLs outlive a revocation (vendor cannot revoke them) | Med | Med | Short expiry, minting only after checks; owner picks window or proxying (Q29) |
@@ -293,7 +294,7 @@ Ranked from the owner's stated concerns first.
 |---|---|---|---|
 | Q1 | Platform vs single site | Personal site, tenant-ready design | **Answered by owner** (2026-10-21, via Q13) |
 | Q2 | Editors | Owner + one invited co-editor | **Answered by owner** |
-| Q3 | Themes at MVP | All four (A–D); more later | **Answered by owner**; depth of 3D per theme in §6.5 awaits owner decision |
+| Q3 | Themes at MVP | All four (A–D); more later | **Answered by owner**; depth of 3D per theme moved to Q57 |
 | Q4 | Visibility | Per page; default Token-only | **Answered by owner** |
 | Q5 | Login methods | Google + email/password | **Answered by owner** |
 | Q6 | Content languages | UI EN/VI; one language per entry + optional second field | **Answered by owner** |
@@ -350,6 +351,8 @@ Ranked from the owner's stated concerns first.
 | Q54 | Fonts without Vietnamese: Outfit (B body), Fredoka and Caveat (C) | Replace them with creative fonts that match the theme and cover Vietnamese | Answered (2026-10-23): owner asked Claude to decide. Verified in the official `google/fonts` repo: Outfit, Fredoka and Caveat have no Vietnamese subset. Chosen after a rendered Vietnamese specimen: B body **Be Vietnam Pro**; C display **Grandstander**, body **Baloo 2**, handwriting **Patrick Hand** (all OFL with Vietnamese; design 4 §8.1) |
 | Q55 | Should each theme also follow the phone's light/dark setting? | No: A and B are night themes, C and D day themes; one scheme per theme (design 4 §10) | Answered (2026-10-23): no, only our themes |
 | Q56 | Look of the owner/co-editor dashboard (`/app`) | One fixed neutral look; the chosen theme is shown in the O3 preview and a "view as guest" preview (design 4 §9) | Open (2026-10-23). Owner: "I don't see app/". Clarified: `/app` is the future logged-in part of the website where the owner edits (design 2, O-screens), not a folder; nothing is built yet |
+| Q57 | 3D depth per theme and the order rich variants are built (design 5 §4.5) | Phase 4 base in all four themes (Home motif, section header bands, Zodiac scene, 2D versions); then rich variants one theme at a time (B → A → C → D: **not adopted**, replaced by the owner's answer) | Answered (2026-10-23): basic set first in all four themes, then improved during the work; the goal is rich versions in all four themes equally, no theme first (design 5 §4.5) |
+| Q58 | World mode navigation (design 5 §4.3) | A rail: tap a nav item or station, or swipe, and the camera flies to the next station; no joystick or free camera | Answered (2026-10-23): default accepted |
 
 ### 12.1 Question details (long text moved out of the table)
 Table rows above are summaries. Full wording of the earlier rows, kept verbatim:
