@@ -6,9 +6,9 @@
     "src": "aries.svg",
     "width": 400,
     "height": 400,
-    "bytes": 3941,
-    "gzipBytes": 1033,
-    "sha256": "9610041e33d1612c36ac903ac73af2fb0e26c1777619d82e7348b7a4b73ab6bc"
+    "bytes": 4019,
+    "gzipBytes": 1042,
+    "sha256": "46ade275898c9c7747b4763b6088e9216d268f4a51df23b3d82b89f4c8a15368"
   },
   {
     "sign": "taurus",
@@ -17,9 +17,9 @@
     "src": "taurus.svg",
     "width": 400,
     "height": 400,
-    "bytes": 4696,
-    "gzipBytes": 1123,
-    "sha256": "4fafd2b6f0cfced5a389ab2cc31535b1745365ce9413cbcf68ae2bd83eb76e32"
+    "bytes": 4829,
+    "gzipBytes": 1132,
+    "sha256": "f20b7a755031a23f64f6c82cf6590617cfe5981a3cf314dc5d4537ab13ed9e45"
   },
   {
     "sign": "gemini",
@@ -28,9 +28,9 @@
     "src": "gemini.svg",
     "width": 400,
     "height": 400,
-    "bytes": 5198,
-    "gzipBytes": 1146,
-    "sha256": "d6bb1eb5c5b420b306c43d32ebd8043d287ae141671d74cc6f72afe26446f330"
+    "bytes": 5359,
+    "gzipBytes": 1157,
+    "sha256": "ebd17f1d9c205037dca5a71b5c52e72c5b2e053f78007b8a2cac0d97ce3c083e"
   },
   {
     "sign": "cancer",
@@ -39,9 +39,9 @@
     "src": "cancer.svg",
     "width": 400,
     "height": 400,
-    "bytes": 4319,
-    "gzipBytes": 1083,
-    "sha256": "b472c29d6e97d5fa50199782718fd8c3157f1d46d65d89183156e15196013e5a"
+    "bytes": 4431,
+    "gzipBytes": 1092,
+    "sha256": "f249a8f87a37ce222ff75c7a033918b6ef09c75958daa5a8c1c7c560374c0366"
   },
   {
     "sign": "leo",
@@ -50,9 +50,9 @@
     "src": "leo.svg",
     "width": 400,
     "height": 400,
-    "bytes": 4546,
-    "gzipBytes": 1113,
-    "sha256": "a14b7fc64663b899e51f7fc9206399d2f1374ef167467e4611d2b49b8a8f2bb5"
+    "bytes": 4618,
+    "gzipBytes": 1120,
+    "sha256": "a4bb09a53045ee604c7bc448af379b5ffddfdae14c3265925c5572f435dd2559"
   },
   {
     "sign": "virgo",
@@ -61,9 +61,9 @@
     "src": "virgo.svg",
     "width": 400,
     "height": 400,
-    "bytes": 5193,
-    "gzipBytes": 1171,
-    "sha256": "f6ccbe95b8b39498d2f362550cb24b4e9dc0e12196c8ffe7931db28dc5db4336"
+    "bytes": 5331,
+    "gzipBytes": 1179,
+    "sha256": "73766cac2a85217b80f3498356a5650382b5bccb33ce8b6ef1637e9a049e8a92"
   },
   {
     "sign": "libra",
@@ -72,9 +72,9 @@
     "src": "libra.svg",
     "width": 400,
     "height": 400,
-    "bytes": 4584,
-    "gzipBytes": 1071,
-    "sha256": "b7887951341b1d563505e1f73c1144c1c390b0f640988aca91dc33c095390af3"
+    "bytes": 4692,
+    "gzipBytes": 1079,
+    "sha256": "43a44b0ad3976167a283eaf95275bdbb5d8d244c4a1f689e6de13fd693a608fc"
   },
   {
     "sign": "scorpio",
@@ -83,9 +83,9 @@
     "src": "scorpio.svg",
     "width": 400,
     "height": 400,
-    "bytes": 4571,
-    "gzipBytes": 1110,
-    "sha256": "eece2ca98de04b70137005e9bee71e78e59e476ffcf23a6640b42023a66f5ba2"
+    "bytes": 4715,
+    "gzipBytes": 1118,
+    "sha256": "3d5ba792605db56a4c6b101f244a09257e5f36a74a0f726bcc7576bbf93a8714"
   },
   {
     "sign": "sagittarius",
@@ -94,9 +94,9 @@
     "src": "sagittarius.svg",
     "width": 400,
     "height": 400,
-    "bytes": 5229,
-    "gzipBytes": 1168,
-    "sha256": "5884d90f601b6857301c70173832d8864baf96065b791e934058bff808ba424d"
+    "bytes": 5505,
+    "gzipBytes": 1184,
+    "sha256": "de768961e8fb61ca0b7fd72b4a2229c8e9d825fa75879e0396c5905c965e8498"
   },
   {
     "sign": "capricorn",
@@ -105,9 +105,9 @@
     "src": "capricorn.svg",
     "width": 400,
     "height": 400,
-    "bytes": 4593,
-    "gzipBytes": 1109,
-    "sha256": "dabd8c72b143afd7522527f147838d6266f0aa156a5e23f005831bc8cb3954b8"
+    "bytes": 4773,
+    "gzipBytes": 1120,
+    "sha256": "c268026752dac3dfebbd95519f9672d132f2b5c9c4fc95e7ca0f72b92db1900f"
   },
   {
     "sign": "aquarius",
@@ -116,9 +116,9 @@
     "src": "aquarius.svg",
     "width": 400,
     "height": 400,
-    "bytes": 5065,
-    "gzipBytes": 1151,
-    "sha256": "1247dece01f454ac19e1363d7972c305c4b5d0492a50a9e57785b8140a77223a"
+    "bytes": 5263,
+    "gzipBytes": 1161,
+    "sha256": "cdf2e66c74059277100c8bfbc9f8726be7e201772cd8c123cde8471c100a8fb5"
   },
   {
     "sign": "pisces",
@@ -127,8 +127,8 @@
     "src": "pisces.svg",
     "width": 400,
     "height": 400,
-    "bytes": 4951,
-    "gzipBytes": 1136,
-    "sha256": "37e9481fd31d980cdf1e69d450f3ad23ccb401926b3125aae53ee607260d9630"
+    "bytes": 5098,
+    "gzipBytes": 1144,
+    "sha256": "3504534a470dca0453cf68bfeb4655cfe9ec97792f862daa992c5df61e53f069"
   }
 ]

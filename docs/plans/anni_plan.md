@@ -201,7 +201,7 @@ One workflow, `ci.yml`, on `pull_request` and on `push` to `master`. Jobs run **
 | `db` | Local Supabase (Docker) + SQL tests for RLS and every `guest_*` function | Isolation and visibility: E3–E6, E28, E29 | Docker, Supabase CLI |
 | `e2e` | Playwright on phone viewports, WebKit (iPhone-like) and Chromium (Android-like), split into shards | Guest and owner flows from design 2; E1, E5, E21, E27, E30 | Built app + local Supabase |
 | `a11y-perf` | axe checks in Playwright; Lighthouse budget on the guest pages | WCAG 2.2 AA target; first visit ≤ 3 MB; first content budget | Built app |
-| `privacy-scan` | Repo script: no secrets, no real-looking emails, tokens or tag UIDs, no image files outside `docs/**/placeholder*` | CLAUDE.md rule 3 | Shell only |
+| `privacy-scan` | Repo script: no secrets, no real-looking emails, tokens or tag UIDs, no image files outside `docs/**/placeholder*`, except the built-in Zodiac art files listed in `assets/zodic-sign/manifest.json` (Q39); those must have no scripts, event handlers, external references or embedded raster content, and must match the manifest checksums | CLAUDE.md rule 3 | Shell only |
 | `red-proof` (optional, advisory first) | Run the PR's new or changed tests against the `master` code; pass if they **fail** there | Evidence that new tests can fail | Node |
 | `gate` | `needs:` all of the above | One required status for merging | — |
 

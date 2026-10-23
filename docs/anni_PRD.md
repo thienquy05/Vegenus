@@ -332,7 +332,7 @@ Ranked from the owner's stated concerns first.
 | Q36 | Visitor with no token | Visibility decides; anything that writes needs a token or account | Answered (2026-10-22): a visitor can read the Published page, read-only |
 | Q37 | Resend email | Assume a verified domain is needed for any sending (official docs, plan §R); decide the domain later | **Partly answered**: docs reading approved and done (2026-10-22); domain decision deferred. Owner-only sending without a domain is **unverified** |
 | Q38 | Guest accounts ("save my place") | Email-verified, cap 50, owner can remove | Answered (2026-10-22): approved. Email part waits for Q37 phase B |
-| Q39 | Zodiac section | Galaxy style; owner supplies the sign characters | Answered (2026-10-22): approved. **Corrected by the owner the same day:** the section is about the couple's own birth data, not guests' (S21, Q46-Q49). Character art is done (owner, 2026-10-22; location to be confirmed) |
+| Q39 | Zodiac section | Galaxy style; owner supplies the sign characters | Answered (2026-10-22): approved. **Corrected by the owner the same day:** the section is about the couple's own birth data, not guests' (S21, Q46-Q49). Built-in default art: Western set in `assets/zodic-sign/` (2026-10-22); Vietnamese animals still required. The owner can replace it through the dashboard |
 | Q40 | First-visit tour | 3-4 skippable steps, shown once | Answered (2026-10-22): approved |
 | Q41 | Sign-in emails (verify, reset) via Resend | Only after Q37 domain; until then owner-created accounts | Answered (2026-10-22): approved; waits for Q37 phase B (domain) |
 | Q42 | A yearly anniversary on 29 February: which day in other years? | 28 February | Answered (2026-10-22): 28 February |
@@ -416,7 +416,7 @@ Table rows above are summaries. Full wording of the earlier rows, kept verbatim:
 **Q39**
 - Question: Zodiac section: which system, what to store, how it looks
 - Default / decision: Western sun signs first (month and day only; computed in the browser; nothing stored unless a signed-in guest opts in, and then the sign, not the birthday). Option: Chinese/Vietnamese animal sign (needs the year). Encrypted birthday only if birthday emails are wanted. Animated constellation SVGs drawn in-repo; fun facts written by us in EN/VI, labelled "for fun". Zodiac also becomes the motif of Theme B (Cosmic / night sky)
-- Status: Answered (2026-10-22): approved; galaxy style; owner uploads the character art later.
+- Status: Answered (2026-10-22): approved; galaxy style; owner uploads the character art later. Update 2026-10-22: 12 non-personal Western constellation SVGs ship in `assets/zodic-sign/` as the built-in default art (design 3 §3.3); the 12 Vietnamese animals are a separate required set.
 
 **Q40**
 - Question: First-visit tour for guests and for the owner's first dashboard visit

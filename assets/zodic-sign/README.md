@@ -1,15 +1,23 @@
-# Zodiac sign artwork — complete
+# Zodiac sign artwork: Western set
 
-Owner approved storing these 12 original, non-personal constellation illustrations here on 2026-10-22. This is an explicit exception to the earlier instruction to keep zodiac artwork outside the repository. The folder spelling `zodic-sign` follows the owner request.
+Owner approved storing these 12 original, non-personal constellation illustrations here on 2026-10-22. They are the **built-in default art** that ships with the app (design 3 §3.3 placeholder rule): the Zodiac section shows them until the owner uploads their own art through the dashboard, which is stored as page media in the private bucket, never in Git. The folder spelling `zodic-sign` follows the owner's request.
 
-One transparent square SVG per Western sign, each with a 400 × 400 viewBox. Total: 56,886 bytes; combined individual gzip sizes: 13,414 bytes. No embedded fonts, scripts, external resources, raster images, filters or animation. Coordinates are decorative, not scientific charts. `manifest.json` records dimensions, sizes and SHA-256 checksums. Artwork delivery is done; dashboard upload, processing and runtime integration are pending.
+One transparent square SVG per Western sign, each with a 400 × 400 viewBox. Total: 58,633 bytes; combined individual gzip sizes: 13,528 bytes. No embedded fonts, scripts, external references, raster images, filters or animation. Coordinates are decorative, not scientific star charts. Every `id` is prefixed with the sign (for example `aries-title`, `aries-h`), so the files can be inlined on one page without clashes. `manifest.json` records dimensions, sizes and SHA-256 checksums.
+
+## Status
+
+| Set | Files | Status |
+|---|---|---|
+| Western (12 signs) | `aries.svg` … `pisces.svg` | Done |
+| Vietnamese 12 con giáp | Tý Chuột, Sửu Trâu, Dần Hổ, Mão Mèo, Thìn Rồng, Tỵ Rắn, Ngọ Ngựa, Mùi Dê, Thân Khỉ, Dậu Gà, Tuất Chó, Hợi Lợn | **Required, not started.** Same style, square and transparent, prefixed ids, same safety checks, own manifest |
 
 ## Integration contract
 
-- These source illustrations contain no personal content. Production artwork remains page-owned content uploaded through the dashboard and stored privately (§3.3); this directory does not authorize public storage of personal uploads.
-- Keep one square picture per sign. Target approximately 150 KB or less per processed picture; do not inflate these smaller SVGs. Confirm supported upload formats before integration; sanitize SVG uploads or rasterize safely to WebP if the pipeline disallows SVG.
-- When the Zodiac screen opens, load all 12 images together through the same page-access checks. Calculate the sign locally. Do not select image requests by birthday or result, or send birthdays/signs through URLs, analytics or logs. Requests still reveal that the Zodiac screen opened. Explicit profile-save consent is a separate existing flow.
-- Static images now; add dynamic stars, glows and constellation effects at integration, with a still-image path for reduced motion.
-- Retain the celestial style and elegant serif direction. The generated concept has no identifiable font file; select a licensed Vietnamese-capable web font later. Keep localized names in HTML rather than embedding type in images.
+- The Zodiac section is about the couple (design 3 §3.10). Signs are computed on the server when the owner saves birth data in the dashboard (Z1) and stored. Guests see only the published snapshot and never enter a birthday (Z2).
+- Guests load only the art for the couple's published signs in the system on screen (design 3 §3.3). The images reveal nothing beyond the published signs.
+- Keep one square picture per sign. Budget ≤ 150 KB per processed picture; do not inflate these smaller SVGs. Owner uploads are sanitized SVG or rasterized to WebP if the pipeline disallows SVG.
+- Static images now; stars, glow and constellation effects come at integration, with a still image for reduced motion.
+- Keep the celestial style and elegant serif direction. Pick a licensed Vietnamese-capable web font later; localized names stay in HTML, not in the images.
+- The `privacy-scan` CI job (plan §12.2) allows image files here only if they are listed in `manifest.json`.
 
-Validation: 12 unique expected signs, XML parsing, square dimensions, manifest checksums and byte budget. Browser rendering verification remains pending because the available browser could not launch in this environment.
+Validation (2026-10-22): 12 expected signs, XML parsing, square viewBox, no scripts, external references, raster images or event handlers, ids unique and prefixed per sign, every `url(#…)` and `aria-labelledby` reference resolves, manifest sizes and checksums match. Browser rendering verification is still pending.
