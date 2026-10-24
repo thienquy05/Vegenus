@@ -234,6 +234,7 @@ The approved Vegenus emblem is now packaged under `assets/logo/` on `chore/vegen
 - Owner agreed with the extras and asked for something in the phone page gap too. Canvas v57: phone message page gets a compact pull-quote (17 px) and a small 60 px seal; no keyword chips on phone. Owner: no seal on phone; canvas v58 keeps only the pull-quote there (seal and chips stay on tablet and laptop). Owner: "then we should be good"; message page design done (flip default, scroll kept as a Tweak).
 - [ ] Replace the repo art in `assets/zodiac-sign/` with the re-rendered signs (separate unit on its own branch; masters on the canvas)
 - [ ] Next section: owner to choose the Codex review of the round (standing rule) and fixes
+<<<<<<< HEAD:docs/vegenus_progress.md
 
 ## 2026-10-24 (later): Memories v4, page 4 (branch `docs/guest-screens-v3`)
 
