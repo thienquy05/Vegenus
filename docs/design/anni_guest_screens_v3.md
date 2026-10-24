@@ -31,4 +31,5 @@
 1. G1: tapping the photo or "next" advances the counter and wraps 5 → 1; "previous" wraps 1 → 5; the counter is announced; reduced motion shows no fly-out.
 2. Menu: after close, no menu item is focusable (Tab skips them) and the nav is `aria-hidden`; open → close → open leaves no item stuck mid-animation.
 3. Together: every pin has a DOM chip equivalent; opening a pin moves focus to the sheet heading; Esc and × close it and return focus to the pin; previous / next wrap.
-4. Zodiac: the reading card scrolls with long text and keeps ≥ 4.5:1 contrast over the galaxy; the sign images keep alt text.
+4. Zodiac (v4, 2026-10-24): the reading is six message tiles (real `<button>`s, ≥ 44 px) that each open one message; tile and dialog text keep ≥ 4.5:1 contrast over the sky; the sign images keep alt text; on a 390 × 844 phone all six tiles are visible without scrolling, laid out in flow (no absolute positions), with equal gaps.
+5. Zodiac message dialog (Codex review 2026-10-24): opening moves focus into the dialog (its heading or close button), the page behind is `inert`, Tab stays inside, Escape and × close it, focus returns to the tile that opened it; previous / next keep focus in the dialog; reduced motion shows it without the slide or zoom. The circular menu keeps design 4 test 12 (inert page, focus, Escape, close on selection, no tilt under reduced motion).
