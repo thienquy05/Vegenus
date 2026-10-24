@@ -28,7 +28,7 @@ Phase 0 Planning & design. PRD v0.6 and plan v0.3 are written (Codex challenge f
 - [x] 2026-10-22: owner pre-approved creating/switching branches (rule 4); commits, pushes and PRs still on request
 - [ ] Owner may later replace the built-in Zodiac art through the dashboard. Design 3 §3.3: uploaded art is page media in the private bucket, not committed to Git; budget ≤ 150 KB per image after processing
 - [x] Owner review of design 1 and design 2 (approved 2026-10-23); Q33–Q35 answered (PRD §12)
-- [ ] Owner gate on plan v0.3 as a whole
+- [x] 2026-10-23: owner approved the plan ("if nothing else need to be done"), asked that Phase 1 not start yet: the owner works on the frontend design concurrently
 - [x] 2026-10-22 (branch `docs/data-model`): Design 3 draft `docs/design/anni_data_model.md`. Supersedes plan §4. One `items` table, `page_sections`, composite FKs per page, no `invites`, no birthday column, Zodiac art stored as page media (not in Git), operational tables, access matrix, retention, 20 tests to write first. Added PRD Q42-Q45; O3 gets a time-zone step. Docs only: no tests run (nothing to run yet), no git writes
 - [x] 2026-10-22: Q42-Q45 answered (28 Feb; per device + per IP with a guest-visible notice; day 1, hidden until it begins; retention defaults). Written into PRD §12, design 3, G6
 - [x] 2026-10-22: Codex challenge of design 3, round 1: needs-attention, 2 findings (rate limits bypassable by direct RPC; concurrent uploads exceed budget). Fixed: design 3 §3.9 trusted write path (`anni_server` role, atomic limits), §3.4 upload reservations
@@ -117,7 +117,7 @@ Phase 0 Planning & design. PRD v0.6 and plan v0.3 are written (Codex challenge f
   - Codex round 12: needs-attention, 1 finding, PRE-EXISTING, valid: a base64 photo inside an SVG is text, so the binary check missed it. Fixed: a base64 data URI in added lines fails (RED/GREEN; 18 cases; no data URIs in this repo's history)
   - Codex round 13: needs-attention, 1 finding, INTRODUCED by the round-12 fix, valid: a charset parameter slipped past the pattern. Per the loop guard the rule was widened, not patched: any image data URI or any base64 data URI, any case (RED on 2 new forms; GREEN 22/22). Docs describe the pattern in words so the check does not flag itself
   - Codex round 14: **approve, no material findings**
-- [ ] Owner, before switching to public: explicitly accept that the personal email on 9 existing commits becomes public (or approve a remedy); Claude scans the GitHub-only refs once GitHub is reachable. After the switch: protect `master` (design 6 §8). Owner OK needed for Docker image storage (design 6 §7.1)
+- [x] 2026-10-23: owner accepts that the personal email on the existing commits becomes public; Docker image storage in Docker's own folder approved. Still open: Claude scans the GitHub-only refs (contents and metadata) right before the switch; after the switch, protect `master` (design 6 §8)
 - [ ] Owner: turn on GitHub's private-email push block; OK for Claude to set this repo's `user.email` to the `noreply` address (design 6 §8)
 - [ ] Supabase CLI version to pin still unread (GitHub API was unreachable)
 
