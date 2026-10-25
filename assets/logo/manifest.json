@@ -1,0 +1,165 @@
+{
+  "schemaVersion": 1,
+  "brand": "Vegenus",
+  "decision": "PRD Q60",
+  "source": "approved-source.png",
+  "status": "Source emblem approved by owner; traced exports preserve its contours with flat palette normalization.",
+  "palettes": {
+    "plum": {
+      "ink": "#fff8df",
+      "star": "#e8c875",
+      "background": "#24123a"
+    },
+    "navy": {
+      "ink": "#e8c875",
+      "star": "#e8c875",
+      "background": "#0a0e2e"
+    },
+    "cream": {
+      "ink": "#4a2c1d",
+      "star": "#b58b38",
+      "background": "#fff1de"
+    },
+    "ivory": {
+      "ink": "#1a1a1a",
+      "star": "#b3402a",
+      "background": "#f4f1ec"
+    },
+    "transparent": {
+      "ink": "#fff8df",
+      "star": "#e8c875",
+      "background": null
+    }
+  },
+  "files": [
+    {
+      "file": "approved-source.png",
+      "format": "png",
+      "bytes": 1266887,
+      "sha256": "105ebbb3866a544bf4f3f500adec6d3906d9b06df7d9f16b6f682eb6088fad53",
+      "width": 1254,
+      "height": 1254,
+      "role": "approved-raster-reference"
+    },
+    {
+      "file": "favicon-180.png",
+      "format": "png",
+      "bytes": 10634,
+      "sha256": "345a4d83122a54e70a37e07f691f3399fe7f4b02aceed8203033c30a714e09d7",
+      "width": 180,
+      "height": 180,
+      "role": "favicon-export"
+    },
+    {
+      "file": "favicon-32.png",
+      "format": "png",
+      "bytes": 1420,
+      "sha256": "3889c9e842fcfbc0703161417da58824e2456481f6a8f6955d21e9708b57ddc5",
+      "width": 32,
+      "height": 32,
+      "role": "favicon-export"
+    },
+    {
+      "file": "favicon-512.png",
+      "format": "png",
+      "bytes": 33679,
+      "sha256": "32b6c90cc07271ea9431a3a17fb9944661ad1ad755274c5b0eb45876f33e3489",
+      "width": 512,
+      "height": 512,
+      "role": "favicon-export"
+    },
+    {
+      "file": "favicon.svg",
+      "format": "svg",
+      "bytes": 5139,
+      "sha256": "244d064982c51e70c6f1b7cb7ba8ffb95c3cf80f33c6c52b5bd4bf8f0497ecda",
+      "gzipBytes": 2608,
+      "role": "favicon-export"
+    },
+    {
+      "file": "vegenus-cream.png",
+      "format": "png",
+      "bytes": 120772,
+      "sha256": "5fc402924d0d51f886d21d87403bbccd4d55c80b83660814282c2713703f915c",
+      "width": 2048,
+      "height": 2048,
+      "role": "vector-derived-export"
+    },
+    {
+      "file": "vegenus-cream.svg",
+      "format": "svg",
+      "bytes": 5133,
+      "sha256": "75a7e85cfdb4cb91ffa15db270f1f0d6d8b2044aea8ce8aef0af497a693d7d26",
+      "gzipBytes": 2596,
+      "role": "vector-derived-export"
+    },
+    {
+      "file": "vegenus-ivory.png",
+      "format": "png",
+      "bytes": 120617,
+      "sha256": "8fa0de6692105cc7c42fc3fe16042cded2012a3d2668baa22ec099bbd198a9b4",
+      "width": 2048,
+      "height": 2048,
+      "role": "vector-derived-export"
+    },
+    {
+      "file": "vegenus-ivory.svg",
+      "format": "svg",
+      "bytes": 5133,
+      "sha256": "f70fdc417bdbba763da6df4c2f7739e72553a4de8a07b36e20546ada128c47b1",
+      "gzipBytes": 2594,
+      "role": "vector-derived-export"
+    },
+    {
+      "file": "vegenus-navy.png",
+      "format": "png",
+      "bytes": 119078,
+      "sha256": "b30f01d8132be2da0134869f5eeb2bef48c9ed592f97fc6dc7dadac6f0d3d9c3",
+      "width": 2048,
+      "height": 2048,
+      "role": "vector-derived-export"
+    },
+    {
+      "file": "vegenus-navy.svg",
+      "format": "svg",
+      "bytes": 5129,
+      "sha256": "77d63dd0f51400d2284c9bed6088e43b3ea2f5e4039dcb5b08debcefea6bd94b",
+      "gzipBytes": 2588,
+      "role": "vector-derived-export"
+    },
+    {
+      "file": "vegenus-plum.png",
+      "format": "png",
+      "bytes": 121593,
+      "sha256": "aa1abdc6b7189c1044fd4503a87263e75bcfc9aed971c8ec8bf8ad68407043be",
+      "width": 2048,
+      "height": 2048,
+      "role": "vector-derived-export"
+    },
+    {
+      "file": "vegenus-plum.svg",
+      "format": "svg",
+      "bytes": 5129,
+      "sha256": "0d17e7a5616107eb8a6245967cc4911c58f63b2935f4c5cdab521a13d1935c2f",
+      "gzipBytes": 2595,
+      "role": "vector-derived-export"
+    },
+    {
+      "file": "vegenus-transparent.png",
+      "format": "png",
+      "bytes": 101626,
+      "sha256": "e2752c6c3fcf5c59fd9d77bfa985b2cee605bcaa1d54d4b6412c62a269352be0",
+      "width": 2048,
+      "height": 2048,
+      "role": "vector-derived-export"
+    },
+    {
+      "file": "vegenus-transparent.svg",
+      "format": "svg",
+      "bytes": 5095,
+      "sha256": "0154099c7ed6f51ecef5bb94b2df4795b77b7acb8dcc76bd8dfc20901bab70da",
+      "gzipBytes": 2581,
+      "role": "vector-derived-export"
+    }
+  ]
+}

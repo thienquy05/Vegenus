@@ -2,8 +2,20 @@
 
 Live status only. Decisions and open questions: `docs/vegenus_PRD.md` §12 (single source). Research and tool findings: `docs/plans/vegenus_plan.md` §R and §8.
 
-## Status (2026-10-23)
+## Status (2026-10-25)
 Phase 0 Planning & design. PRD v0.6 and plan v0.3 are written (Codex challenge findings and fixes: plan §11). Designs 1-3 approved by the owner (2026-10-23). Design 4 (theme system) is a draft. Design 5 (3D approach) approved by the owner (2026-10-23), on `docs/3d-approach`. No application code. harness-os not enabled.
+
+The approved Vegenus emblem is now packaged under `assets/logo/` on `chore/vegenus-logo-assets`; see PRD Q60 and the handoff below. Runtime logo integration remains pending.
+
+## Approved logo handoff (2026-10-25)
+
+- Created local branch `chore/vegenus-logo-assets` from the current GitHub `master` revision `356650b5f62a45dcf81ab4287cd77794777454bb`. The old checkout and remote-tracking reference were stale. Shell fetch could not connect to its proxy, so the current snapshot was retrieved through the GitHub connector; each imported blob, tree and signed commit matched its Git object hash. The imported snapshot is a shallow boundary; prior local work remains on `work`.
+- Preserved the approved star-as-eye source PNG byte-for-byte. Delivered 6 pure-vector SVGs and 9 PNGs: four palette pairs, a transparent pair, favicon SVG and 32/180/512 px icon PNGs, plus the source. Main raster exports are 2048 × 2048. The asset README, original generation prompt and checksum manifest are in the same folder.
+- Vector contours come from the approved raster, using the already installed Potrace library and Inkscape. Flat palette normalization is documented. No raster embedding, font dependency, package install or application code. Earlier design explorations are not labelled as the approved master.
+- RED: before asset creation, the delivery inventory check failed on all 16 required paths (including documentation and manifest), as expected.
+- GREEN: all 15 image files match the manifest's hashes and sizes; PNG decoding, dimensions, transparent corners, SVG XML, static-element allowlist and accessible references pass. The source is byte-identical. Source-versus-render silhouette overlap is 98.2088% at the source resolution. SVGs total 30,758 bytes; each is below 150 KB. Rendered and inspected the primary export and actual-size 32 px favicon; fine tapered details soften at that size. Temporary export/check scripts and comparison renders remain outside the repo.
+- Updated root README, PRD Q60, theme-system integration guidance, plan and CI design's file-level asset allowances. Recorded the owner's subsequent explicit commit-and-push request as a scoped exception for this approved initial PNG inventory; future binary additions retain the base-branch manifest requirement. The planned CI workflow is not implemented yet, so local asset validation is not a claim of CI `gate` success.
+- The owner subsequently requested committing and pushing the handoff so the branch can be fetched in local VS Code. The publication contains only assets, documentation and exact PNG ignore exceptions; runtime integration remains separate work. No merge is authorized. Asset and privacy checks run before publication; no CI `gate` success is claimed.
 
 ## Done
 - [x] Process docs in `docs/process/` (copied unchanged); `CLAUDE.md`, `AGENTS.md`, `.gitignore`
