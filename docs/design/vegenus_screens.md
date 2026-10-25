@@ -1,6 +1,6 @@
 # Design 2: Screen inventory (low fidelity, no visuals)
 
-**Status:** v0.2, **approved by the owner 2026-10-23** (v0.2, 2026-10-22: tour, guest account, Zodiac, email settings added). Purpose: fix *what each screen shows and lets you do*, so the data model (design 3) can be drawn from it. Colours, type, layout and 3D come later (theme system, 3D approach).
+**Status:** v0.4, **approved by the owner 2026-10-23** (v0.2, 2026-10-22: tour, guest account, Zodiac, email settings added; v0.3, 2026-10-23, owner on the preview canvas: G1 lower area on branch `docs/theme-nav-icons`; v0.4, same day: G1 lower area replaced by section shortcuts). Purpose: fix *what each screen shows and lets you do*, so the data model (design 3) can be drawn from it. Colours, type, layout and 3D come later (theme system, 3D approach).
 **Date:** 2026-10-21
 **Inputs:** PRD §3.1, §4.1, §6; design 1 (`vegenus_token_flow.md`).
 **Privacy:** placeholders only.
@@ -12,14 +12,14 @@ Rules for every screen: phone-first, one-hand use, touch targets ≥ 44 px, all 
 | ID | Screen | Shows | Actions | Reads | Notes |
 |---|---|---|---|---|---|
 | G0 | Opening | Short loader while the token is exchanged | — | `guest_open` | Clears the fragment; no content before the check passes |
-| G1 | Home / intro | Couple title ([PARTNER_A] & [PARTNER_B]), cover image, days-together counter, links to enabled sections | Go to a section; open settings | page, home item, counter start | Counter rules: E14 |
+| G1 | Home / intro | Couple title ([PARTNER_A] & [PARTNER_B]), cover image (or the theme motif, the 3D hero in Page mode), days-together counter. Lower half (owner, 2026-10-23, after the menu moved to the top left; design 4 §2): **section shortcuts**, one per enabled section except Home and Settings (Memories, Together, Wishes, Zodiac), each with its theme icon, name and a short fixed line; drawn per theme (A glass tiles, B constellation list, C toy blocks, D numbered index) | Go to a section (shortcut or menu); open settings (menu) | page, home item, counter start, enabled sections (`*_open`) | Counter rules: E14. A disabled section has no shortcut; with one or two shortcuts they keep their size and the space stays sky. The shortcuts are links (≥ 44 px), not a second menu: no state, no counts. Replaces the "on this day" card, "latest wish" strip and "leave a wish" button of v0.3 (owner, 2026-10-23: "I don't like the 2 containers"); leaving a wish stays in G5 |
 | G2 | Memories | Grid or list of published memories: thumbnail, title, date | Open one; load more | memories, media thumbnails | First visit ≤ 3 MB (plan §3) |
 | G3 | Memory detail | Text (entry's language, optional second language), photos, short video (tap to play, poster first), voice note | Swipe between photos; play; language toggle for this entry | memory, media URLs (5 min) | Missing second language falls back (E13) |
 | G4 | Together | Timeline of milestones; anniversaries; counter. Later: places map | Open a milestone | milestones, anniversaries | Places map is after core (PRD §6.4) |
 | G5 | Guestbook | Approved messages, newest first; "Leave a wish" button | Open G6; load more | approved entries | Hidden if the section is disabled |
 | G6 | Leave a wish | Display name (required), message, language, one-line note that the network address is checked briefly to stop spam and not stored | Send | — | Name/text limits: Q34c; rate limits: Q43 (blocked = plain message with wait time). Plain text only |
 | G7 | Sent | "Thanks, it will appear after [OWNER] approves it" | Back to guestbook | — | Guest does not see their pending message (proposal, Q34) |
-| G8 | Settings sheet | Language EN/VI, mode World/Page/Static, reduce motion | Change; remembered on this device | — | Mode auto-chosen first (FR13) |
+| G8 | Settings sheet | Language EN/VI, mode World/Page/Static, reduce motion, menu corner (top left / top right; design 4 §2), replay the tour (G9) | Change; remembered on this device | — | Mode auto-chosen first (FR13) |
 | G9 | First-visit tour | 3-4 step pop-up over G1: what this is, what you can see, leave a wish, save your place | Next, Back, Skip, Done | — | Once per device (once per account when signed in); `role=dialog`, focus trap, Esc, reduced motion; never delays G0; replay from G8 (S20, Q40) |
 | G10 | Save my place | Email, optional display name, what an account gives | Send verification mail | `guest_register` (rate limited) | Only from a token session; needs email to guests (Q37 Phase B, Q38) |
 | G11 | Guest sign-in | Email link or password | Sign in | auth | Same generic errors as the owner login; no sign-up link without a token |
