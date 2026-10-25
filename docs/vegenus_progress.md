@@ -291,4 +291,3 @@ The approved Vegenus emblem is now packaged under `assets/logo/` on `chore/vegen
 - [x] Owner review of Together v5.2: approved (2026-10-24). Owner: some changes may still be needed at the deployment stage.
 - [x] Owner installed the browser system libraries (sudo). First real render: Playwright headless Chromium on a local copy of the boards with the canvas runtime (scratchpad only).
 - v5.2.1 from the render: (1) the finger coach dot, the tablet / laptop empty card and the Cozy light effect had `%%` written literally (not a %-formatted string), so the dot sat as a grey square under the header, the card did not centre and the light was dropped; fixed, no `%%` left in any board. (2) Phone: gesture hint wrapped into the panel, shortened to one line; map controls touched the screen edge, now 16 px in. Logic tests pass; tags balanced; screenshots checked (phone A-D, tablet B, laptop D).
-- [ ] Owner review of Together v5.2
