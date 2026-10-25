@@ -8,6 +8,8 @@
 
 ## 1. Principles
 
+**Brand asset handoff:** PRD Q60 records the approved Vegenus swan/galaxy emblem. Use the SVG and PNG exports in [assets/logo](../../assets/logo/README.md). Plum, navy, cream and ivory variants are supplied; the transparent ivory/gold mark needs a dark plain surface. These brand colours are scoped to the logo and do not replace the theme token values or their contrast checks. The emblem is static in all presentation modes. Integration should check its favicon at actual size and give any linked logo an accessible name and touch target.
+
 1. A theme is data, not code: one token file plus one 3D scene preset. Components and scenes read tokens only; no component names a colour, font or duration.
 2. Every theme defines every token. A missing token is a test failure, not a fallback.
 3. Contrast is part of the token set: each text/background pair a theme can produce is listed and checked (§5). A theme that fails does not ship.

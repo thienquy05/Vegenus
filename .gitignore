@@ -72,3 +72,14 @@ Thumbs.db
 # Owner-approved non-personal celestial artwork source sheets only
 !/assets/zodiac-sign/western/approved-atlas.png
 !/assets/zodiac-sign/vietnamese/approved-atlas.png
+
+# Owner-approved Vegenus logo PNG exports (exact manifest inventory)
+!/assets/logo/approved-source.png
+!/assets/logo/favicon-180.png
+!/assets/logo/favicon-32.png
+!/assets/logo/favicon-512.png
+!/assets/logo/vegenus-cream.png
+!/assets/logo/vegenus-ivory.png
+!/assets/logo/vegenus-navy.png
+!/assets/logo/vegenus-plum.png
+!/assets/logo/vegenus-transparent.png
