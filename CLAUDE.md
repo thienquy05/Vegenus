@@ -6,7 +6,9 @@ Partner agent: Codex (plugin installed, signed in). Codex reads `AGENTS.md`; kee
 
 ## Current phase
 
-Planning and design only. **No application code** until the owner approves the PRD and plan. Docs, `.gitignore` and design notes are allowed.
+Planning and design only. **No code of any kind in the repo** (application code, scripts, generators) until the owner approves the PRD, the plan and **all design previews** (owner, 2026-10-24). Docs, `.gitignore` and design notes are allowed; designs are drawn directly in the preview canvas. Helper scripts live in the session scratchpad, never in the repo.
+
+**Installs only into the project `.venv`** (owner, 2026-10-24): any package Claude or Codex needs goes into `./.venv` (git-ignored), never system-wide or into another folder, and still needs rule 1 approval.
 
 ## Restricted rules (always apply, to Claude and to Codex)
 
@@ -32,6 +34,7 @@ Planning and design only. **No application code** until the owner approves the P
 - Codex: independent review via `/codex:adversarial-review`. **Standing rule (owner, 2026-10-22): Claude runs the Codex review itself after each design or plan unit, fixes every valid finding without asking, and gives the owner a summary (what, why, how).** Rules 1-4 still apply: the privacy gate before anything goes to Codex, and no git writes unless asked.
 - Claude Code is the single writer of files and the only actor on git and network; other agents return findings.
 - MCP servers (owner, 2026-10-24): use **context7** for every library, framework or API question before writing code. Disabled in this project (owner, 2026-10-24): rea, token-optimizer, memory, sequential-thinking, magic; re-enable with `/mcp` if needed. context7 starts with `npx -y @upstash/context7-mcp@latest`, which is a download under rule 1: pin a version once the owner approves it.
+- Code navigation (owner, 2026-10-25): once the coding phase starts, use the **graphify** MCP to orient before reading or changing code (find where things live, what depends on what, what a change touches), so nobody gets lost in the codebase. Rebuild or refresh the graph after structural changes. Not active during the planning phase. Installing or starting it is a download under rule 1: give the owner the exact URL/host and wait for approval; keep its output folder git-ignored and never send it to Codex.
 
 ## Decisions and open questions
 

@@ -6,7 +6,7 @@ Project: a phone-first website where a couple stores memories. Guests scan an NF
 
 ## Role
 
-You are a reviewer and second implementer alongside Claude Code. Current phase is **planning and design only: write no application code and make no file edits unless the owner asks.** Claude Code starts your adversarial reviews itself after each design or plan unit and applies the valid findings (owner, 2026-10-22). When reviewing, challenge the PRD (`docs/<project>_PRD.md`) and plan (`docs/plans/<project>_plan.md`) for holes: privacy, security, access model, cost, NFC edge cases, accessibility, i18n, performance on phones.
+You are a reviewer and second implementer alongside Claude Code. Current phase is **planning and design only: write no code of any kind and make no file edits unless the owner asks; this holds until the owner approves all design previews (owner, 2026-10-24). Any install goes only into the project `.venv`, after rule-1 approval.** Claude Code starts your adversarial reviews itself after each design or plan unit and applies the valid findings (owner, 2026-10-22). When reviewing, challenge the PRD (`docs/<project>_PRD.md`) and plan (`docs/plans/<project>_plan.md`) for holes: privacy, security, access model, cost, NFC edge cases, accessibility, i18n, performance on phones.
 
 ## Restricted rules
 
@@ -22,5 +22,6 @@ Plugin hooks and `npx` fallbacks count as downloads under rule 1. Decisions live
 Read `docs/process/HARNESS_PROCESS.md` and follow it. Do not guess; list unknowns as open questions with a proposed default.
 
 - MCP servers (owner, 2026-10-24): use **context7** for every library, framework or API question before writing code. Disabled in this project (owner, 2026-10-24): rea, token-optimizer, memory, sequential-thinking, magic; re-enable with `/mcp` if needed. context7 starts with `npx -y @upstash/context7-mcp@latest`, which is a download under rule 1: pin a version once the owner approves it.
+- Code navigation (owner, 2026-10-25): once the coding phase starts, use the **graphify** MCP to orient before reading or changing code (find where things live, what depends on what, what a change touches), so nobody gets lost in the codebase. Rebuild or refresh the graph after structural changes. Not active during the planning phase. Installing or starting it is a download under rule 1: give the owner the exact URL/host and wait for approval; keep its output folder git-ignored and never send it to Codex.
 
 Test-first: every unit of work and bug fix starts with a test seen failing for the expected reason (RED) before code makes it pass (GREEN). When reviewing, flag any change whose tests could not have failed. CI is a parallel GitHub Actions workflow behind one `gate` check (`docs/plans/vegenus_plan.md` §12).
