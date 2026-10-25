@@ -6,6 +6,8 @@
 **Owner decisions used (2026-10-23):** designs 1-3 approved; Zodiac art always sits on a night-sky panel; fonts are self-hosted open-licence (OFL) files.
 **Privacy:** placeholders only.
 
+**Guest motion supplement (draft):** [connected sections and living backgrounds](vegenus_guest_motion.md), direction recorded in PRD Q61 and reference limits in Q62. It extends this design with overlapping menu/route choreography, grouped content reveals and background treatments for all four themes. Exact motion values remain prototype defaults; the existing contrast checks must be repeated over the new composited frames.
+
 ## 1. Principles
 
 **Brand asset handoff:** PRD Q60 records the approved Vegenus swan/galaxy emblem. Use the SVG and PNG exports in [assets/logo](../../assets/logo/README.md). Plum, navy, cream and ivory variants are supplied; the transparent ivory/gold mark needs a dark plain surface. These brand colours are scoped to the logo and do not replace the theme token values or their contrast checks. The emblem is static in all presentation modes. Integration should check its favicon at actual size and give any linked logo an accessible name and touch target.
@@ -40,6 +42,8 @@ The mood board shows one phone home screen (390 × 844) per theme. Each has a ce
 
 Tests: §11 tests 5 and 12.
 
+**Transition handoff:** the menu's opening, cancellation and destination selection follow [guest motion §3](vegenus_guest_motion.md#3-menu-choreography). Destination selection overlaps card expansion, background adjustment and incoming content instead of playing three effects consecutively. The fallback list uses the same route/focus rules. Page-mode WebGL Views use still motifs while the card transforms, so a fixed canvas cannot detach visually from the card.
+
 ## 3. Token contract
 
 CSS custom properties on `[data-theme="<id>"]`, so any element can be a theme root: `<html>` for the guest site, a preview container inside the neutral dashboard (§9), like the night panel (§6). Names are the contract; values per theme are in §4.
@@ -55,7 +59,7 @@ CSS custom properties on `[data-theme="<id>"]`, so any element can be a theme ro
 | Scheme | `--color-scheme` → `color-scheme` (`dark` / `light`) | Native controls and scrollbars match the theme |
 | Type | `--font-display`, `--font-body`, `--font-hand` (C only, else = body), `--display-style` (normal/italic), `--display-weight`, scale `--fs-xs … --fs-display` | Scale is shared (§3.1); only the families and display style change |
 | Space and shape | `--space-1 … --space-8` = 4, 8, 12, 16, 24, 32, 48, 64 px; `--radius-sm`, `--radius-md`, `--radius-pill` | Spacing is shared; radius is per theme |
-| Motion | `--dur-fast`, `--dur-slow`, `--ease`, `--ease-enter` | Set to `0ms` under reduced motion (§7) |
+| Motion | `--dur-fast`, `--dur-slow`, `--ease`, `--ease-enter`; proposed guest extension: `--dur-route`, `--dur-menu`, `--dur-reveal`, `--delay-stagger`, `--motion-enter-distance`, `--ease-route` | Durations and delays become `0ms`, entrance distance zero under effective reduced motion or Static. Guest extension values and scope: [motion §6](vegenus_guest_motion.md#6-motion-tokens-and-timing-defaults) |
 | Elevation | `--shadow` | `none` allowed |
 | 3D (read by scenes, not CSS) | `scene.json`: palette (3-5 colours taken from the tokens above), fog colour and density, ambient light, particle style, motif id | Design 5 defines the scene side; this design fixes only that scenes take colours from tokens |
 
@@ -141,9 +145,14 @@ The approved blue celestial art (`assets/zodiac-sign/`) is never recoloured. In 
 
 ## 7. Reduced motion, data saver and modes
 
-- `prefers-reduced-motion: reduce`, or "Reduce motion" in G8, sets `--dur-*` to `0ms` and swaps the theme's animated decor (orbs, stars, blocks, sphere) for its still frame. The page stays fully usable (E18).
+- Effective Reduce motion (G8's explicit choice when set, otherwise `prefers-reduced-motion`, design 5 §3.2) sets all durations and delays to `0ms`, entrance distance to zero, and swaps animated decor (orbs, stars, blocks, sphere) for its still frame. The page stays fully usable (E18). G8 can explicitly override the system preference, as already specified in design 5.
 - Static mode (no WebGL) uses the same tokens; the centre object is a 2D SVG drawn from tokens, as on the mood board.
 - The theme never decides the mode; FR13 does.
+- The proposed guest motion handoff makes Static fully still, including CSS backgrounds, menu effects and smooth scrolling. New ambient motion pauses for menus/forms/sheets/tours and stops when hidden or idle. A mid-transition motion change settles the destination while retaining focus, scroll and input ([motion §§6-7](vegenus_guest_motion.md#6-motion-tokens-and-timing-defaults)).
+
+### 7.1 Connected backgrounds (draft)
+
+[Guest motion §5](vegenus_guest_motion.md#5-dynamic-backgrounds-by-theme) defines the theme-specific compositions: A soft light fields and orbs; B a sparse star field, haze and recurring orbit; C layered cream, yellow/mint shapes and soft paper shadows; D a quiet tonal plane and hairline arc. Preserve the ground across section routes and change only its decorative composition. The approved logo stays static. These layers share design 5's budgets and obey §3's decor exclusion rule throughout movement; existing static contrast results do not approve their new frames.
 
 ## 8. Fonts (owner: self-hosted OFL)
 

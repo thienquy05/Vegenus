@@ -7,6 +7,8 @@
 
 Rules for every screen: phone-first, one-hand use, touch targets ≥ 44 px, all text from EN/VI string keys, works in Static mode with no WebGL, and has loading, empty and error states. World and Page modes are other presentations of the same guest screens, not extra routes.
 
+**Motion handoff (draft, PRD Q61-Q62):** [guest motion](vegenus_guest_motion.md) specifies connected menu/section transitions, grouped scroll reveals and dynamic backgrounds. [Section handoffs](vegenus_guest_motion.md#4-section-handoffs) cover G1-G9 and Z2, memory-detail return, direct links and browser history. G0, G10, G11 and access errors retain their existing loading/auth/form behavior; no decorative transition delays access checks or submission. The screen inventory and section routes are unchanged. New supplements are not covered by the earlier screen-inventory approval.
+
 ## Guest screens (`/g/...`)
 
 | ID | Screen | Shows | Actions | Reads | Notes |
@@ -60,6 +62,8 @@ Rules for every screen: phone-first, one-hand use, touch targets ≥ 44 px, all 
 - Every editable row needs `updated_at` (or a version number) for the overwrite check in O5.
 
 ## Tests derived from screens (written failing first)
+
+Also apply [guest motion §9](vegenus_guest_motion.md#9-tests-to-write-first) when motion is implemented: interruptions, focus/history, reduced motion, slow-loading and revoked-access destinations, contrast through transitions and phone resource limits.
 
 One Playwright flow per row, phone viewport, EN and VI:
 
