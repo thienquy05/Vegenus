@@ -2,7 +2,7 @@
 
 **Status:** v0.2, **approved by the owner 2026-10-23** (v0.2, 2026-10-22: tour, guest account, Zodiac, email settings added). Purpose: fix *what each screen shows and lets you do*, so the data model (design 3) can be drawn from it. Colours, type, layout and 3D come later (theme system, 3D approach).
 **Date:** 2026-10-21
-**Inputs:** PRD §3.1, §4.1, §6; design 1 (`anni_token_flow.md`).
+**Inputs:** PRD §3.1, §4.1, §6; design 1 (`vegenus_token_flow.md`).
 **Privacy:** placeholders only.
 
 Rules for every screen: phone-first, one-hand use, touch targets ≥ 44 px, all text from EN/VI string keys, works in Static mode with no WebGL, and has loading, empty and error states. World and Page modes are other presentations of the same guest screens, not extra routes.

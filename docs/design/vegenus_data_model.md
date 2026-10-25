@@ -2,7 +2,7 @@
 
 **Status:** v1.0, **approved by the owner 2026-10-23** (merged 2026-10-22: "finish the database model, commit and merge"). Codex adversarial review: 11 rounds, last verdict **approve**. History: v0.2 answered Q42-Q45, added the trusted write path §3.9 and upload reservations §3.4, corrected Zodiac to the couple's own data §3.10; v1.0 added Zodiac systems, birthplace/time, publication snapshot and guest disclosure levels. Open: Q50 (event line). Facts marked **unverified** or "to verify in research" are checked before the feature that needs them is built. No code. Table and column lists below are a contract for Phase 1 migrations, not SQL.
 **Date:** 2026-10-22
-**Inputs:** PRD §3.1, §4.3, §5, §9.2, §12 (Q15, Q17, Q27, Q29, Q30, Q34, Q35, Q38, Q39); design 1 (`anni_token_flow.md`) §3, §5, §10, §11; design 2 (`anni_screens.md`) "What this tells the data model"; plan §1, §3, §4.
+**Inputs:** PRD §3.1, §4.3, §5, §9.2, §12 (Q15, Q17, Q27, Q29, Q30, Q34, Q35, Q38, Q39); design 1 (`vegenus_token_flow.md`) §3, §5, §10, §11; design 2 (`vegenus_screens.md`) "What this tells the data model"; plan §1, §3, §4.
 **Supersedes:** the sketch in plan §4. Changes from it are listed in §2.
 **Privacy:** placeholders only. No real names, dates, emails, tag IDs or tokens appear in the schema, seed data or tests.
 **Single-source rule:** decisions stay in PRD §12. New questions raised here are Q42–Q45.
@@ -271,20 +271,20 @@ Guest accounts hold no Zodiac data: the Zodiac section is about the couple, not 
 
 **Problem.** The guest **read** functions are callable by `anon`, which is fine: reads carry no rate risk beyond the vendor's own limits, and a 256-bit token cannot be guessed. But if `guest_guestbook_post` were also callable by `anon`, a token holder could call the database API directly and skip the per-device and per-IP limits, because only our server knows the device cookie and the IP. Passing those values as arguments from the browser would not help: the caller could change them.
 
-**Decision.** Every guest function that **writes** is not executable by `anon` or `authenticated`. It is executable only by a dedicated database role, `anni_server`:
-- `anni_server` is a login role with `EXECUTE` on the write functions and the rate limiter only. It has no table privileges, does not bypass RLS, and is not the service role (plan §1 stays true).
+**Decision.** Every guest function that **writes** is not executable by `anon` or `authenticated`. It is executable only by a dedicated database role, `vegenus_server`:
+- `vegenus_server` is a login role with `EXECUTE` on the write functions and the rate limiter only. It has no table privileges, does not bypass RLS, and is not the service role (plan §1 stays true).
 - Its credentials are a server-only environment variable. The browser never holds them; only the server's guest-write module uses them, and a lint rule forbids importing that module anywhere else.
 - How the server connects as this role (direct Postgres connection through the vendor's pooler, or a server-signed token carrying the role) is **unverified** for Supabase; check in Phase 1 before the first migration. If neither works, the fallback is option (b): the service role confined to that one module behind the same lint rule, with the functions still doing every check themselves.
 
-Write functions behind `anni_server`: `guest_guestbook_post`, `guest_register`, and the rate limiter used by the token exchange and login routes. These are the writes made **without** a verified identity, where the server's device and IP keys are the only basis for limits.
+Write functions behind `vegenus_server`: `guest_guestbook_post`, `guest_register`, and the rate limiter used by the token exchange and login routes. These are the writes made **without** a verified identity, where the server's device and IP keys are the only basis for limits.
 
-**Guest-account writes keep the database-verified identity (Codex round 2, finding 3).** A connection as `anni_server` carries no user identity, so routing account writes through it would need the server to assert "this is user X", a new trust boundary. Instead:
+**Guest-account writes keep the database-verified identity (Codex round 2, finding 3).** A connection as `vegenus_server` carries no user identity, so routing account writes through it would need the server to assert "this is user X", a new trust boundary. Instead:
 - `account_guestbook_post` and `account_profile_set` stay executable by `authenticated` only and take **no user id argument**. They read the identity from `auth.uid()`, which the database derives from the guest's own session token after verifying its signature. The server passes the guest's session token through; it never names the user.
 - Inside the function, in one transaction with the page row lock: an active `guest_accounts` row for `auth.uid()` must exist, the page must not be Private, then the limits are applied atomically as in the steps above, keyed on the **account** instead of device and IP: 3 posts per 10 min per account, plus the shared 50 per page per day. A direct API call with the same session hits the same limits, because the identity is verified, not claimed. Accounts are email-verified and capped at 50 per page (Q38), so per-account limits stand in for the IP check.
 - Removal of the account row or setting the page Private stops the next call (design 1 §5.1).
 - Nothing in these functions uses session-level settings, so pooled connections cannot leak one request's identity into another. Any setting a future function needs must be `set local` (transaction-scoped) and covered by a pooled-request test.
 
-**Signature.** `guest_guestbook_post(token, device_key, ip_key, display_name, body, lang)`. The server computes `device_key` and `ip_key` as HMACs with a server secret; the database never sees a raw IP or device ID. Because only `anni_server` can call it, those keys cannot be forged by a guest.
+**Signature.** `guest_guestbook_post(token, device_key, ip_key, display_name, body, lang)`. The server computes `device_key` and `ip_key` as HMACs with a server secret; the database never sees a raw IP or device ID. Because only `vegenus_server` can call it, those keys cannot be forged by a guest.
 
 **Atomic enforcement, inside the function, in one transaction:**
 1. Validate the token (design 1 §4 step 4) and lock the page row (`for update`), so concurrent posts on one page queue behind each other.
@@ -428,17 +428,17 @@ Deleting a page cascades to every row above and enqueues its storage keys in `st
 | `guest_tokens` | fn (hash lookup inside) | — | create, rotate through `owner_rotate_token`; never read `token_hash` | — | |
 | `items` | fn (published, enabled) | fn | full CRUD | full CRUD (Q15) | |
 | `media`, `media_variants` | fn (ready media of published items) | fn | read; writes through `member_upload_*` / `member_media_*` only (§3.4) | same as owner | deletion worker |
-| `guestbook_entries` | fn (approved list). Posting goes through our server only (`anni_server`, §3.9), never directly and never through `public_*` | fn (approved list; post) | read, moderate, delete | read, moderate | |
+| `guestbook_entries` | fn (approved list). Posting goes through our server only (`vegenus_server`, §3.9), never directly and never through `public_*` | fn (approved list; post) | read, moderate, delete | read, moderate | |
 | `guest_accounts` | — | fn (own row) | read, delete | — | verification function |
 | `email_prefs` | — | fn (own row) | — | — | |
 | `partner_profiles` | fn (labels and signs only, never the date) | fn (same) | read, write | — | |
 | `upload_reservations` | — | — | through `member_upload_*` only | through `member_upload_*` only | expiry job, deletion worker |
-| `pending_registrations` | — (`guest_register` runs as `anni_server`, §3.9) | — | — | — | purge job |
+| `pending_registrations` | — (`guest_register` runs as `vegenus_server`, §3.9) | — | — | — | purge job |
 | `page_email_settings` | — | — | read, update | — | |
 | `email_log`, `email_suppressions` | — | — | read `email_log` (O14 "last sends") | — | send job |
 | operational (§3.8) | — | — | — | — | per §3.8 |
 
-Function rules (all three contracts): `SECURITY DEFINER`, `set search_path = ''`, fully qualified names, `EXECUTE` revoked from `public` and granted only to the intended role. Read functions are granted to `anon` (and `authenticated` for `account_*`). Token-guest writes (`guest_guestbook_post`, `guest_register`) are granted to `anni_server` only; guest-account writes to `authenticated`, with identity from `auth.uid()` (§3.9). No function callable by `anon` takes a `page_id` (design 1 §1). Each returns an explicit column list per kind, never `select *`, so internal columns (`version`, `created_by`, `status`, `token_version`) never reach a guest.
+Function rules (all three contracts): `SECURITY DEFINER`, `set search_path = ''`, fully qualified names, `EXECUTE` revoked from `public` and granted only to the intended role. Read functions are granted to `anon` (and `authenticated` for `account_*`). Token-guest writes (`guest_guestbook_post`, `guest_register`) are granted to `vegenus_server` only; guest-account writes to `authenticated`, with identity from `auth.uid()` (§3.9). No function callable by `anon` takes a `page_id` (design 1 §1). Each returns an explicit column list per kind, never `select *`, so internal columns (`version`, `created_by`, `status`, `token_version`) never reach a guest.
 
 Co-editor limits (Q15) are enforced by RLS, not only by hidden buttons: no update on `pages`, `page_sections`, `guest_tokens` or `guest_accounts`. Today no co-editor exists (Q35), but the policies and tests exist so adding one later is safe.
 

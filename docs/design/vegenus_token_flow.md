@@ -80,11 +80,11 @@ Recovery rules that make A safe:
 Tag/QR ──> https://<host>/g#<token>
   1. Browser loads the /g shell (static, no data, noindex, no analytics).
   2. Script reads location.hash. Empty → screen G-E1 "Tap the tag or scan the QR".
-  3. POST /api/guest/session  {token}   (header X-Anni-Guest: 1; Origin checked; rate limited per IP)
+  3. POST /api/guest/session  {token}   (header X-vegenus-Guest: 1; Origin checked; rate limited per IP)
   4. Server calls guest_open(token) with the anon role:
        hash → active token? → page visibility ≠ private? → returns page summary, enabled sections, theme, default lang
        Otherwise it returns one generic "not available" result (no hint whether the token is wrong, rotated or the page is private)
-  5. Server sets cookie  anni_g=<token>; Secure; HttpOnly; SameSite=Lax; Path=/; Max-Age=<Q34>
+  5. Server sets cookie  vegenus_g=<token>; Secure; HttpOnly; SameSite=Lax; Path=/; Max-Age=<Q34>
   6. Client: history.replaceState removes the fragment, then routes to /g/home.
   7. Each later guest request: server reads the cookie → guest_*(token, …) → the same checks run again in the database.
 ```
@@ -97,7 +97,7 @@ Tag/QR ──> https://<host>/g#<token>
 
 ## 5. Guest database functions (contract, not code)
 
-All are `SECURITY DEFINER`, take the token as the first argument, re-run the checks in §4 step 4, and return nothing for any failure. The read functions are callable by `anon`; `guest_guestbook_post` and `guest_register` are callable only by our server's `anni_server` role, so the per-device and per-IP limits cannot be skipped by calling the database directly (design 3 §3.9).
+All are `SECURITY DEFINER`, take the token as the first argument, re-run the checks in §4 step 4, and return nothing for any failure. The read functions are callable by `anon`; `guest_guestbook_post` and `guest_register` are callable only by our server's `vegenus_server` role, so the per-device and per-IP limits cannot be skipped by calling the database directly (design 3 §3.9).
 
 | Function | Returns / does | Extra predicates |
 |---|---|---|
