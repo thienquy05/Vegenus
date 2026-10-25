@@ -21,4 +21,6 @@ Plugin hooks and `npx` fallbacks count as downloads under rule 1. Decisions live
 
 Read `docs/process/HARNESS_PROCESS.md` and follow it. Do not guess; list unknowns as open questions with a proposed default.
 
+- MCP servers (owner, 2026-10-24): use **context7** for every library, framework or API question before writing code. Disabled in this project (owner, 2026-10-24): rea, token-optimizer, memory, sequential-thinking, magic; re-enable with `/mcp` if needed. context7 starts with `npx -y @upstash/context7-mcp@latest`, which is a download under rule 1: pin a version once the owner approves it.
+
 Test-first: every unit of work and bug fix starts with a test seen failing for the expected reason (RED) before code makes it pass (GREEN). When reviewing, flag any change whose tests could not have failed. CI is a parallel GitHub Actions workflow behind one `gate` check (`docs/plans/anni_plan.md` §12).
