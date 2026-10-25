@@ -1,6 +1,6 @@
 # CLAUDE.md
 
-Project: a phone-first website where a couple stores memories. Guests scan an NFC tag and the site opens. Working name and file prefix: `anni` (owner's choice; a better name will come later and the owner will rename the repo). PRD: `docs/anni_PRD.md`.
+Project: a phone-first website where a couple stores memories. Guests scan an NFC tag and the site opens. Project name: **Vegenus**; file prefix: `vegenus` (owner renamed the repository to Vegenus). PRD: `docs/vegenus_PRD.md`.
 
 Partner agent: Codex (plugin installed, signed in). Codex reads `AGENTS.md`; keep it in sync with this file. Process: `docs/process/HARNESS_PROCESS.md` (copied unchanged). PRD template: `docs/process/PRD_TEMPLATE.md` (written for research/ML, so drop sections that do not apply to a website).
 
@@ -35,4 +35,4 @@ Planning and design only. **No application code** until the owner approves the P
 
 ## Decisions and open questions
 
-Single source: `docs/anni_PRD.md` §12. Research facts: `docs/plans/anni_plan.md` §R. Do not restate them here.
+Single source: `docs/vegenus_PRD.md` §12. Research facts: `docs/plans/vegenus_plan.md` §R. Do not restate them here.

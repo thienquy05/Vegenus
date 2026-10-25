@@ -1,6 +1,6 @@
-# Plan: anni (working name)
+# Plan: Vegenus (working name)
 
-**Status:** v0.3. v0.2 was revised after the Codex adversarial challenge (harness step 5); v0.3 adds §12 (test-first rule and parallel CI on GitHub) and the cookie change from design 1. Derived from `docs/anni_PRD.md` v0.5. Awaiting the owner gate. No code is written.
+**Status:** v0.3. v0.2 was revised after the Codex adversarial challenge (harness step 5); v0.3 adds §12 (test-first rule and parallel CI on GitHub) and the cookie change from design 1. Derived from `docs/vegenus_PRD.md` v0.5. Awaiting the owner gate. No code is written.
 **Date:** 2026-10-21
 **Privacy:** placeholders only.
 **Single-source rule:** decisions and open questions live only in PRD §12; this plan links to them and never restates them. Research facts live only in §R of this plan.
@@ -30,8 +30,8 @@ Decisions that came out of the challenge (Codex finding → fix; see §11):
 - **No service role on guest paths.** Guest reads and the guestbook write go through a small set of `guest_*` Postgres functions callable by the anon role, which derive the page from the validated token inside the database and apply page, visibility, token-version, section-enabled and publication predicates there. The service-role key (which bypasses RLS: verified) stays server-only and is used only for admin jobs such as account provisioning. This makes RLS and function checks a real second boundary.
 - **Publication boundary.** Every content row has `status` (`draft` | `published`); guestbook rows have `pending` | `approved` | `rejected`. Guest predicates require `published`/`approved` and the section flag; media signing requires the media to belong to a published item.
 - **Media and revocation.** Signed URLs are valid until their expiry and cannot be revoked by us (verified; Supabase says to contact support). So revocation of media is "no new URLs after the change, issued URLs die within the expiry". Proposed expiry: 5 minutes, responses `Cache-Control: private, no-store` for the minting endpoint. The alternative, proxying every media request through our server, gives instant revocation but spends Vercel transfer and CPU, and video streaming through functions is a poor fit for the Hobby limits. Owner decision: PRD Q29.
-- **Token handling.** The token lives in the URL **fragment** (`#…`), which browsers do not send to servers, referrers or log lines; the page exchanges it for an `HttpOnly`, `Secure`, `SameSite=Lax` guest cookie that carries the token itself, so the database re-checks it on every call and the anon-callable functions never accept a page ID (changed from "signed cookie bound to the token version"; reason in `docs/design/anni_token_flow.md` §4), then clears the fragment. Fragment survival in Zalo/Facebook/Messenger browsers is **unverified** and must be tested on real devices. If cookies are blocked, the session lives in memory for that visit and the guest re-taps to return; the token is never put in a query string or path. A copied link or screenshot of the full URL **does** grant read and post access until the token is rotated; rotation means rewriting the tag and reprinting the QR, so the tag is never locked (Q16 open). Set `Referrer-Policy: no-referrer`, `X-Robots-Tag: noindex` on guest routes, and keep tokens out of analytics.
-- **Deny by default (owner, 2026-10-22).** Route table + per-handler checks + RLS + private storage; design in `docs/design/anni_token_flow.md` §9, requirement in PRD §4.3 and E31-E37. Middleware is never the only check.
+- **Token handling.** The token lives in the URL **fragment** (`#…`), which browsers do not send to servers, referrers or log lines; the page exchanges it for an `HttpOnly`, `Secure`, `SameSite=Lax` guest cookie that carries the token itself, so the database re-checks it on every call and the anon-callable functions never accept a page ID (changed from "signed cookie bound to the token version"; reason in `docs/design/vegenus_token_flow.md` §4), then clears the fragment. Fragment survival in Zalo/Facebook/Messenger browsers is **unverified** and must be tested on real devices. If cookies are blocked, the session lives in memory for that visit and the guest re-taps to return; the token is never put in a query string or path. A copied link or screenshot of the full URL **does** grant read and post access until the token is rotated; rotation means rewriting the tag and reprinting the QR, so the tag is never locked (Q16 open). Set `Referrer-Policy: no-referrer`, `X-Robots-Tag: noindex` on guest routes, and keep tokens out of analytics.
+- **Deny by default (owner, 2026-10-22).** Route table + per-handler checks + RLS + private storage; design in `docs/design/vegenus_token_flow.md` §9, requirement in PRD §4.3 and E31-E37. Middleware is never the only check.
 - **Email (owner, 2026-10-22).** Resend, server-side only, behind a small `sendEmail` interface so the vendor can change. Needs Q37 (docs approval, sending domain). Reminders ride on the daily keep-alive job. Supabase Auth can use Resend as its SMTP once a domain exists (Q41).
 - **Accounts and the co-editor.** See PRD Q26, Q30 and Q35 (2026-10-22: both partners may share one login; Google is a fallback). Constraint from the vendor (verified): linking identities by an unverified email invites pre-account takeover, and the free built-in auth email only reaches project team members. Proposal: **closed registration**. Public sign-up is off; the owner creates or invites accounts. Google sign-in works for a pre-created account only when Google's verified email matches. A sign-up page is added only when the platform opens to other couples.
 - **Storage behind an interface** so media can move to Cloudflare R2 (10 GB free, no egress fee: verified) when the egress trigger in §3 fires.
@@ -71,7 +71,7 @@ Decision is the owner's; nothing below is installed.
 
 ## 4. Data model (sketch; refined in the design deliverable)
 
-**Superseded by design 3, `docs/design/anni_data_model.md` (2026-10-22).** Its §2 lists what changed from this sketch (one `items` table, `page_sections`, no `invites`, no birthday column, operational tables). The sketch below is kept for history only.
+**Superseded by design 3, `docs/design/vegenus_data_model.md` (2026-10-22).** Its §2 lists what changed from this sketch (one `items` table, `page_sections`, no `invites`, no birthday column, operational tables). The sketch below is kept for history only.
 
 `users` (Supabase Auth) · `pages` (id, theme, default_lang, visibility ∈ {private, token_only, published}, enabled_sections, vanity_name?) · `memberships` (page_id, user_id, role ∈ {owner, co_editor}; one co-editor per page) · `invites` (page_id, email, token_hash, expires_at, consumed_at; consumed atomically) · `guest_tokens` (page_id, token_hash, version, active, rotated_at) · `guest_accounts` (user_id, page_id, role=guest, created_at, tour_seen_version) · `email_prefs` (user_id, reminders, digest) · `email_log` (dedupe_key unique, template, recipient_hash, status, sent_at) · `profiles_zodiac` (user_id, sign, birthday_enc nullable, key_id) · `memories`, `milestones`, `anniversaries`, later `places` (each: page_id, `status` draft|published, text in `lang` plus optional `text_alt`, `lang_alt`) · `guestbook_entries` (page_id, display_name required, text, status pending|approved|rejected, token_version, created_at) · `media` (page_id, owner_item_id, kind, bytes, variants, storage_key, alt_text, status inherited from its item).
 
@@ -87,11 +87,11 @@ Every table carries `page_id` (or, for per-user rows such as email preferences a
 
 ## 6. Theme system
 
-Superseded by design 4 (`docs/design/anni_theme_system.md`): token contract, values per theme from the owner's mood board, contrast results, Zodiac night panel, self-hosted fonts, tests.
+Superseded by design 4 (`docs/design/vegenus_theme_system.md`): token contract, values per theme from the owner's mood board, contrast results, Zodiac night panel, self-hosted fonts, tests.
 
 ## 7. 3D approach and performance budgets
 
-Superseded by design 5 (`docs/design/anni_3d_approach.md`): mode rules and runtime downgrade, one shared WebGL context, procedural theme motifs, the Zodiac sky scene, budgets, tests. The order Static → Page → World (owner confirmed) is unchanged.
+Superseded by design 5 (`docs/design/vegenus_3d_approach.md`): mode rules and runtime downgrade, one shared WebGL context, procedural theme motifs, the Zodiac sky scene, budgets, tests. The order Static → Page → World (owner confirmed) is unchanged.
 
 ## 8. Tools, MCP servers and orchestration
 
@@ -147,7 +147,7 @@ Proposed scope until the owner says otherwise:
 | 6 Hardening | 15–16 | Rate limits, monitoring, restore drill, real tag/QR test, event-day check | all rows | Go/no-go |
 | After / last | — | Places map + chibi; legal + export/delete | E20 | — |
 
-**Verification loop per step:** write the test → run it and **see it fail (RED)** → implement → run until it passes (GREEN) → refactor with tests green → CI green on GitHub → update `docs/anni_progress.md`. Details in §12. Frontend steps also use Playwright MCP on a phone viewport and Lighthouse/performance traces.
+**Verification loop per step:** write the test → run it and **see it fail (RED)** → implement → run until it passes (GREEN) → refactor with tests green → CI green on GitHub → update `docs/vegenus_progress.md`. Details in §12. Frontend steps also use Playwright MCP on a phone viewport and Lighthouse/performance traces.
 
 ## 10. Open decisions
 
@@ -187,7 +187,7 @@ What CI can and cannot prove: an ordinary CI run only sees the final state, so i
 
 ### 12.2 Workflow layout (GitHub Actions, proposal)
 
-**Refined by design 6** (`docs/design/anni_ci_spec.md`, 2026-10-23): its job list, triggers (no `push`), docs-only skip and `gate` rule replace the table below where they differ. The `privacy-scan` definition below stays the source.
+**Refined by design 6** (`docs/design/vegenus_ci_spec.md`, 2026-10-23): its job list, triggers (no `push`), docs-only skip and `gate` rule replace the table below where they differ. The `privacy-scan` definition below stays the source.
 
 One workflow, `ci.yml`, on `pull_request` and on `push` to `master`. Jobs run **in parallel**; one final `gate` job depends on all of them and is the single required check.
 

@@ -1,6 +1,6 @@
 # Design 4: Theme system
 
-**Status:** DRAFT v0.11 for owner review. Phase 0 design deliverable "theme system". Replaces the sketch in plan §6. No code. Codex adversarial review rounds 1-10: 20 findings, all fixed (round-by-round log in `docs/anni_progress.md`); v0.9 adds a consistency pass over those fixes; v0.10 adds the decor rule (rounds 9-10). v0.11: owner answers Q53-Q55 (2026-10-23); fonts verified and chosen (§8.1).
+**Status:** DRAFT v0.11 for owner review. Phase 0 design deliverable "theme system". Replaces the sketch in plan §6. No code. Codex adversarial review rounds 1-10: 20 findings, all fixed (round-by-round log in `docs/vegenus_progress.md`); v0.9 adds a consistency pass over those fixes; v0.10 adds the decor rule (rounds 9-10). v0.11: owner answers Q53-Q55 (2026-10-23); fonts verified and chosen (§8.1).
 **Date:** 2026-10-23
 **Inputs:** PRD §4.1 (S2, S11, S21), §6.1-6.2, §7 (accessibility, language), E12, E18, E19, Q3, Q39; plan §6; design 2 (O3, G8, Z2); design 3 §3.1 (`pages.theme`); the owner's mood board (private artifact, read 2026-10-23 with the owner's approval; only colours, font names and layout notes are copied here).
 **Owner decisions used (2026-10-23):** designs 1-3 approved; Zodiac art always sits on a night-sky panel; fonts are self-hosted open-licence (OFL) files.

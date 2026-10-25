@@ -1,4 +1,4 @@
-# PRD: anni (working name), a memory-keeping site opened by NFC tap
+# PRD: Vegenus, a memory-keeping site opened by NFC tap
 
 **Status:** DRAFT v0.6. Owner said "the PRD looks good" (2026-10-21). v0.5 added the test-first rule and parallel CI (§9.1, plan §12). v0.6 (2026-10-22) records the owner's answers to Q34-Q35, and adds: deny-by-default access (§4.3, E31-E37), Resend email (S18), optional guest accounts (S19), first-visit tour (S20), Zodiac section (S21), and Q36-Q41. Open items: Q16, Q37 (domain). Zodiac (Q46-Q49) answered; its facts await the research step. Q33-Q36, Q38-Q45 answered 2026-10-22; Zodiac (S21) corrected by the owner to be about the couple. Data model: design 3. Nothing is implemented.
 **Date:** 2026-10-21 (v0.1 written 2026-10-20)
@@ -119,7 +119,7 @@ FR1 accounts and sessions. FR2 tenancy: every record belongs to one page; access
 ### 4.3 Non-functional requirements
 - **Privacy:** Token-only and Private pages send `noindex`; tokens are unguessable (long random values), never derived from names or sequences; only Published pages are indexable. Any third-party service that receives owner content must be named and approved first. Privacy policy, terms and minimum age are required before the site is published to others (last phase).
 - **Security:** server-side authorization on every request; input validation; stored-XSS-safe rendering of guest text; rate limiting on login, upload and token-gated posting; secrets only in environment variables (never in Git). A leaked token or full link grants guest **read** access (enabled, published sections) and post-to-queue access until it is rotated; it never allows edits. Guests reach data only through narrow database functions, never through table access or the service-role key (plan §1).
-- **Deny by default (no unauthenticated bypass):** a person with no session and no token can reach only an allow-list (landing, `/g` shell, login, health check, static files). Every other route returns a login redirect or a generic not-found with no data in the response. Four independent layers, so one miss is not a breach: (1) a single route table that classifies every route and fails the build if one is unclassified; (2) an auth check inside every page, route handler and server action (middleware alone is never trusted); (3) row-level security on every table with no anon table access, only the narrow `guest_*` functions; (4) private storage with signed URLs minted after the same checks. Design and tests: `docs/design/anni_token_flow.md` §9.
+- **Deny by default (no unauthenticated bypass):** a person with no session and no token can reach only an allow-list (landing, `/g` shell, login, health check, static files). Every other route returns a login redirect or a generic not-found with no data in the response. Four independent layers, so one miss is not a breach: (1) a single route table that classifies every route and fails the build if one is unclassified; (2) an auth check inside every page, route handler and server action (middleware alone is never trusted); (3) row-level security on every table with no anon table access, only the narrow `guest_*` functions; (4) private storage with signed URLs minted after the same checks. Design and tests: `docs/design/vegenus_token_flow.md` §9.
 - **Guest powers by credential:** no token = read only what a Published page shows (through `public_*`, no posting), and nothing on a Token-only or Private page; valid token = read enabled published sections and post to the moderation queue; guest account = same plus a display name and email preferences; owner or co-editor = edit and moderate. Interactions that write anything (guestbook, profile, email opt-in) always need a token session or an account (Q36).
 - **Personal data (birthdays, emails):** guests' birthdays are never collected. The partners' own birth dates (Zodiac, S21) are entered by the owner, collected at the minimum Q47 needs, encrypted at application level (AES-256-GCM, key in an environment variable, never in Git or CI), kept out of logs, analytics, emails and Git, and deleted with the page. Emails need the address in readable form to send, so they rely on row-level security and the vendor's at-rest encryption (**unverified**), not on application encryption.
 - **Performance (proposals, to be measured):** content-first loading; 3D lazy-loaded; asset and GPU budgets set in the plan; automatic downgrade from world mode to page mode to 2D when WebGL2 is missing, memory is low, frame rate drops, data saver or battery saver is on, or `prefers-reduced-motion` is set.
@@ -132,7 +132,7 @@ FR1 accounts and sessions. FR2 tenancy: every record belongs to one page; access
 
 ## 5. Data specification (content and data model; adapted from the template)
 
-The full model is design 3, `docs/design/anni_data_model.md` (draft, 2026-10-22). Entities and rules fixed here:
+The full model is design 3, `docs/design/vegenus_data_model.md` (draft, 2026-10-22). Entities and rules fixed here:
 
 | Entity | Notes |
 |---|---|
@@ -177,10 +177,10 @@ One content model feeds all modes. Build order (owner confirmed): Static and Pag
 ---
 
 ## 7. Technical specification
-Intentionally undecided until the plan is approved. Candidates and research are in `docs/plans/anni_plan.md`. Constraints: $0 start, phone performance, EN/VI, tenant-ready isolation enforced server-side, themes added without rewrites, content decoupled from presentation mode.
+Intentionally undecided until the plan is approved. Candidates and research are in `docs/plans/vegenus_plan.md`. Constraints: $0 start, phone performance, EN/VI, tenant-ready isolation enforced server-side, themes added without rewrites, content decoupled from presentation mode.
 
 ## 8. Execution environment and cost
-Development on [OWNER]'s machine (WSL2). Hosting: Supabase free tier (database, auth, media) and Vercel Hobby, at the free `*.vercel.app` address. All limits, capacity arithmetic and sources are in `docs/plans/anni_plan.md` §3 and §R; they are design constraints and are not repeated here.
+Development on [OWNER]'s machine (WSL2). Hosting: Supabase free tier (database, auth, media) and Vercel Hobby, at the free `*.vercel.app` address. All limits, capacity arithmetic and sources are in `docs/plans/vegenus_plan.md` §3 and §R; they are design constraints and are not repeated here.
 
 ---
 
@@ -290,6 +290,9 @@ Ranked from the owner's stated concerns first.
 ---
 
 ## 12. Open questions (status and who answered)
+
+**Project naming (owner, 2026-10-25):** The repository and product are named **Vegenus**. Project document filenames use the `vegenus_` prefix; proposed application identifiers use `vegenus` (including `vegenus_server`, `vegenus_g`, and `X-Vegenus-Guest`). Existing external preview canvas / toolkit names and recorded historical CSS selectors retain their original names until those artifacts are renamed separately. The local checkout directory is independent of the repository name.
+
 | # | Question | Default if unanswered | Status |
 |---|---|---|---|
 | Q1 | Platform vs single site | Personal site, tenant-ready design | **Answered by owner** (2026-10-21, via Q13) |
@@ -299,7 +302,7 @@ Ranked from the owner's stated concerns first.
 | Q5 | Login methods | Google + email/password | **Answered by owner** |
 | Q6 | Content languages | UI EN/VI; one language per entry + optional second field | **Answered by owner** |
 | Q7 | Guestbook | Owner approves before display | **Answered by owner** |
-| Q8 | Project name | Prefix `anni` | **Answered by owner** (better name later) |
+| Q8 | Project name | **Vegenus**; document prefix `vegenus_` | **Answered by owner** (2026-10-25): repository renamed to Vegenus |
 | Q9 | harness-os | Enable after PRD and plan approved; will ask first and say it commits | **Answered by owner** |
 | Q10 | Stack | Plan compares and prices options | **Answered by owner**; research in plan |
 | Q11 | Review gates | After PRD, after Codex challenge, after each design deliverable, before harness-os or spend | **Answered by owner** |
@@ -310,7 +313,7 @@ Ranked from the owner's stated concerns first.
 | Q16 | NFC tag exact model, capacity, count | Unknown; design for a standard NDEF URL tag | **OPEN by owner's choice** |
 | Q17 | Media and storage | Supabase free tier; photos and short video | **Answered in principle**; limits in §8 and plan; caps for video to be set by the owner |
 | Q18 | Cost ceiling | $0 | **Answered by owner** (2026-10-21) |
-| Q19 | Domain name, and whether it is worth paying for (NFC URL depends on it) | Undecided; use `anni` in docs. A free `*.vercel.app` address costs $0 but ties the tag to it | **Answered by owner** (2026-10-21): free `*.vercel.app` address; the tag and QR URL are tied to it |
+| Q19 | Domain name, and whether it is worth paying for (NFC URL depends on it) | Undecided; use `Vegenus` in docs. A free `*.vercel.app` address costs $0 but ties the tag to it | **Answered by owner** (2026-10-21): free `*.vercel.app` address; the tag and QR URL are tied to it |
 | Q20 | Chibi characters: art source and photo handling | Optional feature. The owner generates anime or chibi pictures with an AI tool of their choice and uploads the results; a real photo is allowed but never required. Nothing is sent to any external tool by us | **Answered by owner** (2026-10-22): optional; owner supplies the art. No art tool needed from us (after core) |
 | Q21 | Places map / "full 3D" | Both World mode and Page mode, with automatic fallback (§6.5) | **Answered by owner** (2026-10-21) |
 | Q22 | Legal pages, minimum age, data location | Last phase | **Answered by owner:** low priority, at the end |
@@ -399,7 +402,7 @@ Table rows above are summaries. Full wording of the earlier rows, kept verbatim:
 
 **Q34**
 - Question: Guest details: (a) show the link and QR once, or store the token so it can be shown again; (b) cookie lifetime; (c) guestbook limits; (d) does the guest see their own pending message
-- Default / decision: (a) Show once, plus a printable QR sheet at creation; a lost link means rotate and rewrite the tag. Discussion in `docs/design/anni_token_flow.md` §3.2
+- Default / decision: (a) Show once, plus a printable QR sheet at creation; a lost link means rotate and rewrite the tag. Discussion in `docs/design/vegenus_token_flow.md` §3.2
 - Status: See the table: Q34a answered (show once), Q34b-d answered 2026-10-22.
 
 **Q35**
