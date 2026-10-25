@@ -2,7 +2,7 @@
 
 **Status:** v0.1, 2026-10-23, waiting for owner review. Branch `docs/guest-screens-v3` (stacked on `docs/theme-nav-icons`, owner's choice). No application code.
 **Canvas:** "anni Theme Preview" (Claude design canvas, version 40). Rebuilt with `docs/design/preview/build_v3.py` from the round-2 boards; placeholders only (rule 3).
-**Codex review:** not run this round (Codex lives on the owner's Mac and is not reachable from this session). Due next session, before the image run (see `anni_codex_image_brief.md`).
+**Codex review:** not run this round (Codex lives on the owner's Mac and is not reachable from this session). Due next session, before the image run (see `vegenus_codex_image_brief.md`).
 
 ## 1. Owner feedback (2026-10-23) and what changed
 
