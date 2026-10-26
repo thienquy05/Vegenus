@@ -91,7 +91,7 @@ Approved brand asset handoff (PRD Q60): [logo inventory and usage](../../assets/
 
 Superseded by design 4 (`docs/design/vegenus_theme_system.md`): token contract, values per theme from the owner's mood board, contrast results, Zodiac night panel, self-hosted fonts, tests.
 
-Guest motion supplement (draft, PRD Q61-Q62): [connected sections and living backgrounds](../design/vegenus_guest_motion.md). Phase 3 keeps usable still screens and route/focus/history behavior; Phase 4 adds one coordinated menu/route interval, grouped content entrances and backgrounds across all four themes. Tokens and timings are prototype defaults. Tests in its §9 must fail before implementation, then pass with recorded phone footage and budget measurements. Public reference descriptions were read; live Layers motion remains unverified.
+Guest motion supplement (draft, PRD Q69-Q70): [connected sections and living backgrounds](../design/vegenus_guest_motion.md). Phase 3 keeps usable still screens and route/focus/history behavior; Phase 4 adds one coordinated menu/route interval, grouped content entrances and backgrounds across all four themes. Tokens and timings are prototype defaults. Tests in its §9 must fail before implementation, then pass with recorded phone footage and budget measurements. Public reference descriptions were read; live Layers motion remains unverified.
 
 ## 7. 3D approach and performance budgets
 

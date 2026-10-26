@@ -1,6 +1,6 @@
 # Guest motion: connected sections and living backgrounds
 
-**Status:** DRAFT v0.1 on `docs/guest-screens-v3`. Documentation only. Owner direction and open questions: PRD §12, Q61-Q62. Numerical values below are prototype defaults, not measured reference values or owner-approved final timings. Existing approvals for designs 2 and 5 do not approve this supplement.
+**Status:** DRAFT v0.1 on `docs/guest-screens-v3`. Documentation only. Owner direction and open questions: PRD §12, Q69-Q70. Numerical values below are prototype defaults, not measured reference values or owner-approved final timings. Existing approvals for designs 2 and 5 do not approve this supplement.
 **Inputs:** [screens](vegenus_screens.md), [theme system](vegenus_theme_system.md), [3D approach](vegenus_3d_approach.md). This document supplies the missing choreography between their screens, menu states and scene motifs. It does not change access rules, content, routes or the Static → Page → optional World delivery order.
 **Privacy:** placeholders only; reference sites receive no guest content or uploads.
 
@@ -18,7 +18,7 @@
 | [Komorebi](https://www.getlayers.ai/layer/komorebi) | Soft leaf shadows and light respond to interaction | Give Cozy a restrained light/shadow layer in decorative margins |
 | [Image Motion](https://www.getlayers.ai/tools/image-motion) | Configurable image arrangements such as rings, tunnels and decks | Coordinate media as a group; keep guest photos upright and readable |
 
-**Evidence limit:** live scroll, menu gestures, mobile rendering, easing and frame rate were **not verified**. The available web reader exposed text, not animation playback; an executable browser was not available through the session's browser tools. No claim here that GetLayers uses a particular router, transition engine or homepage animation technique. No premium prompts, source assets or packages were downloaded. Q62 tracks a future visual comparison; all choreography below is an original proposal informed by the owner's observation and the public descriptions.
+**Evidence limit:** live scroll, menu gestures, mobile rendering, easing and frame rate were **not verified**. The available web reader exposed text, not animation playback; an executable browser was not available through the session's browser tools. No claim here that GetLayers uses a particular router, transition engine or homepage animation technique. No premium prompts, source assets or packages were downloaded. Q70 tracks a future visual comparison; all choreography below is an original proposal informed by the owner's observation and the public descriptions.
 
 ## 2. Continuity contract
 
@@ -67,8 +67,8 @@ These handoffs apply from any permitted link or menu item, including non-adjacen
 | Any section → G4 Together | Carry the motif's line/ring language into the timeline's decorative line | Heading and first milestone settle together; dates and counter values render immediately without count-up |
 | Any section → G5 Wishes | Soften the background to the content density; reuse the same surface entrance as Memories | Approved messages remain stable; no floating message text or automatic carousel |
 | G5 → G6 → G7 | Keep the Wishes setting and use the same sheet edge for entry and exit | Still while typing. Confirmation follows server success only; no animation delays errors or rate-limit messages |
-| Any section → Z2 Zodiac | Keep the outer theme ground; introduce the existing inset night panel and then its galaxy in the same interval | Panel text is immediately on theme B's tested surface. Never recolour or dissolve sign artwork through intermediate colours |
-| Z2 Western ↔ Vietnamese | Preserve panel size and galaxy phase; change the sign group and reading together | Short opacity change only; no wheel spin. Show only fields present in the published snapshot |
+| Any section → Z2 Zodiac | Transition to the full-page night sky required by design 4 §6; keep the theme identity through fonts, controls and accent glow | Reading text stays on its contrast-tested glass surface over the sky (Q61). Never recolour or dissolve sign artwork through intermediate colours |
+| Z2 Western ↔ Vietnamese | Preserve the full-page sky and its phase; change the sign group and reading together | Short opacity change only; no wheel spin. Show only fields present in the published snapshot |
 | G8 Settings / G9 tour | Preserve the underlying section and its position | Pause ambient motion while overlay is open; closing restores focus to the invoker |
 | Direct link, refresh, Back/Forward | Render the actual destination without inventing an origin | No Home fly-through; restore scroll and focus where applicable, skip entrance replay |
 
@@ -81,13 +81,13 @@ Use three layers: the existing tested base ground; a small decorative atmospheri
 | Theme | Background treatment | Connection through navigation | Still version |
 |---|---|---|---|
 | A Dreamy | Two broad plum/rose light fields and a few soft orbs near the outside edges; use existing theme colours | Light fields change balance as the card expands; one orb cluster remains a visual anchor between Home and headers | Same fields and orb arrangement, no drift or pulsing |
-| B Cosmic | Navy ground, one restrained haze band and a sparse fixed-seed star arrangement; keep bright stars away from reading areas | The same orbit/constellation line recurs in menu and headers; section change gently adjusts haze opacity. Zodiac opens its own scoped galaxy window | Same stars and line at fixed phase; no twinkle |
+| B Cosmic | Navy ground, one restrained haze band and a sparse fixed-seed star arrangement; keep bright stars away from reading areas | The same orbit/constellation line recurs in menu and headers; section change gently adjusts haze opacity. Zodiac uses a full-page night sky with theme B colour tokens in every theme | Same stars and line at fixed phase; no twinkle |
 | C Cozy | Cream ground, overlapping yellow/mint shapes in margins, a soft paper-shadow shape suggesting light through leaves | Shapes regroup with the destination header; a small toy-like settle is confined to decorative objects | Same layered shapes and shadows; no wobble or moving grain |
 | D Elegant | Ivory ground, a faint broad tonal plane made from existing tokens, one hairline arc and the motif's red dot in empty space | Arc alignment changes subtly on navigation; generous empty space connects sections | Same plane and line; no ambient rotation |
 
 Keep colour sources in the theme tokens; no new palette is approved here. Each theme has the same complete handoff before adding richer scenes to any one theme (Q57). No autoplay background video, full-screen fluid simulation, pointer trail, device tilt or sound. Background changes require neither hover nor pointer precision.
 
-**Contrast across time:** decor must never cross unprotected text, functional icons or focus rings, including during a menu transform. Existing design 4 colour checks are not proof that a new composited frame passes. Test every extreme composition and intermediate blend against the existing thresholds; keep an opaque reading surface where necessary. With 200 % text or narrower reflow, remove decorative shapes before shrinking content. Keep the reserved top bar opaque after scrolling. Zodiac's night panel retains its established margin, radius and colour scope.
+**Contrast across time:** decor must never cross unprotected text, functional icons or focus rings, including during a menu transform. Existing design 4 colour checks are not proof that a new composited frame passes. Test every extreme composition and intermediate blend against the existing thresholds; keep an opaque reading surface where necessary. With 200 % text or narrower reflow, remove decorative shapes before shrinking content. Keep the reserved top bar opaque after scrolling. Zodiac uses the full-page night sky from design 4 §6, with theme B colour scope and the page theme's fonts, controls and accent glow; do not restore the superseded inset margin.
 
 ## 6. Motion tokens and timing defaults
 
@@ -135,4 +135,4 @@ These are future behavioral tests, each demonstrated RED before implementation. 
 6. **Loading/access:** delay and fail the destination request, remove a section, revoke access mid-transition. Old results cannot replace a newer route; protected outgoing layers disappear immediately on denial; loading/errors remain readable without an endless transition.
 7. **Accessibility/reflow:** keyboard and screen reader traversal, EN/VI maximum-length labels, 390 × 844 and 320 px width with 200 % text. Check focus, Vietnamese diacritics, target sizes, safe areas, menu overlap and contrast at extreme/intermediate background states. Movement must not leave two accessible copies of the content.
 8. **Resource lifetime:** hidden tab, idle timeout, focused form, forced low FPS and context loss. Verify stop/pause/downgrade rules, preserved state, no second canvas and baseline resources after ten route/menu/mode cycles.
-9. **Visual evaluation:** on the target iPhone and Android phone, compare menu selection with shortcut navigation and ordinary scrolling. Record footage and frame timings. Owner judges whether the setting feels continuous and content stays comfortable to read; passing token checks alone is insufficient. Complete Q62's reference comparison before claiming fidelity to Layers.
+9. **Visual evaluation:** on the target iPhone and Android phone, compare menu selection with shortcut navigation and ordinary scrolling. Record footage and frame timings. Owner judges whether the setting feels continuous and content stays comfortable to read; passing token checks alone is insufficient. Complete Q70's reference comparison before claiming fidelity to Layers.

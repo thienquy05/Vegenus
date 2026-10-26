@@ -6,7 +6,7 @@
 **Owner decisions used (2026-10-23):** designs 1-3 approved; Zodiac art always sits on a night-sky panel; fonts are self-hosted open-licence (OFL) files.
 **Privacy:** placeholders only.
 
-**Guest motion supplement (draft):** [connected sections and living backgrounds](vegenus_guest_motion.md), direction recorded in PRD Q61 and reference limits in Q62. It extends this design with overlapping menu/route choreography, grouped content reveals and background treatments for all four themes. Exact motion values remain prototype defaults; the existing contrast checks must be repeated over the new composited frames.
+**Guest motion supplement (draft):** [connected sections and living backgrounds](vegenus_guest_motion.md), direction recorded in PRD Q69 and reference limits in Q70. It extends this design with overlapping menu/route choreography, grouped content reveals and background treatments for all four themes. Exact motion values remain prototype defaults; the existing contrast checks must be repeated over the new composited frames.
 
 ## 1. Principles
 

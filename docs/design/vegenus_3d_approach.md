@@ -5,7 +5,7 @@
 **Inputs:** PRD §4.1 (S10, S11, S16, S21), §6.4-6.5, §7 (performance, accessibility), FR9, FR13, E2, E17, E18, E26, E30, E41, Q3, Q21, Q50; plan §1-§3, §7; design 2 (G1-G8, Z1, Z2); design 3 §3.10-3.11 (`birth_sky`, `published`); design 4 (token contract, `scene.json`, night panel, decor rule, §7, tests 2, 5, 7).
 **Privacy:** placeholders only. Scenes read only what the guest calls already return; no new data, endpoint or third-party host.
 
-**Proposed supplement:** [guest motion](vegenus_guest_motion.md) coordinates the existing modes with menu/route handoffs and dynamic theme grounds (PRD Q61-Q62). This supplement is a draft, not part of the approval above. It keeps the one-canvas budget, native scrolling, no scroll-driven parallax and published-snapshot boundary.
+**Proposed supplement:** [guest motion](vegenus_guest_motion.md) coordinates the existing modes with menu/route handoffs and dynamic theme grounds (PRD Q69-Q70). This supplement is a draft, not part of the approval above. It keeps the one-canvas budget, native scrolling, no scroll-driven parallax and published-snapshot boundary.
 **Labels:** **Verified** = read 2026-10-23 on the publisher's own documentation or data (sources in plan §R). **Unverified** = background knowledge; check before relying on it. All numbers marked "proposal" are set from a prototype on the test phones in Phase 4.
 
 ## 1. Principles

@@ -1,6 +1,6 @@
 # Codex image brief (for the next session)
 
-**Status:** v0.2, 2026-10-24. Home run done (owner approved the host for the whole design system). Owner chose Codex for the art (Q61) and will continue the run in the next session.
+**Status:** v0.2, 2026-10-24. Home run done (owner approved the host for the whole design system). Owner chose Codex for the art (Q62) and will continue the run in the next session.
 **Branch:** `docs/guest-screens-v3`.
 **Privacy (rule 3):** text prompts only. No real names, dates, places, photos, messages or tag ids go to Codex. Nothing from `.env`, `.claude-flow/`, `.swarm/` or `ruvector.db`.
 **Network (rule 1):** Codex image generation calls OpenAI's image model through the owner's own Codex sign-in. Before the run, state the host (`api.openai.com`, via Codex CLI) and wait for the owner's go.
@@ -53,7 +53,7 @@ Shared rules for every prompt: no text, letters, numbers or logos; no people or 
 ## 3. After generation (Claude)
 - Check: transparent corners where asked, no text, no faces, no recognisable real place; 1 image per prompt, re-run at most once on a miss.
 - Convert to WebP (q≈82); targets: motif ≤ 120 KB, galaxy ≤ 250 KB, map ≤ 250 KB, button ≤ 30 KB. Keep PNG masters out of the site payload.
-- Design 5 §1 principle 4 ("procedural before assets") and §6.1 ("0 model and texture bytes in Page mode") change if these images ship: proposal in Q61, owner decides.
+- Design 5 §1 principle 4 ("procedural before assets") and §6.1 ("0 model and texture bytes in Page mode") change if these images ship: proposal in Q62, owner decides.
 - Upload the approved WebP to the preview canvas and swap the code-drawn shapes; keep the code-drawn versions as the Static fallback.
 
 ## 4. Log (fill in during the run)

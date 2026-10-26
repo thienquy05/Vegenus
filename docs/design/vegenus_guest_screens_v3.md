@@ -16,11 +16,11 @@
 | Memories, G5, G6, G8 | "Seems okay" / "looks okay" | Only the new button and motion |
 
 ## 2. Decisions that touch approved designs (need owner OK)
-- **Text over the 3D box (Q60).** Design 4 §3 decor rule and design 5 §4.2 say text never sits inside a View box. The new Zodiac puts the sign art and the reading card on top of the galaxy. Proposal: allowed only for Zodiac, text always inside a card at 72 % night glass with blur, contrast checked against the brightest frame of the scene.
-- **Generated art (Q61).** Design 5 principle 4 is "procedural before assets" with 0 texture bytes in Page mode. Owner wants Codex images instead of code-drawn shapes. Proposal: images become the Page-mode art within the byte targets in the brief; procedural/SVG stays as Static fallback.
-- **Map positions (Q62).** The map is a drawing, not geography, so a pin stores x/y on the drawing, never coordinates. Guests never receive a real location from the map.
-- **Home photos and note (Q63).** Which photos feed the stack and who writes the note.
-- **"Circular menu" (Q64).** Only the button was redesigned; the round item bubbles are unchanged. Owner to say if the items should change too.
+- **Text over the 3D box (Q61).** Design 4 §3 decor rule and design 5 §4.2 say text never sits inside a View box. The new Zodiac puts the sign art and the reading card on top of the galaxy. Proposal: allowed only for Zodiac, text always inside a card at 72 % night glass with blur, contrast checked against the brightest frame of the scene.
+- **Generated art (Q62).** Design 5 principle 4 is "procedural before assets" with 0 texture bytes in Page mode. Owner wants Codex images instead of code-drawn shapes. Proposal: images become the Page-mode art within the byte targets in the brief; procedural/SVG stays as Static fallback.
+- **Map positions (Q63).** The map is a drawing, not geography, so a pin stores x/y on the drawing, never coordinates. Guests never receive a real location from the map.
+- **Home photos and note (Q64).** Which photos feed the stack and who writes the note.
+- **"Circular menu" (Q65).** Only the button was redesigned; the round item bubbles are unchanged. Owner to say if the items should change too.
 
 ## 3. References looked at (21st.dev, owner suggestion)
 - Draggable Photo Stack by @laziekiki (MIT): swipe physics, fan view, shuffle. Reference for the real G1 stack (drag to throw, not only tap). https://21st.dev/@laziekiki/components/draggable-photo-stack
