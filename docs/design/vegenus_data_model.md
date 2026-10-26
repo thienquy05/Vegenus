@@ -288,7 +288,7 @@ Write functions behind `vegenus_server`: `guest_guestbook_post`, `guest_register
 
 **Atomic enforcement, inside the function, in one transaction:**
 1. Validate the token (design 1 §4 step 4) and lock the page row (`for update`), so concurrent posts on one page queue behind each other.
-2. Increment the three buckets in `rate_limit_hits`: device (3 per 10 min), IP (3 per 10 min), page (50 per day in `pages.timezone`). Each is `insert … on conflict do update … returning count`.
+2. Increment the three buckets in `rate_limit_hits`: device (3 per 10 min), IP (3 per 10 min) [window under review: PRD Q75 proposes 3 per day], page (50 per day in `pages.timezone`). Each is `insert … on conflict do update … returning count`.
 3. If any count is over its limit, roll back the whole transaction (so a refused post consumes nothing) and return `rate_limited` with `retry_after` seconds. The server shows that wait time to the guest (Q43).
 4. Otherwise insert the `pending` entry and commit.
 

@@ -9,18 +9,32 @@ Rules for every screen: phone-first, one-hand use, touch targets ≥ 44 px, all 
 
 **Motion handoff (draft, PRD Q69-Q70):** [guest motion](vegenus_guest_motion.md) specifies connected menu/section transitions, grouped scroll reveals and dynamic backgrounds. [Section handoffs](vegenus_guest_motion.md#4-section-handoffs) cover G1-G9 and Z2, memory-detail return, direct links and browser history. G0, G10, G11 and access errors retain their existing loading/auth/form behavior; no decorative transition delays access checks or submission. The screen inventory and section routes are unchanged. New supplements are not covered by the earlier screen-inventory approval.
 
+## Design map (which file owns what)
+
+| Topic | File |
+|---|---|
+| Screen inventory, states, responsive matrix | this file |
+| Guest sections: status, specifications, tests | [guest UI](vegenus_guest_ui.md) |
+| Owner area | [owner UI](vegenus_owner_ui.md) |
+| Motion, backgrounds, signature entrances | [guest motion](vegenus_guest_motion.md) |
+| Themes, menu, tokens, fonts, contrast | [theme system](vegenus_theme_system.md) |
+| 3D scenes, Zodiac sky, performance modes | [3D approach](vegenus_3d_approach.md) |
+| Logo and brand assets | [assets/logo/README.md](../../assets/logo/README.md), PRD Q60 |
+| Generated art prompts | [Codex image brief](vegenus_codex_image_brief.md) |
+| Access contracts, data, CI | [token flow](vegenus_token_flow.md), [data model](vegenus_data_model.md), [CI spec](vegenus_ci_spec.md) |
+
 ## Guest screens (`/g/...`)
 
 | ID | Screen | Shows | Actions | Reads | Notes |
 |---|---|---|---|---|---|
 | G0 | Opening | Short loader while the token is exchanged | — | `guest_open` | Clears the fragment; no content before the check passes |
-| G1 | Home / intro | Couple title ([PARTNER_A] & [PARTNER_B]), cover image (or the theme motif, the 3D hero in Page mode), days-together counter. Lower half (owner, 2026-10-23, after the menu moved to the top left; design 4 §2): **section shortcuts**, one per enabled section except Home and Settings (Memories, Together, Wishes, Zodiac), each with its theme icon, name and a short fixed line; drawn per theme (A glass tiles, B constellation list, C toy blocks, D numbered index) | Go to a section (shortcut or menu); open settings (menu) | page, home item, counter start, enabled sections (`*_open`) | Counter rules: E14. A disabled section has no shortcut; with one or two shortcuts they keep their size and the space stays sky. The shortcuts are links (≥ 44 px), not a second menu: no state, no counts. Replaces the "on this day" card, "latest wish" strip and "leave a wish" button of v0.3 (owner, 2026-10-23: "I don't like the 2 containers"); leaving a wish stays in G5 |
+| G1 | Home / intro | Couple title ([PARTNER_A] & [PARTNER_B]), a tap-to-advance stack of 3-7 owner-picked photos, a welcome note written by the owner (≤ 600 characters per language), days-together counter (Q64). Phone, tablet and laptop have their own compositions (approved 2026-10-24). No section tiles and no tour button (the tour replays from G8) | Go to a section (shortcut or menu); open settings (menu) | page, home item, counter start, enabled sections (`*_open`) | Counter rules: E14. A disabled section has no shortcut; with one or two shortcuts they keep their size and the space stays sky. The shortcuts are links (≥ 44 px), not a second menu: no state, no counts. Replaces the "on this day" card, "latest wish" strip and "leave a wish" button of v0.3 (owner, 2026-10-23: "I don't like the 2 containers"); leaving a wish stays in G5 |
 | G2 | Memories | Grid or list of published memories: thumbnail, title, date | Open one; load more | memories, media thumbnails | First visit ≤ 3 MB (plan §3) |
 | G3 | Memory detail | Album / book (design round 4): opening page with contents, message text, voice note, photo pages that fill the page (grid follows the photo count), video page; text in the language chosen in Settings, original text plus a note when that language is missing (Q67) | Turn pages (buttons, page list); open photo viewer; play voice/video. Owner: edit pages with layouts and + slots, stickers (Q66) | memory, media URLs (5 min) | Missing second language falls back (E13); menu button hides under overlays (Q68) |
-| G4 | Together | Timeline of milestones; anniversaries; counter. Later: places map | Open a milestone | milestones, anniversaries | Places map is after core (PRD §6.4) |
+| G4 | Together | Illustrated, made-up 3D map per theme with theme signature pins in fixed seeded slots (Q63), searchable place list, place card (photo, place, date, note), counter | Open a milestone | milestones, anniversaries | Map approved (v5.2, 2026-10-24); signature entrance proposed: motion §10.1 |
 | G5 | Guestbook | Approved messages, newest first; "Leave a wish" button | Open G6; load more | approved entries | Hidden if the section is disabled |
-| G6 | Leave a wish | Display name (required), message, language, one-line note that the network address is checked briefly to stop spam and not stored | Send | — | Name/text limits: Q34c; rate limits: Q43 (blocked = plain message with wait time). Plain text only |
-| G7 | Sent | "Thanks, it will appear after [OWNER] approves it" | Back to guestbook | — | Guest does not see their pending message (proposal, Q34) |
+| G6 | Leave a wish | Display name (required), message (language follows Settings, Q67), one-line note that the network address is checked briefly to stop spam and not stored | Send | — | Name/text limits: Q34c; rate limits: Q43 (blocked = plain message with wait time). Plain text only |
+| G7 | Sent | "Thanks, it will appear after [OWNER] approves it" | Back to guestbook | — | Guest does not see their pending message (Q34d, answered) |
 | G8 | Settings sheet | Language EN/VI, mode World/Page/Static, reduce motion, menu corner (top left / top right; design 4 §2), replay the tour (G9) | Change; remembered on this device | — | Mode auto-chosen first (FR13) |
 | G9 | First-visit tour | 3-4 step pop-up over G1: what this is, what you can see, leave a wish, save your place | Next, Back, Skip, Done | — | Once per device (once per account when signed in); `role=dialog`, focus trap, Esc, reduced motion; never delays G0; replay from G8 (S20, Q40) |
 | G10 | Save my place | Email, optional display name, what an account gives | Send verification mail | `guest_register` (rate limited) | Only from a token session; needs email to guests (Q37 Phase B, Q38) |
@@ -77,3 +91,24 @@ One Playwright flow per row, phone viewport, EN and VI:
 8. Token holder → G10 → verification link → signed in; a visitor with no token cannot reach G10.
 9. Owner saves birth dates in Z1 → guest Z2 shows both signs and the reading, and the page source and network responses contain no date; an invalid date is rejected; reduced motion shows a still image.
 10. Unauthenticated visit to `/app`, `/app/anything`, `/home` shows login or not-found and no owner data.
+
+## Responsive coverage matrix (guest and owner, phone / tablet / laptop)
+
+“Owner” includes the partner using the shared account. Owner guest previews use the corresponding guest composition inside the neutral preview shell.
+
+| Section | Phone — guest | Tablet — guest | Laptop — guest | Phone — owner | Tablet — owner | Laptop — owner |
+|---|---|---|---|---|---|---|
+| Home | Stack, hero, welcome | Note + hero + photo fan | Three aligned columns | Guest preview | Guest preview | Guest preview |
+| Zodiac | Signs + six tiles | Signs + 3×2 tiles | Sign \| tiles \| sign | Guest preview; Z1 separate | Same | Same |
+| Memories | Two columns; one at reflow | Featured + three columns | Year panel + four columns | O4 records / preview | O4 rows / preview | O4 rows / preview |
+| Memory detail | Single album page | Two-page spread | Two-page spread | O5 stacked editor | Page list + editor | List + editor + inspector |
+| Together | Map + controls + sheets | Map + list/card dock | List \| map \| card | Guest preview | Guest preview | Guest preview |
+| Wishes G5 | One card column | Centered reading column | Intro + reading column | Preview / O7 stacked | Preview / queue-detail | Preview / queue-detail |
+| G6/G7 | Bottom/full-height sheet | Centered 560 px dialog | Centered 600 px dialog | Nonposting preview | Nonposting preview | Nonposting preview |
+| G8 | Bottom sheet | Centered dialog | Centered dialog | Preview-local controls | Same | Same |
+| O1/O12/O11 | No access | No access | No access | Single form | Centered form | Centered form |
+| O2/O10 | No access | No access | No access | Stacked panels | Two columns | Two/three columns |
+| O3/O13 | No access | No access | No access | Stacked steps/sheet | Choices + preview/dialog | Choices + preview/dialog |
+| O4/O5/O6 | No access | No access | No access | Records/editor/queue | Two regions | Up to three regions |
+| O7/O15 | No access | No access | No access | Records | List + detail | Table/list + detail |
+| O14 | No access | No access | No access | Stacked form/history | Form + history | Form + history |
