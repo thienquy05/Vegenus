@@ -1,8 +1,8 @@
 # Editable wording: what the owner writes and what the system generates
 
-**Status:** DRAFT v0.3, 2026-10-26: owner answered all Q82 points (see §7). Branch `docs/editable-copy` (stacked on `docs/guest-screens-v3`). Documentation only; no application code. Rule 3: every example is invented sample text with placeholders; nothing here is a real name, date or message.
+**Status:** DRAFT v0.4, 2026-10-27: Q82 answered; preview completion prepared locally on `docs/wording-preview-completion`, awaiting synchronization to the existing canvas (§6.1). No application code. Rule 3: every example is invented sample text with placeholders; nothing here is a real name, date or message.
 **Why:** owner direction (2026-10-26): the template should give the couple more control. Greetings, placeholders and similar wording must not be fixed; the couple edits them. Anything the system works out (zodiac, counts, dates) stays generated: the owner supplies the inputs, never the output text.
-**Related:** [screens](vegenus_screens.md), [guest UI](vegenus_guest_ui.md), [owner UI](vegenus_owner_ui.md), [data model](vegenus_data_model.md) §3.10-3.11, PRD Q82 (new, open).
+**Related:** [screens](vegenus_screens.md), [guest UI](vegenus_guest_ui.md), [owner UI](vegenus_owner_ui.md), [data model](vegenus_data_model.md) §3.10-3.11, PRD Q82 and Q83 (answered).
 
 ## 1. The rule in one table
 
@@ -60,6 +60,7 @@ Tokens are inserted from chips under the field, shown as locked chips in the pre
 | Photo stack hint | **B** | "Tap a photo to see the next one." / "Chạm vào ảnh để xem ảnh tiếp theo." |
 | Photo counter "n / 5" | C | 2 / 5 |
 | Scroll cue | **B** | "Scroll to read our note." / "Cuộn xuống để đọc lời nhắn." |
+| No photos / no welcome note | **D**, fixed system notices (Q83) | "Photos will appear here once the owners add them." / "Ảnh sẽ xuất hiện ở đây khi chủ trang thêm vào."; "The owners have not added a welcome note yet." / "Chủ trang chưa thêm lời nhắn chào mừng." |
 | Photo descriptions (alt text) | A | Owner describes each photo in a line; read by screen readers |
 | Section shortcut labels | D (see 3.2) | |
 
@@ -172,20 +173,41 @@ Theme Preview canvas, version 93 (not in Git). Delivered:
 2. **Guest Settings (G8), 12 boards**: Tweaks > langSetup (vi default, both, en). A language that is not set up shows "· chưa thiết lập", a dashed border, `aria-disabled`, and the sentence "Chủ trang chưa thiết lập tiếng Anh." under the group. The same engine feeds Wishes and Leave-a-wish, so those 24 boards also carry the new wording.
 3. **Example wording on guest boards**: Wishes intro, button, empty state, name and message placeholders, thank-you (plus the fixed "not public until approved" line), back button and tour steps (Wishes, Leave a wish, Settings: 36 boards); Home greeting, days line, photo hint and scroll cue (12 boards); Memories intro on the 4 laptop boards; Together search placeholder (12 boards).
 
-Known gaps, to close in the next round:
+Gaps recorded at version 93 (historical; local completion status is in §6.1):
 
 - Not rendered or checked in a browser (the canvas is private and the boards need the canvas runtime); layout of longer example lines on Home (greeting and days line) is unchecked, and the O18 menu button is a static placeholder.
 - Home previously had a different tagline per theme; the B greeting and days line are now one owner-written text across A-D (a consequence of Q82). Theme D keeps its editorial decor ("Tập 01", "Tuyển tập").
 - Memories intro and Together intro have no slot yet on phone and tablet (Memories) or on any size (Together); each needs a one-line slot designed per theme. Memories, Together and Home empty states are not drawn.
 - Updates-card question, page title, link description and email greeting appear only in O18 (no guest or email board).
-- Not yet reviewed by Codex; O18 motion is none (reduced-motion safe by default).
+- Codex reviewed the original boards; the findings and fixes are recorded below. O18 adds no motion; reduced motion uses the same immediate updates.
 
 **Codex review of the boards (2026-10-27, read-only, 14 findings).** Fixed: all 12 Write boards threw on render (placeholders read `t` out of scope; now `v.t`, confirmed by executing `renderVals()` before and after); O18 retry button, stale publish timer, default language no longer hard-coded (tweak `defaultLang`), per-key token allowlists aligned with §2 (table above), validation of HTML, links, line breaks and NFC, availability messages computed from both languages and a visible "unsaved changes" line, working conflict comparison, a permission-lost scenario, a long button label, a preview of all 27 fields, unique error ids tied to their inputs, `aria-describedby` only when the notice exists, Home theme D photo hint, and the two statements in this document that contradicted §3.2 and the field count. Still open: no theme selector in the O18 preview; Together intro, Memories phone/tablet intro, and empty states for Memories, Together and Home have no guest slot; updates card, page title, link description and email greeting have no guest or email board; Home shows the days sentence as number plus suffix, not the full tokenised sentence, and theme D has no greeting slot.
 
-## 7. Owner answers (2026-10-26) and what is still open
+### 6.1 Local completion prepared 2026-10-27; canvas synchronization pending
+
+**Review status:** Codex reviewed the original boards and checked the revised local previews. The revisions passed 169 source/state checks and 432 browser cases. The latest changes have not received a separate independent review, and they have not been applied to or verified on the live canvas.
+
+The owner requested all five remaining changes after the read-only check. Local exported sources were preserved before editing, including the later Together pin-placement work. There are **63 design boards**: 12 each for Home, Memories, Together and Write; three neutral O18 boards; and 12 new `WordingDestinations` boards. Sources and checks stay in a temporary design-review folder outside the repository. They have **not** been written to the live canvas: its viewer is accessible, but this session exposes no Artifact write connector.
+
+| Gap | Prepared design |
+|---|---|
+| O18 theme selection | Four labelled A–D buttons change only the preview. Owner controls remain neutral; wording and publication state are preserved. Context snippets cover Memories, Together, updates, browser tab, shared link and email, alongside the existing 27-field preview. |
+| Intro slots | All 12 Memories and all 12 Together boards have editable intro text. Memories places it in the reading flow below the fixed heading area; laptop Together puts it beneath the list heading. Longer phone/tablet Together compositions scroll vertically while retaining the map box dimensions and pin coordinates. |
+| Empty states | Memories removes sample records and hides content-only controls. Together uses the saved `together.empty` fixture when no pins exist. Home has no-photos, no-note and both-empty examples, with fixed notices per Q83; no sample photos/signature in empty regions and no photo counter without photos. |
+| Outside O18 | All 12 Write receipts contain the updates question in a card with labelled email and explicit consent. The 12 new destination boards show the browser title, shared-link description and email greeting in context. Confirmation and validation are explicitly simulated; no email is sent. Email examples contain counts and generic page/unsubscribe labels, never memory bodies or guest credentials. |
+| Home sentence and D greeting | Every Home board binds the whole `home.days` sentence, preserving text on either side of `{days}`. All three Elegant boards have a greeting above the names. Phone greeting, names, sentence, photos and note flow vertically so long wording does not collide. |
+
+Frame sizes remain phone 390×844, tablet 820×1180 and laptop 1440×900, with A–D guest treatments. O18 stays plain. The destination set stacks cards on phone, uses two columns on tablet and an updates / link / email arrangement on laptop. EN/VI and long Vietnamese examples are selectable. Loading, read failure, offline and throttled-read examples are separate from empty content; email cards also show sending, failure and simulated confirmation.
+
+**Verification:** the initial check reproduced 64 missing-feature failures, with 33 existing editor-scenario checks passing. After the changes, 169 source/state checks pass. A browser pass exercised 432 cases, including all 12 Write receipts, long/empty/error/offline examples and 320 px phone frames, with no script errors or horizontal page overflow in those cases. The new opaque text-surface pairs have calculated contrast of A 16.11:1, B 15.15:1, C 11.74:1 and D 15.45:1. New theme buttons are at least 44 px high; email input is 48 px high and its consent label is at least 44 px. New copy surfaces add no motion; existing section entrances remain.
+
+**Limits:** browser checks use the existing canvas runtime and cached local fonts; canvas background image blobs are unavailable locally. These results do not establish contrast over the live art, live-canvas parity, complete 200% text behavior, screen-reader behavior or real-device behavior. Playwright MCP reported its browser profile already in use; browser checks used the connected Chrome DevTools browser instead. Synchronization and review on the existing canvas remain pending. No installation, commit, push or PR was performed.
+
+## 7. Owner answers (2026-10-26 and 2026-10-27)
 
 1. **The split:** yes, A / B / C / D as in §1.
 2. **Zodiac:** the owner cannot edit anything in it; they give birth data and the system computes (owner, 2026-10-26). Everything else in Zodiac stays as designed. The Q50 reword field is removed (data model, Z1, Q50 text).
 3. **Section names:** no renaming; fixed (§3.2).
 4. **Missing language:** a language that is not fully set up cannot be chosen by guests; the option explains it (§4).
 5. **Publishing:** everything at once, in Settings (§4).
+6. **Home missing content (Q83, owner 2026-10-27):** keep 27 editable fields per language; use fixed system notices for missing photos and a missing welcome note. These states add no required wording keys.
