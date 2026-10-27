@@ -192,7 +192,7 @@ Loading preferences uses system motion settings and a stable shell; never briefl
 
 | Codex id | Question | Lives in |
 |---|---|---|
-| D1, D2, D9 | Together entrance: option 1 chosen, per-theme fall styles to design; replay policy default pending | PRD Q71; [motion §10.1.4](vegenus_guest_motion.md#1014-replay-policy) |
+| D1, D2, D9 | Together entrance: option 1 chosen, per-theme fall styles designed (motion §10.1.3), replay policy default "first time only" confirmed (2026-10-26) | PRD Q71; [motion §10.1.4](vegenus_guest_motion.md#1014-replay-policy) |
 | D3 | Elegant gold hairline: accepted | PRD Q72 |
 | D4, D5, D6 | Character counting, stored language, retry de-duplication: defaults adopted | PRD Q73; §8 |
 | D7 | Album quota limits | PRD Q66 |
