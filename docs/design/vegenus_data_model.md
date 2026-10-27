@@ -311,7 +311,7 @@ Write functions behind `vegenus_server`: `guest_guestbook_post`, `public_guestbo
 
 **Guest-account writes keep the database-verified identity (Codex round 2, finding 3).** A connection as `vegenus_server` carries no user identity, so routing account writes through it would need the server to assert "this is user X", a new trust boundary. Instead:
 - `account_guestbook_post` and `account_profile_set` stay executable by `authenticated` only and take **no user id argument**. They read the identity from `auth.uid()`, which the database derives from the guest's own session token after verifying its signature. The server passes the guest's session token through; it never names the user.
-- Inside the function, in one transaction with the page row lock: an active `guest_accounts` row for `auth.uid()` must exist, the page must not be Private, then the limits are applied atomically as in the steps above, keyed on the **account** instead of device and IP: 3 posts per 10 min per account, plus the shared 50 per page per day. A direct API call with the same session hits the same limits, because the identity is verified, not claimed. Accounts are email-verified and capped at 50 per page (Q38), so per-account limits stand in for the IP check.
+- Inside the function, in one transaction with the page row lock: an active `guest_accounts` row for `auth.uid()` must exist, the page must not be Private, then the limits are applied atomically as in the steps above, keyed on the **account** instead of device and IP: 3 posts per 24 h per account (Q75), plus the shared 50 per page per day. A direct API call with the same session hits the same limits, because the identity is verified, not claimed. Accounts are email-verified and capped at 50 per page (Q38), so per-account limits stand in for the IP check.
 - Removal of the account row or setting the page Private stops the next call (design 1 §5.1).
 - Nothing in these functions uses session-level settings, so pooled connections cannot leak one request's identity into another. Any setting a future function needs must be `set local` (transaction-scoped) and covered by a pooled-request test.
 
@@ -319,8 +319,8 @@ Write functions behind `vegenus_server`: `guest_guestbook_post`, `public_guestbo
 
 **Atomic enforcement, inside the function, in one transaction:**
 1. Validate the token (design 1 §4 step 4) and lock the page row (`for update`), so concurrent posts on one page queue behind each other.
-2. Increment the three buckets in `rate_limit_hits`: device (3 per 10 min), IP (3 per 10 min) [window under review: PRD Q75 proposes 3 per day], page (50 per day in `pages.timezone`). Each is `insert … on conflict do update … returning count`.
-3. If any count is over its limit, roll back the whole transaction (so a refused post consumes nothing) and return `rate_limited` with `retry_after` seconds. The server shows that wait time to the guest (Q43).
+2. Increment the three buckets in `rate_limit_hits`: device (3 per 24 h), IP (3 per 24 h; Q75: the window starts at the first post and resets 24 h later, not at midnight), page (50 per day in `pages.timezone`). Each is `insert … on conflict do update … returning count`.
+3. If any count is over its limit, roll back the whole transaction (so a refused post consumes nothing) and return `rate_limited` with `retry_after` seconds. `retry_after` is computed from **every** exceeded bucket and the latest expiry wins: the rest of the 24 h window for a device or IP bucket (their windows can start at different posts), the next local midnight in `pages.timezone` for the page bucket. The daily-limit notice shows that exact time (Q75). Tests: page-only rejection returns the next midnight; overlapping device and IP windows return the later expiry.
 4. Otherwise insert the `pending` entry and commit.
 
 The token exchange (`/api/guest/session`) keeps calling `guest_open` as `anon`. A direct caller can skip the per-IP limit on that route, which is accepted: it only reads, and guessing a token is infeasible (design 1 §1).
@@ -385,9 +385,8 @@ How the lunar date is computed: an astronomical new-moon and solar-term algorith
 | `vn_hour_chi` | enum (12) null | hour pillar branch; only with a time |
 | `vn_menh` | enum (`kim`, `moc`, `thuy`, `hoa`, `tho`) | year element by nạp âm |
 | `birth_sky` | jsonb null | **the sky at birth** (Q50, owner clarification 2026-10-22), computed once at save from the date, time and place by the astronomy library and stored like the signs: Moon phase (one of 8 names), illumination %, waxing or waning, near-perigee flag ("supermoon"); ecliptic longitude and sign of the Sun, Moon, Mercury, Venus, Mars, Jupiter, Saturn, Uranus, Neptune; with a time and place, which of them were above the horizon; sky events near the date (rules in §3.11); `approximate: true` when there is no time. Contains no date or timestamp |
-| `birthday_event` | text null | the owner's own wording of the sky line, overriding the composed one; NFC, ≤ 300 chars, EN and VI columns; null = use the line composed from `birth_sky` and the reference texts |
 | `calc_version` | smallint | version of the calculation rules that produced the stored signs |
-| `published` | jsonb null | **the only thing guests read**: a snapshot of `label`, the **basic** values and `calc_version`; the detailed values, `birth_sky` and the sky line (composed or the owner's, per language) are added only if the owner ticked "show details to guests" for that partner (Q50): planet positions alone pin the exact date. Guests render from the snapshot only, so a later draft change alters nothing until the next Publish. Never contains the date, time or place fields |
+| `published` | jsonb null | **the only thing guests read**: a snapshot of `label`, the **basic** values and `calc_version`; the detailed values, `birth_sky` and the sky line (always composed from `birth_sky` and the reference texts, per language; the owner cannot reword it, Q82) are added only if the owner ticked "show details to guests" for that partner (Q50): planet positions alone pin the exact date. Guests render from the snapshot only, so a later draft change alters nothing until the next Publish. Never contains the date, time or place fields |
 | `show_details` | bool default false | the opt-in above; copied into the snapshot at Publish |
 | `published_at` | tstz null | null = nothing shown to guests yet |
 | `version`, `updated_at`, `updated_by` | | §1.6 |
@@ -522,7 +521,7 @@ Written and **observed failing** before the migration that makes them pass (plan
 | Composite FK: an item of page A cannot get media or a cover from page B | DB | E6 |
 | Item kind checks: a `home` without `start_date`, a second `home`, an `anniversary` without day precision are rejected | DB | E14 |
 | Counter: start date is day 1; hidden before the start date in the page time zone (test across a date line); 29 Feb anniversary lands on 28 Feb in a common year | Unit | E14, Q42, Q44 |
-| Guestbook limits: 4th post in 10 min from one device, or from one IP with several devices, is refused with the wait-time message; G6 shows the IP note | DB + API + E2E | E11, Q43 |
+| Guestbook limits: 4th post within 24 h of the window's first post from one device, or from one IP with several devices, is refused with the come-back-time notice, and the window ends 24 h after that first post; G6 shows the IP note | DB + API + E2E | E11, Q43 |
 | `lang_alt` equal to `lang`, or alt text without `lang_alt`, is rejected | DB | E13 |
 | Non-NFC text and over-length text are rejected in every text column | DB | E12 |
 | Version check: an update naming an old `version` changes zero rows | DB | E15 |

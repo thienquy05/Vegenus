@@ -140,7 +140,7 @@ These are future behavioral tests, each demonstrated RED before implementation. 
 
 ## 10. Signature entrances (lead design by Codex, 2026-10-26)
 
-**Status:** proposal; owner answers 2026-10-26: Q71 option 1 (soft fall and slam) with a different fall style per theme still to design, Q72 gold hairline accepted, Q74 parallax and photo pan removed (PRD §12). Written by Codex as lead designer from the owner's seed (Together: the map falls from the top, larger to smaller, slams into the ground with effects after) and edited by Claude only for numbering and links. Every value is a prototype target; rendering, comfort and frame cost are **unverified**. Canvas preview of these entrances is pending (progress 2026-10-26). Layers §1-§9 above are unchanged; where §10 differs (first direct arrival, Memories parallax) the difference is listed as an open decision, not silently applied.
+**Status:** proposal; owner answers 2026-10-26: Q71 option 1 (soft fall and slam) with a different fall style per theme (A feather drift, B comet, C toy drop, D printing plate; §10.1.3; replay default "First time only" confirmed), Q72 gold hairline accepted, Q74 parallax and photo pan removed (PRD §12). Written by Codex as lead designer from the owner's seed (Together: the map falls from the top, larger to smaller, slams into the ground with effects after) and edited by Claude only for numbering and links. Every value is a prototype target; rendering, comfort and frame cost are **unverified**. Canvas preview of these entrances is pending (progress 2026-10-26). Layers §1-§9 above are unchanged; where §10 differs (first direct arrival, Memories parallax) the difference is listed as an open decision, not silently applied.
 
 ### 10.1 Together signature entrance — “A little world lands”
 
@@ -182,43 +182,45 @@ For the settled pose, retain perspective **1100 px**, initial tilt **56°**, and
 
 #### 10.1.3 Physical model
 
-Animate an outer decorative wrapper around the fitted map. The following scale values multiply its final fitted scale. Pin coordinates remain in the original drawing coordinate system.
+Each theme has its own descent, not a shared fall with different particles. Time zero is semantic arrival with usable placeholder map data. Heading focus happens immediately; one polite, atomic “Map ready. [N] places. / Bản đồ đã sẵn sàng. [N] địa điểm.” announcement follows data readiness, independent of animation. Replay and Skip do not announce readiness again.
 
-| Property | Exact proposed value |
-|---|---|
-| Transform origin | `50% 70%`; perspective origin retains the approved top origin |
-| Initial translation | Phone `translateY(-300px)`; tablet `-360px`; laptop `-280px`, clipped inside stage |
-| Initial scale | Phone `1.24`; tablet `1.18`; laptop `1.16` |
-| Initial tilt offset | `-10deg` relative to resting tilt; reaches `0deg` at contact |
-| Initial roll | A `-2deg`; B `1deg`; C `-3deg`; D `0deg`; zero at contact |
-| Descent | 420 ms; `cubic-bezier(.42,0,1,1)` |
-| Contact compression | 60 ms; decorative slab only, `scaleX(1.025) scaleY(.965)`; pins, text and controls excluded |
-| Rebound | Contact → peak over 90 ms, `cubic-bezier(0,0,.2,1)`; peak → rest over 130 ms, `cubic-bezier(.4,0,1,1)` |
-| Rebound height | A 10 px; B 6 px; C 14 px; D 2 px; exactly one rebound |
-| Tilt settle | Contact `+1.5deg`, rebound peak `-.5deg`, rest `0deg`; D `+.4deg → 0deg` |
-| Shadow | Prepainted ellipse; scale `.45 → 1.04 → 1`; opacity `.06 → .24 → .18`; fixed 12 px blur, never animate blur radius |
-| Local recoil | Decorative contact plane only: A/B `0 → 2px → -1px → 0`; C `0 → 3px → -1px → 0`; 160 ms total; D none |
-| Impact light | One 120 ms rim pulse, opacity `0 → .14 → 0`; covers no more than the map footprint; no full-screen flash |
-| Particle travel | 24–72 px outward; 8–28 px upward; 420–650 ms lifetime; opacity fades only during final 40% |
-| Particle size | 3–8 px; D red-dot spark 3 px; never use tiny flashing points |
-| Pin entrance | 280 ms; ornament `translateY(12px) rotateX(-24deg) → 0`; maximum scale overshoot `1.04` |
-| Pin stagger | 60 ms, maximum four ornaments; remaining pins appear settled |
-| Route highlight | 480 ms, `cubic-bezier(.22,1,.36,1)`; underlying route remains visible |
+Separate the map artwork into a temporary outer fall wrapper; retain the original fitted map transform and fixed seeded `TG_SLOTS`. Keep the pin button plane at its settled coordinates throughout. Only ornamental pin children unfold. Squash affects SVG slab artwork, never text, buttons or the selection `.pin-in` transform. Perspective stays 1100 px and resting tilt 56°. World transform origin is 50% 70%; Z tilt has no extra offset (the four paths establish weight without another camera movement). The heading, list, reading card and menu never fall.
 
-The temporary tilt is a **map pose**, not a viewport camera flight. On a restored visit, preserve the guest’s current rotation, tilt and zoom; do not force the default camera.
+| Composition | Initial Y / multiplicative scale | Initial X A / B / C / D | Control placement outside stage |
+|---|---|---|---|
+| Phone 390×844 | −300 px / 1.24 | −18 / +120 / 0 / 0 px | x16, y88, ≥44 px high; map section moves from y96/h620 to y140/h576, retaining bottom edge |
+| Tablet 820×1180 | −360 px / 1.18 | −18 / +170 / 0 / 0 px | right24, y32; map y104/h640 above stationary list/card dock y778 |
+| Laptop 1440×900 | −280 px / 1.16 | −18 / +150 / 0 / 0 px | right24, y28; map x320/y96/w720/h780 between the original list and reading card |
 
-Use transform/opacity layers and prepainted artwork. No physics engine, animated shadow filter or additional WebGL canvas is needed.
+These retain the actual latest `pub/project/` compositions, rather than replacing them with §10.1.2's approximate layout targets. No canvas frames change. All effects are clipped inside the map viewport. Text retains its original composition; Replay and Skip have their own strip on phone and use the empty right part of the top bar on larger boards.
+
+Timing shorthand below: **I** = `cubic-bezier(.42,0,1,1)`, **O** = `cubic-bezier(.22,1,.36,1)`, **S** = `cubic-bezier(.45,0,.55,1)`. Each easing applies from its keyframe to the next. Values between keyframes interpolate; the complete animation is not given an additional easing. All rotations below are Z roll. `H` is the positive starting descent distance (300 / 360 / 280 px); `K` is initial scale (1.24 / 1.18 / 1.16); `X` is Cosmic's initial X (120 / 170 / 150 px).
+
+| Theme | Exact descent: ms → (X px, Y px, scale, roll); outgoing easing | One contact / squash | Restoring motion |
+|---|---|---|---|
+| A Dreamy — feather-light drift | 0→(−18,−H,K,−2°) S; 240→(+18,−.86H,1+.85(K−1),+1.5°) I; 470→(−10,−.35H,1.06,−.8°) I; 620→(0,0,1,0°) O | 620 ms; 100 ms 1→(1.018X,.978Y)→1, S | 740 ms lift −4 px; I to rest at 900 ms. No horizontal recoil after contact. |
+| B Cosmic — comet arrival | 0→(+X,−H,K,−12°) I; 180→(+.6X,−.72H,1.12,−7°) I; 340→(+.14X,−.18H,1.035,−2°) I; 440→(0,0,1,0°) O | 440 ms; 100 ms 1→(1.02X,.975Y)→1, S | 570 ms lift −3 px; I to rest at 760 ms. Spin resolves before impact. |
+| C Cozy — toy drop | 0→(0,−H,K,0°) I; 220→(0,−.55H,1.08,0°) I; 360→(0,0,1,0°) O | 360 ms; slab stretches 1→(.98X,1.04Y) over 0–360 ms I, then 100 ms (.98X,1.04Y)→(1.045X,.945Y)→1, S | −6 px at 430; I to 0 at 500; O to −3 px at 560; I to 0 at 620; S wobble +.4° at 680, −.25° at 760, 0 at 900. |
+| D Elegant — printing plate | 0→(0,−H,K,0°) O continuously to 640→(0,0,1,0°); no intermediate easing restarts | 640 ms; 100 ms 1→(1.006X,.994Y)→1, S | Hold world at rest through 720 ms; no bounce, spin or recoil. |
+
+The squash uses three equally spaced frames (C starts from its stretched slab pose; the others start at identity) at contact, contact+50 and contact+100 ms. C's two small rebounds are quiet elastic follow-through after **one** slam: no second impact pulse, particles or sound. This explicitly supersedes the earlier “exactly one rebound” constraint in §10.1.3 and RED test 2. There is no viewport shake. Local lift never exceeds 6 px; the wobble lasts 220 ms. Reduced motion removes all of it.
+
+Common shadow is one prepainted radial ellipse, no animated filter: 0 ms scale .45 / opacity .06; contact scale 1.04 / opacity .24; 1200 ms scale 1 / opacity .18, using O. Shadow is separate from the particle cap. No runtime shadow/blur, layout, `left`, stroke-dashoffset or mask animation is introduced. Animation uses transform and opacity only; any path clipping or dash pattern is static artwork.
+
+At contact+100 ms the first four ornaments unfold deterministically, 60 ms stagger, 280 ms each, O: `translateY(12px) rotateX(-24deg) scale(.96)`, opacity 0 → identity, opacity 1. Other ornaments are already settled. Last unfold ends A1180 / B1000 / C920 / D1200 ms. The existing selected-place route remains unchanged; no new route or geography is invented. All entrance animations, fill effects and callbacks are canceled and released at 1200 ms or interruption.
 
 ##### Theme impacts
 
-| Theme | Landing and impact | Hard cap |
+| Theme | Exact themed effect | Hard cap (entrance effects, excluding map/shadow/pin ornaments) |
 |---|---|---:|
-| **A Dreamy — cloud cradle** | The cloud island compresses into two soft cloud lobes. Six small heart wisps emerge around the rim, drift outward and dissolve. The heart lake catches one pink edge reflection. | 8 moving elements: 2 cloud lobes + 6 hearts |
-| **B Cosmic — stellar landing** | The celestial garden lands over its nebula sea. One elliptical star ring expands beneath it while sparse dust escapes between the star isles. No additional shooting star during the entrance. | 12: 1 ring + 11 dust points |
-| **C Cozy — tabletop thump** | The felt board gives one toy-like bounce. Four felt puffs and six paper flecks scatter along the tabletop; flecks rotate at most 45°. No confetti over cards. | 10: 4 puffs + 6 flecks |
-| **D Elegant — seal impression** | The engraved plan lands like a carefully placed printing plate. One ink ellipse spreads, a hairline follows the perimeter, and one red dot lifts and returns. | 3: ink ellipse + hairline + dot |
+| A | Cloud cushion: two 48×22 px cream lobes and six 6 px pink heart wisps; 520 ms from 620, finish1140. Gentle world bounce is −4 px. | 8: 2 lobes + 6 hearts |
+| B | One 130×3 px faint diagonal tail, 0–440 ms: (120,−180) rotate−42° scaleX.3 / opacity0 → (50,−85) rotate−42° scaleX1 / .24 at40% → (0,0) rotate−42° scaleX.15 /0; I. One dashed star-ring ellipse scales .45/opacity0 → .7/.6 at15% →1.28/0 over520 ms from440. Ten dust points spread. | 12: tail + ring + 10 dust (refines 11 dust to count the tail) |
+| C | Four 18×12 px felt puffs plus six 6 px paper flecks, 520 ms from360, finish880. Flecks rotate35° maximum. No effects at either rebound. | 10: 4 puffs + 6 flecks |
+| D | Ink ellipse scales .5/0 →.9/.16 at25% →1.05/0, 640–1140 ms O. Gold perimeter traces720–960 ms; red 5 px dot lifts6 px at1060 and returns by1170 (970–1170 ms S, opacity0→1→0). | 3: ink ellipse + one perimeter sprite + one dot |
 
-D’s proposed gold hairline requires a **new theme token decision**: D currently has no gold accent. Until approved, use `--line`; do not borrow the logo palette automatically.
+For A/B/C deterministic particle i uses angle `i×2.399963`, distance `24+(i mod5)×12` px. At 0%, translate(0,0)/scale.6/opacity0; at8%, translate(0,0)/scale1/.65; at60%, translate(cos(angle)×distance, −8−(i mod4)×6)/scale1.3/.65; at100%, translate(cos(angle)×distance,−28)/scale1.5/0. Duration520 ms, O. Only C rotates35° at60%. Each point has no repeated flash. The B tail finishes at contact.
+
+D uses **`--line-gold: #927132`**, approved Q72, contrast about4.03:1 on `#f4f1ec`. Use only for the entrance perimeter hairline; ordinary rules, text and focus retain their existing tokens. The trace is a prepainted 16-pose SVG strip over the existing outline: static pathLength100/dash lengths6.25…100, strip translateX0→−7200 px in240 ms with `steps(15,end)`. One moving sprite produces the trace while staying transform/opacity-only. No gold in the settled view.
 
 #### 10.1.4 Replay policy
 
@@ -276,7 +278,7 @@ Announce **“Map ready. [N] places.” / “Bản đồ đã sẵn sàng. [N] �
 Write and observe these tests failing before implementation, extending motion §9:
 
 1. **Fixed anchors:** add places, replay, resize and rotate. Existing slot index/x/y remain identical; changing a slot to accommodate animation must fail.
-2. **Timeline:** inspect arrival/contact/rest frames in A–D at all three sizes; enforce caps, one rebound and no moving reading surface.
+2. **Timeline:** inspect arrival/contact/rest frames in A–D at all three sizes; enforce caps, one slam (C: two quiet rebounds after it, A/B one small lift, D none) and no moving reading surface; a shared descent across themes must fail.
 3. **Immediate input:** activate a pin, place-list item, menu and Skip at several beats. Settle within 150 ms and execute the intended action once.
 4. **Motion off:** system preference, G8 override, Static and mid-flight toggle produce 0 ms durations/delays and zero continuing animation work.
 5. **Replay:** first visit, repeated navigation, refresh, history, blocked storage, cleared storage and another page obey the single policy.

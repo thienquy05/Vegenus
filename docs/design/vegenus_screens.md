@@ -17,6 +17,7 @@ Rules for every screen: phone-first, one-hand use, touch targets ≥ 44 px, all 
 | Guest sections: status, specifications, tests | [guest UI](vegenus_guest_ui.md) |
 | Owner area | [owner UI](vegenus_owner_ui.md) |
 | Motion, backgrounds, signature entrances | [guest motion](vegenus_guest_motion.md) |
+| Which wording the couple edits, which is generated or fixed (Q82, draft) | [editable wording](vegenus_editable_copy.md) |
 | Themes, menu, tokens, fonts, contrast | [theme system](vegenus_theme_system.md) |
 | 3D scenes, Zodiac sky, performance modes | [3D approach](vegenus_3d_approach.md) |
 | Logo and brand assets | [assets/logo/README.md](../../assets/logo/README.md), PRD Q60 |
@@ -61,7 +62,7 @@ Rules for every screen: phone-first, one-hand use, touch targets ≥ 44 px, all 
 | O11 | Members | The one shared owner account (Q35). No co-editor screen until a second account is wanted | Change password; link Google | Owner |
 | O13 | First-run tour | 3 steps on the empty dashboard: set up the page, add the first memory, create the guest link | Next, Skip, replay from O12 | Owner (and partner) |
 | O14 | Email settings | Reminder lead time, wish digest on/off, last sends and failures | Save; send test to own address | Owner |
-| Z1 | Zodiac: our birth data | For each partner: label, birth date, birthplace (picked from a list), optional birth time; after saving, the computed Western sun/Moon/rising signs and Vietnamese pillars, animal and mệnh; the sky at birth (Moon phase, planets and their signs, nearby sky events such as an eclipse or a meteor shower) with its composed line, which the owner may reword (Q50); per partner a "show details to guests" switch with the warning that details can reveal the exact birthday (Q50); default system for guests; note that the date, time and place are encrypted and never shown, and that guests can work out the birth year from the basic signs; for a birthday near Tết, a warning with the number of days guests could narrow it to, and a choice to hide the Vietnamese animal for that partner; "changes not published" badge | Save; Publish; Unpublish | Owner. Design 3 §3.10, E40 |
+| Z1 | Zodiac: our birth data | For each partner: label, birth date, birthplace (picked from a list), optional birth time; after saving, the computed Western sun/Moon/rising signs and Vietnamese pillars, animal and mệnh; the sky at birth (Moon phase, planets and their signs, nearby sky events such as an eclipse or a meteor shower) with its composed line, which the owner cannot reword (generated, Q82); per partner a "show details to guests" switch with the warning that details can reveal the exact birthday (Q50); default system for guests; note that the date, time and place are encrypted and never shown, and that guests can work out the birth year from the basic signs; for a birthday near Tết, a warning with the number of days guests could narrow it to, and a choice to hide the Vietnamese animal for that partner; "changes not published" badge | Save; Publish; Unpublish | Owner. Design 3 §3.10, E40 |
 | O15 | Guest accounts | List of guest accounts for the page, with cap counter | Remove one; remove all | Owner |
 | O12 | Account | Language, log out | — | Both |
 
