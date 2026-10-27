@@ -92,6 +92,7 @@ Tokens are inserted from chips under the field and shown as locked chips in the 
 | Photo stack hint | **B** | "Tap a photo to see the next one." / "Chạm vào ảnh để xem ảnh tiếp theo." |
 | Photo counter "n / 5" | C | 2 / 5 |
 | Scroll cue | **B** | "Scroll to read our note." / "Cuộn xuống để đọc lời nhắn." |
+| No photos / no welcome note | **D**, fixed system notices (Q83) | "Photos will appear here once the owners add them." / "Ảnh sẽ xuất hiện ở đây khi chủ trang thêm vào."; "The owners have not added a welcome note yet." / "Chủ trang chưa thêm lời nhắn chào mừng." |
 | Photo descriptions (alt text) | A | Owner describes each photo in a line; read by screen readers |
 | Section shortcut labels | D (see 3.2) | |
 
@@ -220,3 +221,4 @@ Open:
 3. **Section names:** no renaming; fixed (§3.2).
 4. **Missing language:** a language that is not fully set up cannot be chosen by guests; the option explains it (§4).
 5. **Publishing:** everything at once, in Settings (§4).
+6. **Home missing content (Q83, owner 2026-10-27):** keep 27 editable fields per language; use fixed system notices for missing photos and a missing welcome note. These states add no required wording keys.

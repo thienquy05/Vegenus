@@ -48,3 +48,11 @@ The common loading/error/offline/rate-limit contract applies to every server-bac
 - **Moderation states:** only O7 receives pending/rejected bodies. G5 preview obeys the same approved-only boundary as guests.
 - **Keyboard:** semantic headings, labelled forms, visible focus, keyboard reorder alternatives, modal focus containment and restoration. Progress announcements describe meaningful stages rather than every percentage point.
 - **Cross-links:** O5→O6 media; O2/O6→O10 usage; O2→O7 moderation; O12→O11/O14/O15; O13→O3/O4/O8. O8/O9 retain existing access and confirmation rules.
+
+## 2. O18 — Wording preview completion (prepared locally, 2026-10-27)
+
+The editing contract and 27-field catalogue live in [editable wording §4](vegenus_editable_copy.md). The plain owner shell contains four labelled A–D preview buttons with pressed states and 44 px minimum targets. Switching them preserves draft text, progress, editing language and publication state; it does not change the page theme. No new modal or animation is introduced, so focus stays on the chosen button and Escape has nothing new to dismiss.
+
+Phone keeps the collapsible preview after the form. Tablet places form and preview alongside one another. Laptop keeps section navigation, form and preview in three columns; below laptop width it removes the navigation rail, and at narrow widths the preview follows the form. Context snippets show section intros and empty wording, updates, a browser tab, a shared link and an email. Empty editor fields remain visibly incomplete rather than silently using the example as saved content.
+
+The three revised O18 boards are local review artifacts. Canvas synchronization and live-art checks remain pending; see [editable wording §6.1](vegenus_editable_copy.md#61-local-completion-prepared-2026-10-27-canvas-synchronization-pending).
