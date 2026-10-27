@@ -1,6 +1,6 @@
 # Guest UI design: sections, status and specifications
 
-**Status:** v1.0 consolidation, 2026-10-26, branch `docs/guest-screens-v3`. This file replaces `vegenus_guest_screens_v3.md` and the guest half of `vegenus_remaining_sections.md` (both removed). Documentation only; no application code. Rule 3: placeholders only.
+**Status:** v1.0 consolidation, 2026-10-26, branch `docs/guest-screens-v3`. This is the single guest-UI design document (it absorbed the earlier guest-screens notes and the Wishes, Leave a wish and Settings specifications). Documentation only; no application code. Rule 3: placeholders only.
 **Where things live:** screen inventory and responsive matrix: [screens](vegenus_screens.md). Owner area: [owner UI](vegenus_owner_ui.md). Motion and signature entrances: [guest motion](vegenus_guest_motion.md). Themes, menu, tokens: [theme system](vegenus_theme_system.md). 3D and Zodiac scene: [3D approach](vegenus_3d_approach.md). Image prompts: [Codex image brief](vegenus_codex_image_brief.md). Logo: [assets/logo](../../assets/logo/README.md).
 **Canvas:** "Theme Preview" on the owner's claude.ai account (not in Git). Boards were built by scratchpad generators that are not in the repo; the Wishes, Leave a wish, Settings and Owner generator is stored on the canvas as the asset `anni-gen-pages7-10.txt`. Decision comparison boards (Q71-Q74) are page 13.
 
@@ -11,7 +11,7 @@
 | Home G1 | 1 | Approved 2026-10-24 (phone, tablet, laptop, four themes) | [screens](vegenus_screens.md) G1; [motion §4](vegenus_guest_motion.md#4-section-handoffs), [§10.2](vegenus_guest_motion.md#1022-section-signatures); PRD Q64 |
 | Menu | 2 | Rule final: circular fan everywhere; phone flips the page, tablet and laptop blur it; label review open | [theme system §2](vegenus_theme_system.md); [motion §3](vegenus_guest_motion.md#3-menu-choreography) |
 | Zodiac Z2 | 3 | Approved 2026-10-24 | [3D approach §5.1](vegenus_3d_approach.md), [theme system §6](vegenus_theme_system.md); tests in §5 below; PRD Q61-Q62 |
-| Memories G2 | 4 | Approved; PRD Q74 asks whether to drop parallax and Ken Burns | progress 2026-10-24 "Memories v4" |
+| Memories G2 | 4 | Approved; owner answered Q74 (2026-10-26): parallax and photo pan removed | progress 2026-10-24 "Memories v4" |
 | Memory detail G3 | 5 | Album direction chosen; Codex review clean (round 7); Q66 limits open | [screens](vegenus_screens.md) G3; PRD Q66-Q68 |
 | Together G4 | 6 | Approved v5.2, 2026-10-24; entrance proposed | PRD Q63; [motion §10.1](vegenus_guest_motion.md#101-together-signature-entrance--a-little-world-lands) |
 | Wishes G5 | 7 | Rebuilt 2026-10-26 (Codex lead design); owner review pending | §7 below |
@@ -105,7 +105,7 @@ Each card contains `[DISPLAY_NAME]`, `[WISH_TEXT]` and optional existing display
 | Pending | Never returned in G5, including the sender’s own wish: Q34d. | Visible only in O7 with “Pending / Chờ duyệt.” |
 | Approved | Appears in normal newest-first order on an authorized refresh/load. | “Approved / Đã duyệt”; guest preview matches. |
 | Rejected | Absent; no rejection marker or private status query. | Visible only in moderation history if provided; retention 30 days, Q45. |
-| Public read-only | “Tap the tag or scan the QR code to leave a wish.” / “Chạm thẻ hoặc quét mã QR để gửi lời chúc.” | Preview shows this state when public-reader access is selected. |
+| No access (Token-only page, no token) | The “tap the tag” notice (G-E1) instead of this page: “Tap the tag or scan the QR code to see this page.” / “Chạm thẻ hoặc quét mã QR để xem trang này.” No wishes list and no form (E47). On a Published page every visitor sees the list and the CTA, Q78. | Preview shows this state when Token-only is selected. |
 | More-load failure | Keep existing wishes; replace only the loading footer with Retry. | Same preview behavior. |
 
 Use semantic list items/articles, not a carousel. Load more keeps focus on its button and politely announces “[N] more wishes / Đã tải thêm [N] lời chúc.” No automatic live insertion while somebody is reading.
@@ -114,7 +114,7 @@ Links: G6 from the CTA; G8 for language; menu to Home, Zodiac, Memories and Toge
 
 ## 8. Leave a wish and confirmation — G6/G7
 
-**Purpose:** a short, trusted submission flow. No account is required for a valid token guest. A guest account may write when available under the approved account flow. Owner preview demonstrates the form with placeholders and a clearly labelled sample confirmation.
+**Purpose:** a short, trusted submission flow. No account is required: a token guest, a registered guest and (on a Published page) a visitor with no credential can all send a wish, rate-limited (Q78). The sent state carries the optional updates card (§11, G26). Owner preview demonstrates the form with placeholders and a clearly labelled sample confirmation.
 
 ### Layout and fields
 
@@ -132,7 +132,7 @@ The older G6 inventory lists a language field. Removing that selector is the rec
 
 Privacy copy:
 
-> **EN:** “We briefly check your network address to prevent spam. We never store the address.”  
+> **EN:** “We briefly check your network address to prevent spam. We never store the address.”
 > **VI:** “Chúng tôi kiểm tra nhanh địa chỉ mạng để ngăn spam và không lưu địa chỉ này.”
 
 ### State and submission behavior
@@ -151,8 +151,8 @@ Privacy copy:
 
 G7 copy:
 
-> **“Wish sent / Đã gửi lời chúc”**  
-> “Thank you. Your wish will appear after [OWNER] approves it.”  
+> **“Wish sent / Đã gửi lời chúc”**
+> “Thank you. Your wish will appear after [OWNER] approves it.”
 > “Cảm ơn bạn. Lời chúc sẽ hiển thị sau khi [OWNER] duyệt.”
 
 Show **“Back to wishes / Về lời chúc”**. Do not repeat the pending message body, create a public pending card, promise approval or imply delivery by email.
@@ -192,9 +192,57 @@ Loading preferences uses system motion settings and a stable shell; never briefl
 
 | Codex id | Question | Lives in |
 |---|---|---|
-| D1, D2, D9 | Together entrance direction, replay policy, "Use device setting" | PRD Q71; [motion §10.1.4](vegenus_guest_motion.md#1014-replay-policy) |
-| D3 | Elegant gold hairline | PRD Q72 |
-| D4, D5, D6 | Character counting, stored language, retry de-duplication | PRD Q73; §8 |
+| D1, D2, D9 | Together entrance: option 1 chosen, per-theme fall styles to design; replay policy default pending | PRD Q71; [motion §10.1.4](vegenus_guest_motion.md#1014-replay-policy) |
+| D3 | Elegant gold hairline: accepted | PRD Q72 |
+| D4, D5, D6 | Character counting, stored language, retry de-duplication: defaults adopted | PRD Q73; §8 |
 | D7 | Album quota limits | PRD Q66 |
-| D8 | Memories parallax and Ken Burns | PRD Q74 |
+| D8 | Memories parallax and Ken Burns: removed | PRD Q74 |
 | D10 | Email readiness and reminder defaults | PRD Q37; [owner UI](vegenus_owner_ui.md) |
+| D11 | Sign-in redesign: no gate, invite codes, owner-access request, email updates | PRD Q77-Q81; §11; [token flow §10](vegenus_token_flow.md) |
+
+## 11. Sign in, invite code and email updates — G20–G27 (owner decision 2026-10-26, Q77-Q81)
+
+**Purpose:** optional doors that never block reading. There is **no entry gate** (Q77): a tap on the tag, or a visit with no token, goes straight to the page. Everything below is reached from the menu item “Sign in / Đăng nhập”, a row in Settings (G8), or the card shown after a wish is sent. Q37 (a verified sending domain) must exist before any mail leaves; until then every screen that needs mail shows the “email not available” state. Placeholders only (rule 3): `[EMAIL]`, `[CODE]`.
+
+### 11.1 Layout, themes and shared rules
+
+- **Container:** the shared sheet from §6/§9. Phone: bottom sheet, 16 px padding, 56 px heading/Close row, 48 px inputs and 48 px primary button, body scrolls above the keyboard, errors never hide behind it. Tablet: centered 560 px dialog. Laptop: centered 600 px dialog. At 320 px width and 200 % text everything stacks and the panel scrolls.
+- **Themes:** A–D differ only through the existing type, surface, radius, divider and edge tokens (A glass card, B navy card with constellation brackets, C paper note with stitched margin, D ivory sheet with hairlines), never through control placement. Body fonts in every theme; the display face only for the heading. Backgrounds stay still behind the sheet.
+- **Order of actions:** primary action first and visually strongest, one secondary text action, Close always in the top-right of the heading row. No marketing copy, no countdowns.
+- **Autofill and input:** email `autocomplete="email"`, password `new-password` (create) or `current-password` (sign in), code field `autocomplete="off"`, `autocapitalize="characters"`, spell-check off, accepts lower case, spaces and a dash and normalises them. “Show password” toggle on every password field. A password manager must work.
+- **Sessions:** account session is an HttpOnly cookie. “Remember me” is not offered; the session lasts as long as the vendor default and ends on sign-out.
+
+### 11.2 Screens
+
+| ID | Screen | Content (English / Vietnamese) and behaviour |
+|---|---|---|
+| **G20** | Entry points | Menu item “Sign in / Đăng nhập” (signed out) or “Account / Tài khoản” (signed in). Settings row group “Account / Tài khoản”: “Sign in / Đăng nhập”, “I have an invite code / Tôi có mã mời”, “Get updates by email / Nhận tin qua email”. Never a pop-up on arrival. If a visitor dismisses the invite card after a wish, remember it on this device and do not show it again. |
+| **G21** | Invite code | Heading “Enter your invite code / Nhập mã mời”. Field “Invite code / Mã mời”, help “Each code works once. Ask the couple if you need one. / Mỗi mã chỉ dùng một lần. Hãy hỏi cặp đôi nếu bạn cần mã.” Primary “Continue / Tiếp tục”. Text action “Back / Quay lại”. |
+| **G22** | Create account | Heading “Create your account / Tạo tài khoản”. Fields: “Email / Email”, “Password / Mật khẩu” (help “At least 10 characters / Ít nhất 10 ký tự”), “Display name (optional) / Tên hiển thị (không bắt buộc)”. Unchecked box “Email me updates / Gửi cho tôi tin cập nhật” with one-line consent text and the unsubscribe note. Primary “Create account / Tạo tài khoản”. The code is reserved for 30 minutes (design 1 §10.3); if the person goes back, they keep the code field filled. |
+| **G23** | Check your email | “Check your email / Kiểm tra email của bạn”. “We sent a link to [EMAIL]. It works for 30 minutes. / Chúng tôi đã gửi liên kết tới [EMAIL]. Liên kết có hiệu lực 30 phút.” Actions: “Send again / Gửi lại” (after a cooldown, shown as a plain text hint, no exact seconds), “Use a different email / Dùng email khác”. The same screen appears whether the address is new or existing (no enumeration). |
+| **G24** | Confirm and welcome | Landing opened from the email: heading “Confirm your account / Xác nhận tài khoản” with one button “Confirm / Xác nhận” (a bare link never confirms, E48). Success: “You’re in. Welcome. / Bạn đã vào. Chào mừng bạn.” then “Continue to the page / Tiếp tục vào trang”. Expired or used link: “This link can’t be used any more. Start again with your code. / Liên kết này không còn dùng được. Hãy bắt đầu lại với mã của bạn.” |
+| **G25** | Sign in / forgot password | “Sign in / Đăng nhập”, email, password, “Forgot password? / Quên mật khẩu?”, primary “Sign in / Đăng nhập”, secondary “I have an invite code / Tôi có mã mời”. Wrong credentials: one message, “Email or password isn’t right. / Email hoặc mật khẩu chưa đúng.” Forgot password asks for the email and always answers “If that address has an account, we sent a link. / Nếu địa chỉ này có tài khoản, chúng tôi đã gửi liên kết.” The owner does not sign in here; the owner’s page is `/login` (O1). |
+| **G26** | Updates card and subscribe | Shown inside the sent state (G7) and after other interactions (for example a first like or favourite, if those exist), once per device unless the person asks again in Settings. “Want to hear when we add new memories? / Muốn nhận tin khi có kỷ niệm mới?” Field email, unchecked consent box with the unsubscribe note, primary “Send me a confirmation / Gửi email xác nhận”, text action “Not now / Để sau”. After sending: “Check your email to finish. / Hãy kiểm tra email để hoàn tất.” Confirm landing (button) and unsubscribe landing (button, “You won’t get any more updates. / Bạn sẽ không nhận thêm tin cập nhật.”) follow G24. Settings has the same form under “Get updates by email”. |
+| **G27** | Ask to help manage the page | Only for a signed-in registered guest, in Settings → Account. “Ask to help manage this page / Xin quyền cùng quản lý trang”. A 280-character message with a counter near the cap, primary “Send request / Gửi yêu cầu”. States: none sent, “Request sent. The couple will see it. / Đã gửi yêu cầu. Cặp đôi sẽ thấy yêu cầu.”, “Approved / Đã chấp thuận” (explains the account changes at the next sign-in), “Declined / Đã từ chối” with the optional reason. Daily limit reached: the kind notice pattern of Q75, no numbers. |
+
+### 11.3 States (every screen above)
+
+| State | Treatment |
+|---|---|
+| Default | As described; focus lands on the first field, or the heading for confirmation screens. |
+| Empty / invalid input | Inline text under the field, linked with `aria-describedby`, never colour alone; first invalid field receives focus on submit. |
+| Submitting | The primary button shows a spinner and “Sending… / Đang gửi…”, stays 48 px high, fields are read-only, and a second press is ignored. |
+| Wrong, used, revoked or expired code | One message for all four: “That code can’t be used. Check it, or ask the couple for a new one. / Mã này không dùng được. Hãy kiểm tra lại hoặc xin mã mới.” |
+| Too many attempts (code, sign-in, subscribe) | “Too many tries. Please try again later. / Bạn đã thử quá nhiều lần. Vui lòng thử lại sau.” No counts, no timers, the form is disabled. |
+| Email not available (Q37 unresolved) | “Email isn’t available yet, so sign-up and updates are paused. / Email chưa khả dụng nên đăng ký và nhận tin đang tạm dừng.” Code check can still run; the form is disabled; nothing implies the code was used. |
+| Offline | Banner “You’re offline / Bạn đang ngoại tuyến”, form kept, submit disabled, retries when back online. |
+| Server error | “Something went wrong. Nothing was saved. Try again. / Đã xảy ra lỗi. Chưa lưu gì cả. Hãy thử lại.” |
+| Page not Published, no token (E47) | G-E1 notice only; none of G20–G27 is reachable from it. |
+| Long Vietnamese text | Labels and helper text wrap; buttons grow in height, never truncate; 320 px and 200 % text checked. |
+| Signed in | Menu shows “Account”, the Settings group shows the display name (first 24 characters, then an ellipsis) and “Sign out / Đăng xuất”. Sign-out clears the cookie and the screen returns to the page. |
+
+### 11.4 Motion and accessibility
+
+- **Motion:** the sheet uses the existing sheet entrance (motion §6 tokens). Field errors change border colour and show text in 160 ms (no shake). Success shows a check that fades and scales in 200 ms. **Reduced motion:** sheets appear without movement, success is a static check, spinner replaced by the text “Sending…”. Nothing here plays on page arrival.
+- **Accessibility:** labelled fields, visible focus ring, Esc closes (if the person typed something, a small confirm “Discard what you typed? / Bỏ nội dung đã nhập?”), focus is trapped in the sheet and restored to the opener, status messages in a polite live region, targets at least 44 px (48 px used), contrast checked per theme including text over the sheet (not yet rendered: the boards are a later step), password fields never autofocus, no CAPTCHA. Tab order follows reading order; Show password is a real button with a pressed state.
+- **Privacy:** screens never show a full address after submission beyond the one the person typed; no real names, tokens or codes appear in docs, screenshots or fixtures (rule 3).

@@ -113,6 +113,7 @@ Static mode and effective Reduce motion use **0 ms** for every duration and dela
 - **Slow network:** show the destination's stable shell and loading text; stop after the normal interval. A late response fills the content once without repeating the route transition. Images reserve their layout space. Errors are immediately usable.
 - **Disabled/removed section:** omit it from menu and Home shortcuts. If a stale link reaches it, use the existing unavailable state; do not render hidden content for an animation.
 - **Access failure or revocation:** immediately remove protected DOM, outgoing visual layers, scene resources and pending media work, and show the neutral access state. No decorative fade retains protected content. Issued media URLs still have the existing expiry limitation; this does not change Q29.
+- **Sign-in, code and updates sheets (guest UI §11, G20–G27):** use the standard sheet entrance; nothing plays on arrival and nothing blocks reading. Field errors change border colour and reveal text in 160 ms without shake; success is a check that fades and scales in 200 ms. Reduced motion: no movement, static check, spinner replaced by “Sending…”. An interrupted sheet (route change, access failure) is removed immediately with its typed values discarded, never persisted.
 - **Runtime downgrade:** keep current route, focus, scroll, sheet, language and unsent wish; settle the background, dispose 3D as in design 5 and continue with the still composition. A mode change must not resubmit a form.
 
 ## 8. Phone budgets and implementation boundaries
@@ -139,7 +140,7 @@ These are future behavioral tests, each demonstrated RED before implementation. 
 
 ## 10. Signature entrances (lead design by Codex, 2026-10-26)
 
-**Status:** proposal, owner decisions Q71-Q74 (PRD §12). Written by Codex as lead designer from the owner's seed (Together: the map falls from the top, larger to smaller, slams into the ground with effects after) and edited by Claude only for numbering and links. Every value is a prototype target; rendering, comfort and frame cost are **unverified**. Canvas preview of these entrances is pending (progress 2026-10-26). Layers §1-§9 above are unchanged; where §10 differs (first direct arrival, Memories parallax) the difference is listed as an open decision, not silently applied.
+**Status:** proposal; owner answers 2026-10-26: Q71 option 1 (soft fall and slam) with a different fall style per theme still to design, Q72 gold hairline accepted, Q74 parallax and photo pan removed (PRD §12). Written by Codex as lead designer from the owner's seed (Together: the map falls from the top, larger to smaller, slams into the ground with effects after) and edited by Claude only for numbering and links. Every value is a prototype target; rendering, comfort and frame cost are **unverified**. Canvas preview of these entrances is pending (progress 2026-10-26). Layers §1-§9 above are unchanged; where §10 differs (first direct arrival, Memories parallax) the difference is listed as an open decision, not silently applied.
 
 ### 10.1 Together signature entrance — “A little world lands”
 

@@ -1,6 +1,6 @@
 # Design 3: Data model
 
-**Status:** v1.0, **approved by the owner 2026-10-23** (merged 2026-10-22: "finish the database model, commit and merge"). Codex adversarial review: 11 rounds, last verdict **approve**. History: v0.2 answered Q42-Q45, added the trusted write path §3.9 and upload reservations §3.4, corrected Zodiac to the couple's own data §3.10; v1.0 added Zodiac systems, birthplace/time, publication snapshot and guest disclosure levels. Open: Q50 (event line). Facts marked **unverified** or "to verify in research" are checked before the feature that needs them is built. No code. Table and column lists below are a contract for Phase 1 migrations, not SQL.
+**Status:** v1.0, **approved by the owner 2026-10-23** (merged 2026-10-22: "finish the database model, commit and merge"). Codex adversarial review: 11 rounds, last verdict **approve**. History: v0.2 answered Q42-Q45, added the trusted write path §3.9 and upload reservations §3.4, corrected Zodiac to the couple's own data §3.10; v1.0 added Zodiac systems, birthplace/time, publication snapshot and guest disclosure levels. Open: Q50 (event line). **v1.1 draft (2026-10-26, branch `docs/signin-gate`, Codex review pending): sign-in redesign, adds `invite_codes`, `access_requests`, `email_subscriptions`, author kind `visitor`; §3.5, §3.6, §3.7, §3.9, §5, §7.** Facts marked **unverified** or "to verify in research" are checked before the feature that needs them is built. No code. Table and column lists below are a contract for Phase 1 migrations, not SQL.
 **Date:** 2026-10-22
 **Inputs:** PRD §3.1, §4.3, §5, §9.2, §12 (Q15, Q17, Q27, Q29, Q30, Q34, Q35, Q38, Q39); design 1 (`vegenus_token_flow.md`) §3, §5, §10, §11; design 2 (`vegenus_screens.md`) "What this tells the data model"; plan §1, §3, §4.
 **Supersedes:** the sketch in plan §4. Changes from it are listed in §2.
@@ -217,8 +217,8 @@ O10's meter shows used plus charged. Egress cannot be measured from the database
 | `body` | text | 1–500 chars, NFC, plain text (Q34c, E11) |
 | `lang` | `lang` | |
 | `status` | enum `entry_status` (`pending`, `approved`, `rejected`) | default `pending`; only members change it (O7) |
-| `author_kind` | enum (`token`, `account`) | |
-| `token_version` | int null | required when `author_kind = token` (design 1 §6: kept after rotation) |
+| `author_kind` | enum (`token`, `account`, `visitor`) | `visitor` = a wish from someone with no token or account on a Published page (Q78, design 1 §10.2) |
+| `token_version` | int null | required when `author_kind = token` (design 1 §6: kept after rotation); null for `visitor` and `account` |
 | `account_id` | uuid null FK `guest_accounts` on delete set null | set when `author_kind = account` |
 | `moderated_at`, `moderated_by` | null | |
 
@@ -245,8 +245,37 @@ Cap (Q38, default 50): the verification function locks the `pages` row, counts a
 | `page_id` | uuid FK on delete cascade | |
 | `email` | text | needed to create the account at consumption; deleted at expiry (§5) |
 | `link_secret_hash` | bytea unique | SHA-256 of the single-use link secret |
-| `token_version` | int | rotation invalidates rows with an older version (design 1 §10) |
+| `invite_code_id` | uuid FK `invite_codes` on delete cascade | the code reserved for this registration; replaces `token_version` (sign-up no longer needs a token session, Q79) |
 | `expires_at` | tstz | `created_at + 30 min` |
+
+**`invite_codes`** (Q79; created with the feature, design 1 §10.3)
+| Column | Type | Rule |
+|---|---|---|
+| `id` | uuid PK | |
+| `page_id` | uuid FK `pages` on delete cascade | |
+| `code_hash` | bytea unique | `HMAC-SHA-256(server secret, normalised code)`; the code (10 Crockford base32 characters, about 50 bits) is shown to the owner once and never stored; a keyed hash because 50 bits could be brute-forced offline from a stolen table with a plain hash |
+| `state` | enum (`open`, `reserved`, `redeemed`, `revoked`) | default `open`; transitions only through `join_register`, `join_verify`, `owner_revoke_invite_code`; expiry is evaluated at use |
+| `label` | text null | 0–40 chars, owner's private note; never a real name in docs or fixtures |
+| `expires_at` | tstz null | optional |
+| `reserved_until` | tstz null | `now() + 30 min` at reservation; an expired reservation counts as `open` |
+| `reserved_for_hash` | bytea null | HMAC of the registering address, so a reservation cannot be hijacked by another address |
+| `redeemed_user_id` | uuid null FK `auth.users` on delete set null | set at `join_verify` |
+| `created_at`, `redeemed_at` | tstz | |
+
+Cap rule: `count(guest_accounts) + count(invite_codes where state in (open, reserved) and not expired) <= cap` (default 50), checked under the `pages` row lock at generation and at verification.
+
+**`access_requests`** (Q80)
+| Column | Type | Rule |
+|---|---|---|
+| `id` | uuid PK | |
+| `page_id` | uuid FK on delete cascade | |
+| `user_id` | uuid FK `guest_accounts` on delete cascade | |
+| `message` | text | 1–280 chars, NFC, plain text |
+| `state` | enum (`pending`, `approved`, `declined`) | partial unique index: one `pending` per `user_id`; one request per user per day |
+| `decision_reason` | text null | up to 200 chars, shown to the requester |
+| `created_at`, `decided_at`, `decided_by` | | |
+
+Approval moves the user from `guest_accounts` to `memberships` (role `co_editor`) in one transaction; the existing trigger forbids holding both (§3.2).
 
 Guest accounts hold no Zodiac data: the Zodiac section is about the couple, not the guest (§3.10, owner 2026-10-22).
 
@@ -255,7 +284,9 @@ Guest accounts hold no Zodiac data: the Zodiac section is about the couple, not 
 | Table | Columns | Notes |
 |---|---|---|
 | `page_email_settings` (PK `page_id`) | `reminder_lead_days smallint` (proposal 7), `digest_enabled bool` (default true) | O14. The recipient is the owner account's own email from `auth.users`, not a copy |
-| `email_prefs` (PK `user_id`, FK `guest_accounts`) | `thank_you bool`, `unsubscribed_at tstz null` | phase B only |
+| `email_prefs` (PK `user_id`, FK `guest_accounts`) | `thank_you bool`, `updates bool` (default false, Q81), `unsubscribed_at tstz null` | phase B only |
+| `email_subscriptions` (Q81, S19a) | `id`, `page_id`, `email` (readable; needed to send), `address_hash` unique per page, `state` (`pending`, `active`, `unsubscribed`), `confirm_secret_hash`, `confirm_expires_at` (24 h), `unsubscribe_secret_hash`, `locale`, `source` (`wish`, `interaction`, `settings`), `consent_version smallint`, `consent_at`, `confirmed_at`, `created_at` | no account; the address is personal data: RLS with no anon access, never in logs, analytics or Git. Cap 50 active per page, checked at confirmation under the page row lock. Pending rows purge after 24 h |
+| `page_email_settings` addition | `notify_subscribers bool` (default false), `last_digest_at tstz null` | owner switch in O14; the digest job compares newly published items to `last_digest_at` |
 | `email_suppressions` (PK `address_hash`) | `reason` (`bounce`, `complaint`, `unsubscribe`), `created_at` | `address_hash` = HMAC-SHA-256 with a server secret, so a stolen table does not list addresses (E39) |
 | `email_log` | `id`, `page_id`, `dedupe_key text unique`, `template`, `recipient_hash`, `status` (`queued`, `sent`, `failed`, `suppressed`), `attempts`, `provider_id`, `sent_at` | never stores the address, the body, a token or memory text (design 1 §11). The daily cap counts today's rows |
 
@@ -276,7 +307,7 @@ Guest accounts hold no Zodiac data: the Zodiac section is about the couple, not 
 - Its credentials are a server-only environment variable. The browser never holds them; only the server's guest-write module uses them, and a lint rule forbids importing that module anywhere else.
 - How the server connects as this role (direct Postgres connection through the vendor's pooler, or a server-signed token carrying the role) is **unverified** for Supabase; check in Phase 1 before the first migration. If neither works, the fallback is option (b): the service role confined to that one module behind the same lint rule, with the functions still doing every check themselves.
 
-Write functions behind `vegenus_server`: `guest_guestbook_post`, `guest_register`, and the rate limiter used by the token exchange and login routes. These are the writes made **without** a verified identity, where the server's device and IP keys are the only basis for limits.
+Write functions behind `vegenus_server`: `guest_guestbook_post`, `public_guestbook_post` (Published page, no credential, Q78: the same three buckets with a higher IP bucket, proposal 20 per day, because a venue shares one address), `join_register` (replaces `guest_register`; reserves the invite code atomically), `subscribe_request`, and the rate limiter used by the token exchange, code check and login routes. These are the writes made **without** a verified identity, where the server's device and IP keys are the only basis for limits.
 
 **Guest-account writes keep the database-verified identity (Codex round 2, finding 3).** A connection as `vegenus_server` carries no user identity, so routing account writes through it would need the server to assert "this is user X", a new trust boundary. Instead:
 - `account_guestbook_post` and `account_profile_set` stay executable by `authenticated` only and take **no user id argument**. They read the identity from `auth.uid()`, which the database derives from the guest's own session token after verifying its signature. The server passes the guest's session token through; it never names the user.
@@ -433,12 +464,15 @@ Deleting a page cascades to every row above and enqueues its storage keys in `st
 | `email_prefs` | — | fn (own row) | — | — | |
 | `partner_profiles` | fn (labels and signs only, never the date) | fn (same) | read, write | — | |
 | `upload_reservations` | — | — | through `member_upload_*` only | through `member_upload_*` only | expiry job, deletion worker |
-| `pending_registrations` | — (`guest_register` runs as `vegenus_server`, §3.9) | — | — | — | purge job |
+| `pending_registrations` | — (`join_register` runs as `vegenus_server`, §3.9) | — | — | — | purge job |
+| `invite_codes` | — (`join_register` / `join_verify` only) | — | create, revoke, list through `owner_*_invite_code` (never reads `code_hash`) | — | |
+| `access_requests` | — | fn (create own, read own state) | read, decide through `owner_decide_access_request` | — | |
+| `email_subscriptions` | — (`subscribe_request` runs as `vegenus_server`; confirm and unsubscribe through narrow functions that take the secret) | — | read count and list for O14/O15, remove | — | digest job, purge job |
 | `page_email_settings` | — | — | read, update | — | |
 | `email_log`, `email_suppressions` | — | — | read `email_log` (O14 "last sends") | — | send job |
 | operational (§3.8) | — | — | — | — | per §3.8 |
 
-Function rules (all three contracts): `SECURITY DEFINER`, `set search_path = ''`, fully qualified names, `EXECUTE` revoked from `public` and granted only to the intended role. Read functions are granted to `anon` (and `authenticated` for `account_*`). Token-guest writes (`guest_guestbook_post`, `guest_register`) are granted to `vegenus_server` only; guest-account writes to `authenticated`, with identity from `auth.uid()` (§3.9). No function callable by `anon` takes a `page_id` (design 1 §1). Each returns an explicit column list per kind, never `select *`, so internal columns (`version`, `created_by`, `status`, `token_version`) never reach a guest.
+Function rules (all three contracts): `SECURITY DEFINER`, `set search_path = ''`, fully qualified names, `EXECUTE` revoked from `public` and granted only to the intended role. Read functions are granted to `anon` (and `authenticated` for `account_*`). Writes without a verified identity (`guest_guestbook_post`, `public_guestbook_post`, `join_register`, `subscribe_request`) are granted to `vegenus_server` only; guest-account writes to `authenticated`, with identity from `auth.uid()` (§3.9). No function callable by `anon` takes a `page_id` (design 1 §1). Each returns an explicit column list per kind, never `select *`, so internal columns (`version`, `created_by`, `status`, `token_version`) never reach a guest.
 
 Co-editor limits (Q15) are enforced by RLS, not only by hidden buttons: no update on `pages`, `page_sections`, `guest_tokens` or `guest_accounts`. Today no co-editor exists (Q35), but the policies and tests exist so adding one later is safe.
 
@@ -461,6 +495,9 @@ Pagination is keyset (cursor = last `(sort_order, id)` or `(created_at, id)`), n
 | Content, media, approved wishes | Until the owner deletes them or the page | Owner; cascade plus `storage_deletions` |
 | Rejected wishes | 30 days, then deleted (minimum data) | Daily job (Q45) |
 | `pending_registrations` | 30 minutes | Daily job and a check at consumption |
+| `invite_codes` | `open` / `reserved` until used, revoked or the page is deleted; `redeemed` and `revoked` rows for 90 days (owner audit), then deleted | Daily job |
+| `access_requests` | Pending until decided; decided rows 90 days | Daily job |
+| `email_subscriptions` | `pending`: 24 hours; `active` until unsubscribed; `unsubscribed`: address deleted after 30 days, its hash stays in `email_suppressions` so it is not re-added by mistake | Daily job; page deletion cascades |
 | `rate_limit_hits` | 24 hours | Daily job |
 | `email_log` | 90 days | Daily job (Q45) |
 | `job_runs` | 30 days | Daily job (Q45) |
@@ -499,7 +536,7 @@ Written and **observed failing** before the migration that makes them pass (plan
 | Upload start refuses a file over 50 MB or over the page budget | DB + API | E10 |
 | Concurrent uploads near the budget: of N simultaneous `member_upload_begin` calls, only those that fit are admitted; reserved bytes count against the budget | DB | E10 |
 | Completion with real size over the reservation is refused and the objects are queued for deletion; cancel and expiry release the reservation | DB + API | E9, E10 |
-| `anon` and `authenticated` calling `guest_guestbook_post` or `guest_register` directly get permission denied | DB | E11, E36 |
+| `anon` and `authenticated` calling `guest_guestbook_post`, `public_guestbook_post`, `join_register` or `subscribe_request` directly get permission denied | DB | E11, E36 |
 | Direct storage upload to an unadmitted path, a second write to an admitted path, or a write after `write_until` is refused; a direct insert into `media` / `media_variants` is denied | DB + API | E10, E36 |
 | Expiry then admission: an expired upload's bytes stay charged until deletion is confirmed; a late Complete is refused | DB | E9, E10 |
 | Delete finished media (directly, by item, by page), make the storage worker fail, then try replacement uploads: the deleted bytes stay charged and admission refuses what would exceed the budget; after confirmed deletion the space is free; no byte is counted twice | DB | E10, E16 |
