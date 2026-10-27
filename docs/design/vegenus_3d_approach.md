@@ -1,6 +1,6 @@
 # Design 5: 3D approach
 
-**Status:** v0.6, **approved by the owner 2026-10-23** (v0.6, branch `docs/theme-nav-icons`: menu button instead of bottom nav in §4.3; galaxy shape for the Zodiac star field in §5.1, owner 2026-10-23). Phase 0 design deliverable "3D approach". Replaces plan §7 (its proposals are kept or refined here). No code. v0.2: Codex round 1, 4 findings fixed (context-loss timeout, no horizon arc, nearby events in text only, texture-byte budget test). v0.3: round 2, 2 findings fixed (G8 reduce-motion override, stored World choice). v0.4: round 3, 2 findings fixed (layer rule for View boxes, FPS measured only while animating). Round 4: approve, no material findings. v0.5: owner answered Q57 (basic set first, then rich versions in all four themes equally) and Q58 (rail navigation).
+**Status:** v0.6, approved by the owner 2026-10-23. Phase 0 design deliverable "3D approach"; replaces plan §7. The motion supplement ([guest motion](vegenus_guest_motion.md)) is a draft and not part of the approval. Page-mode art follows Q61 and Q62. No code.
 **Date:** 2026-10-23
 **Inputs:** PRD §4.1 (S10, S11, S16, S21), §6.4-6.5, §7 (performance, accessibility), FR9, FR13, E2, E17, E18, E26, E30, E41, Q3, Q21, Q50; plan §1-§3, §7; design 2 (G1-G8, Z1, Z2); design 3 §3.10-3.11 (`birth_sky`, `published`); design 4 (token contract, `scene.json`, night panel, decor rule, §7, tests 2, 5, 7).
 **Privacy:** placeholders only. Scenes read only what the guest calls already return; no new data, endpoint or third-party host.
@@ -13,7 +13,7 @@
 1. **Content first, 3D second.** Every mode first renders the same DOM content (the Static layout). 3D is loaded after first content and only adds to it. A failed or slow scene never hides content (E17).
 2. **3D is decor or navigation, never the only carrier of content.** Text, photos, forms and buttons are DOM in every mode, so fonts, Vietnamese marks, contrast (design 4) and screen readers work the same everywhere. WebGL draws no text.
 3. **One WebGL context per page.** One full-viewport canvas; sections draw into it through scissored views. No canvas per section.
-4. **Procedural before assets.** The four theme motifs and the night sky are built from three.js primitives and shaders: zero model files to download. Model files (GLB) arrive only with the chibi couple and places map (after core, §9).
+4. **Procedural as the fallback, generated images as Page-mode art (Q62, owner 2026-10-24).** The Codex-generated WebP images are the Page-mode art in every theme (byte targets in the [image brief](vegenus_codex_image_brief.md): motif ≤ 120 KB, galaxy ≤ 250 KB, map ≤ 250 KB, button ≤ 30 KB). The code-drawn three.js and SVG/CSS versions of the four motifs and the night sky are the Static and reduced-motion fallback and the stand-in until an image is approved. No model files (GLB) download until the chibi couple and places map (after core, §9).
 5. **Scenes read tokens.** Colours come from the theme's CSS tokens at runtime (design 4 §3); `scene.json` names tokens, never colour values.
 6. **Rest when idle.** Render on demand; animate only while something visibly moves; stop when off-screen, hidden or idle.
 7. **Mode is decided by rules that can be tested** (§3.2), then corrected by measurement at runtime (§3.3).
@@ -89,7 +89,7 @@ Normal scrolling layout. One `<Canvas>` fixed behind the DOM (`pointer-events: n
 | Z2 Zodiac | Inside the night panel | The Zodiac scene (§5) |
 | G3, G6-G11, errors | none | DOM only |
 
-- Text never sits inside a View box (design 4 §3 decor rule: decor never directly behind text). Titles go above or below the box.
+- Body text and controls do not sit directly on a moving View. Titles go above or below the box. **Exception for Zodiac (Q61, owner 2026-10-24):** the reading and labels may overlap the night scene as long as the main part of it (galaxy core, sign art) stays uncovered; any reading text sits in a card of 72 % night glass with blur, and its contrast is checked against the brightest frame of the scene.
 - **Layer rule.** The canvas is behind the DOM, so nothing opaque may sit between a View box and the canvas: every ancestor of a View box is transparent over the box's area. Where a section needs its own ground, the scene paints it: the Zodiac night panel's text areas carry the panel background, while its View box is transparent and the scene clears that box to the panel's `--bg`. The View box is kept away from the panel's rounded corners (text areas above and below it), since the scissor is rectangular.
 - Views outside the viewport do not render. Touch scrolling is never captured by the canvas; pinch-zoom is never disabled.
 - A tap on the motif (for example A's "tap a glowing orb") is optional delight: decorative only, and given a DOM button if it ever carries meaning.
@@ -141,7 +141,7 @@ Token names are resolved with `getComputedStyle` on the theme root when the scen
 The scene sits on the night panel (design 4 §6) in every theme, takes its colours from the panel's tokens, and reads **only the published snapshot** (`published` in design 3 §3.10). The scene's input type has no date, time or place field (test 8).
 
 ### 5.1 Basic level (always, when Zodiac is enabled)
-- A procedural star field from a fixed seed (not the real sky, so it implies nothing about a date), slow twinkle, gathered into a **spiral galaxy** (owner, 2026-10-23: "it still needs to look like the galaxy"): two arms and a halo as one instanced point cloud, a glowing core sprite, tilted towards the viewer and turning slowly (one turn in about 4 minutes, idle rule §4.4). The 12-sector ring circles the core in the same tilted plane. Static and reduced motion get the same picture still (§5.3; preview canvas, Zodiac row).
+- **Page mode uses the approved night-sky image (Q62; image brief, row 5 v2) behind the DOM; the procedural galaxy below is the Static, reduced-motion and image-failure fallback and the World-mode scene.** A procedural star field from a fixed seed (not the real sky, so it implies nothing about a date), slow twinkle, gathered into a **spiral galaxy** (owner, 2026-10-23: "it still needs to look like the galaxy"): two arms and a halo as one instanced point cloud, a glowing core sprite, tilted towards the viewer and turning slowly (one turn in about 4 minutes, idle rule §4.4). The 12-sector ring circles the core in the same tilted plane. Static and reduced motion get the same picture still (§5.3; preview canvas, Zodiac row).
 - A ring of 12 sectors: Western signs with each partner's sun sign lit, or the 12 earthly branches with each partner's year animal lit, following the Western / Vietnamese switch. The scene draws only values present in `published`: a partner whose year animal the owner hid (Tết warning, Q49) has no lit branch.
 - The two sign artworks with a soft constellation line between them. **Page mode: the artworks are DOM `<img>` elements** (alt text, no texture, no CORS question) placed in the night panel next to the View box. World mode: textured planes; built-in art is same-origin, uploaded art needs the CORS check in §4.3, else the DOM sheet shows it.
 - No text in WebGL: sign names, labels and the reading are DOM below the scene.
@@ -156,7 +156,7 @@ A **geocentric ecliptic ring**, matching what `birth_sky` stores (ecliptic longi
 - One partner at a time, with a switch "[PARTNER_A] / [PARTNER_B]"; a partner without published details has no entry in the switch.
 
 ### 5.3 2D and accessible version
-Static mode, reduced motion and screen readers get the same facts: a 2D SVG Moon drawn from the stored illumination and waxing/waning (terminator as an ellipse), the composed or owner-written sky line, and a DOM list "Moon: [phase], [n] %, in [sign]; Venus in [sign]; …". This list is the DOM equivalent of the 3D ring and is present in every mode (the canvas stays `aria-hidden`).
+Static mode, reduced motion and screen readers get the same facts: a 2D SVG Moon drawn from the stored illumination and waxing/waning (terminator as an ellipse), the generated sky line (the owner cannot reword it, Q82), and a DOM list "Moon: [phase], [n] %, in [sign]; Venus in [sign]; …". This list is the DOM equivalent of the 3D ring and is present in every mode (the canvas stays `aria-hidden`).
 
 ### 5.4 Owner screens
 Z1 (neutral `/app`) shows the 2D version. The real scene is seen through "view as guest" (design 4 §9).
@@ -169,7 +169,7 @@ Z1 (neutral `/app`) shows the 2D version. The real scene is seen through "view a
 |---|---|---|
 | First content (mid-range phone, 4G profile) | ≤ 3 s, before any 3D request | same |
 | 3D code chunk (three + R3F + drei + scenes), gzip | ≤ 300 KB, requested after first content when the browser is idle | ≤ 450 KB incl. world |
-| Model and texture bytes | 0 (procedural) | Photo textures reuse the thumbnails already in the 3 MB first-visit budget (plan §3); other textures and models ≤ 1.5 MB, from Vercel |
+| Model and texture bytes | No models. Approved Page-mode image art within the image-brief targets (Q62), loaded after first content and **counted inside the 3 MB first-visit budget** (plan §3); 0 for the procedural fallback | Photo textures reuse the thumbnails already in the 3 MB first-visit budget (plan §3); other textures and models ≤ 1.5 MB, from Vercel |
 | Draw calls per frame | ≤ 50 | ≤ 150 |
 | Triangles on screen | ≤ 100 k | ≤ 300 k |
 | GPU texture memory | ≤ 16 MB | ≤ 64 MB; textures ≤ 1024 px |

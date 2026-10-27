@@ -28,7 +28,7 @@ A guest who taps the tag or scans the QR sees the enabled, published sections an
 | Actor | Credential | Where checked | Can do |
 |---|---|---|---|
 | Owner | Supabase Auth session (Google or email/password, owner-provisioned, Q30) | RLS by `memberships` | Everything on their page |
-| Co-editor | Same, account provisioned by the owner | RLS by `memberships`, role `co_editor` | Edit content, moderate guestbook (Q15) |
+| Co-editor | **Deferred** (Q35): no account has this role; both partners use the Owner account | RLS by `memberships`, role `co_editor` reserved | Would edit content and moderate wishes (Q15) |
 | Guest with token | Guest cookie holding the token (§4) | Inside `guest_*` functions | Read published content of enabled sections; post one message to the queue at a time |
 | Visitor without token | None | `public_*` functions: Published pages only; wishes through the server-only `public_guestbook_post` (§10.2) | Token-only or Private page: the "tap the tag" screen only. Published page: read published sections; post a wish to the queue, rate-limited (Q78, supersedes the read-only rule of Q36) |
 | Registered guest (invite code, Q79; was "guest account", Q38) | Email-verified login bound to one page, created with a single-use invite code (§10.3) | `account_*` functions: validated identity + an active `guest_accounts` row for that page (§5.1) | Same reads as a token holder; post with a prefilled name; keep email preferences and updates; request owner access (§10.4) |
@@ -59,7 +59,7 @@ A token is assigned to the **page**, not to a person. Everyone who taps the same
 
 ### 3.2 Show once or show again (Q34a: decided 2026-10-22 by Claude and Codex, owner delegated)
 
-**Decision: A, show once, hash only.** Codex agreed and corrected my reasoning: a stolen owner session can already rotate to a token the attacker knows, so "stolen session" is not a real advantage of A; recoverable encryption adds key custody, a credential-reveal endpoint and rotation of the key; and a printed QR sheet is itself another readable credential.
+**Decision: A, show once, hash only.** A stolen owner session can already rotate to a token the attacker knows, so "stolen session" is not an advantage of A; recoverable encryption adds key custody, a credential-reveal endpoint and rotation of the key; and a printed QR sheet is itself another readable credential.
 
 | | A. Show once (default) | B. Store encrypted, show again |
 |---|---|---|
@@ -106,9 +106,11 @@ All are `SECURITY DEFINER`, take the token as the first argument, re-run the che
 | `guest_list(token, section, cursor)` | Published items of an enabled section | `status = published`, section enabled |
 | `guest_media_url(token, media_id)` | One signed URL, expiry 5 min (Q29) | Media belongs to a published item in an enabled section |
 | `guest_guestbook_list(token, cursor)` | Approved entries | `status = approved` |
-| `guest_guestbook_post(token, display_name, text, lang)` | Inserts a `pending` entry with `token_version` | Name 1–40 chars, text 1–500 chars (proposal, Q34); per-token and per-page rate limits enforced inside the function as well as at the server |
+| `guest_guestbook_post(token, submission_id, device_key, ip_key, display_name, body, lang)` | Inserts a `pending` entry with `token_version`. Server-only (`vegenus_server`), canonical signature in data model §3.9 | Name 1–40 chars, body 1–500 chars (Q34c); device, IP and page buckets (Q75, Q78) enforced atomically inside the function; `submission_id` makes a retry idempotent |
 
-### 5.1 Three explicit contracts (Codex finding 1 and 2)
+### 5.1 Three explicit contracts
+
+Every read function in all three contracts also requires the page's wording to be published (`copy_published_at` not null, data model §3.12); a page that has not finished setup returns the generic not-available result.
 
 | Contract | Caller | Authorization checked on every call | Allowed |
 |---|---|---|---|
@@ -131,7 +133,7 @@ Rules for accounts: they do not depend on the token or its version. Removal of t
 
 After a rotation, the dashboard shows the new link and QR once and reminds the owner to rewrite the tag (§3 consequence).
 
-## 7. Owner and co-editor access (summary; decided in Q26/Q30)
+## 7. Owner access (summary; decided in Q26, Q30, Q35)
 
 Closed registration (Q30). Per Q35 (confirmed 2026-10-22) the two partners use **one shared owner account**. The owner provisions it. Google sign-in works only for a pre-created account whose verified Google email matches. The `co_editor` role stays in the data model but has no screen and no provisioning flow until a second account is wanted.
 
@@ -163,18 +165,18 @@ Each row is written and **observed failing** before the code that makes it pass 
 | As the anon database role: `select` on every table returns nothing or is denied; only `guest_*` execute | DB | E36 |
 | Guessed paths (`/home`, `/admin`, `/dashboard`) are not-found or login redirect and reveal nothing | E2E | E37 |
 | Registered-guest sign-up: needs a valid unused code, verified email, attempt lockout, per-page cap; wrong, used, revoked and expired codes give one identical response; rotating the guest link changes nothing | DB + API | E38 |
-| Two concurrent registrations on one code: exactly one reserves it; a double submit by the same address reuses its reservation | DB | E44 |
-| Typo email: code returns to `open` after 30 minutes; consumed only by `join_verify`; verification link single-use and bound to its registration | DB + API | E45 |
+| Two concurrent registrations on one code: exactly one reserves it; a retry by the same address inside the window reuses the reservation and its one pending registration (new link replaces the old, expiry not extended, at most 3 resends, no password or account field changes); a different address on a live reservation gets the generic error; a retry by the same address at minute 31 deletes the lapsed registration and starts a fresh window if the invite is still valid; a password supplied by anyone before the link is opened has no effect because none is accepted | DB + API | E44 |
+| Typo email: a lapsed reservation reopens only an unexpired code; reservation never exceeds 30 minutes or the invite deadline; an invite expiring before or during verification cannot create an account and any Auth user is cleaned up; verification link single-use and bound to its registration | DB + API | E45 |
 | Cap counts accounts + open + reserved codes; code creation refused at the cap; concurrent verifications cannot pass it | DB | E38 |
 | Invite code stored only as keyed hash; no log line, response or table row contains a raw code after creation | API + DB | E38 |
 | `public_guestbook_post`: refused on Token-only/Private pages; device, IP and page buckets enforced atomically; callable only by `vegenus_server`; pending entry never returned | DB + API | E11, E46, E47 |
 | Venue crowd: 15 distinct devices on one IP can each post; the 4th post from one device is limited | API | E46 |
-| Owner-access request: one pending per account, 280 chars, daily limit, no user id argument; approval is refused while the co-editor slot is taken or Q80 is open; approval swaps guest for member atomically | DB + API | E49, E33 |
+| Registration consent: initial sign-up cannot set updates; the confirmation checkbox starts unchecked and only the mailbox holder’s POST supplies consent, which persists across recovery | API + E2E | E48 |
 | Subscriber: double opt-in needs a button POST (a GET and a mail scanner do not confirm); second confirm is a no-op; unsubscribe works without sign-in; cap enforced at confirm | API + E2E | E48 |
-| Updates digest: one mail per recipient per day; recipients de-duplicated; suppressed addresses skipped; owner mail sent first when the daily cap is short; no token or memory text in the body | API + DB | E39, E50 |
+| Updates digest: recheck visibility and recipient eligibility before each dispatch and retry, including privacy/consent changes racing provider submission; one mail per recipient per day; recipients de-duplicated; suppressed addresses skipped; owner mail sent first when the daily cap is short; no token or memory text in the body | API + DB | E39, E50 |
 | `public_*` returns nothing for Token-only/Private pages, drafts, pending entries; media minting requires published; no posting path from `public_*` | DB + API | E31, E36, E28 |
 | `account_*`: removed account, Private page, other page's ID all return nothing; guest cannot write `memberships`/`guest_accounts` | DB | E33 |
-| Pending registration: expiry purge, atomic cap under concurrent verify, generic response for all outcomes, rotation invalidates pending | DB + API | E38 |
+| Pending registration: expiry purge, atomic cap under concurrent verify, generic response for all outcomes, rotating the guest link leaves a pending registration valid | DB + API | E38 |
 | Partner birth date (Zodiac): invalid date rejected; stored value is ciphertext; guest functions never return it; no log line contains it (design 3 §9) | API + DB | E40 |
 
 ## 9. Deny by default: no unauthenticated bypass
@@ -185,7 +187,7 @@ Owner requirement (2026-10-22): nobody may open an owner page such as `/home` or
 |---|---|---|
 | 1. Route table | One file lists every route and server action with a class: `public` (landing, `/g` shell, login, `/signin`, `/join` and `/join/verify`, the subscribe-confirm and unsubscribe landings, health check, static, the read-only Published-page routes that call `public_*` only, and the rate-limited POST routes for a wish, a code check, registration and subscription), `guest` (token or account), `member` (the owner account). An unlisted route is not-found, and CI fails if the build contains a route that is not in the table | Stops "forgot to protect the new page" |
 | 2. Handler check | Every page, route handler and server action starts with `requireMember()` or `requireGuest()`. It asks the auth service to validate the session (not just "a cookie exists"). Server actions are public POST endpoints, so they get the same check | Middleware-only protection has failed in this ecosystem before (a middleware bypass in Next.js was disclosed in 2025; **unverified, from background knowledge**, check when the framework is approved), so middleware is a convenience, never the only gate |
-| 3. Database | Row-level security on every table with no anon access. Guests reach data only through `guest_*` functions that take a token. Member rows are filtered by `memberships` | A bug in the web server still cannot hand out another page's rows |
+| 3. Database | Row-level security on every table with no anon access. Guests reach data only through `guest_*` functions that take a token. Owner-account rows are filtered by `memberships` | A bug in the web server still cannot hand out another page's rows |
 | 4. Storage | Private buckets; signed URLs minted only after the same checks; 5-minute expiry (Q29) | Direct bucket links do not exist |
 
 Behaviour for the owner's example:
@@ -212,13 +214,13 @@ Sign-in surfaces are always optional and never block reading: the menu item "Sig
 
 ### 10.2 Wishes from a visitor with no credential (Q78)
 
-A new write function, `public_guestbook_post(device_key, ip_key, display_name, body, lang)`, is executable only by `vegenus_server`, like `guest_guestbook_post` (design 3 §3.9). Inside one transaction with the page row lock it requires `visibility = published`, the guestbook section enabled, then increments three buckets: device (default 3 per day, Q75), IP (**proposal 20 per day**: a venue or carrier shares one address, E46) and page (50 per day). Over a limit: roll back, return `rate_limited`. Otherwise insert a `pending` entry with `author_kind = visitor`. It reads no table directly and never returns a pending entry. A Token-only page offers no-token visitors no form and no endpoint (E47).
+A new write function, `public_guestbook_post(page_selector, submission_id, device_key, ip_key, display_name, body, lang)`, is executable only by `vegenus_server`. `page_selector` is the page's public vanity name (routed only while Published), so the function can find, lock and charge one specific page; a nonexistent, Private, Token-only or foreign selector returns the generic not-available result and charges nothing. `submission_id` is a random id the form generates once per composed wish and keeps for retries (Q73); a repeat of the same id returns the first result and consumes no quota, like `guest_guestbook_post` (design 3 §3.9). Inside one transaction with the page row lock it requires `visibility = published`, the guestbook section enabled, then increments three buckets: device (default 3 per day, Q75), IP (**20 per rolling 24 hours**, Q78: a venue or carrier shares one address, E46) and page (50 per day). Over a limit: roll back, return `rate_limited`. Otherwise insert a `pending` entry with `author_kind = visitor`. It reads no table directly and never returns a pending entry. A Token-only page offers no-token visitors no form and no endpoint (E47).
 
 ### 10.3 Registered guests and invite codes (Q79)
 
 Only the owner can create a door. A **code** is a credential for one registration.
 
-**Generate** (owner screen O16, function `owner_create_invite_code(label, expires_at)`, member role only): refused when `accounts + open codes + reserved codes` already reach the cap (default 50, Q38). The server draws 10 characters from a CSPRNG over the Crockford base32 alphabet (about 50 bits; no I, L, O, U; accepted case-insensitively and with or without a dash), stores `HMAC-SHA-256(server secret, normalised code)` and returns the code **once**, in the same show-once style as the guest link (§3.2). A fast plain hash is fine for a 256-bit token but not for 50 bits: a stolen table could be brute-forced offline, so the hash is keyed with a server-only secret. The optional label is the owner's private note (never a real name in Git or in docs).
+**Generate** (owner screen O16, function `owner_create_invite_code(label, expires_at)`, owner role only): refused when `accounts + open codes + reserved codes` already reach the cap (default 50, Q38). The server draws 10 characters from a CSPRNG over the Crockford base32 alphabet (about 50 bits; no I, L, O, U; accepted case-insensitively and with or without a dash), stores `HMAC-SHA-256(server secret, normalised code)` and returns the code **once**, in the same show-once style as the guest link (§3.2). A fast plain hash is fine for a 256-bit token but not for 50 bits: a stolen table could be brute-forced offline, so the hash is keyed with a server-only secret. The optional label is the owner's private note (never a real name in Git or in docs).
 
 **States:** `open` → `reserved` → `redeemed`; `open` or `reserved` → `revoked`; `open` → expired when `expires_at` has passed (evaluated when used, no job needed). `reserved` returns to `open` when its reservation lapses.
 
@@ -228,32 +230,75 @@ Menu / Settings / after-wish card → "I have an invite code"
        header X-vegenus-Guest: 1, Origin checked, rate limit per IP and per device
        5 wrong tries per hour, then a one-hour lockout; global daily budget
        answer: valid or one generic "not valid" (wrong, used, revoked, expired look identical, same latency)
-  2. Create the account    POST /api/join/register  {code, email, password, display name?}
-       the code is checked again and reserved in ONE statement:
-         update invite_codes set state='reserved', reserved_until=now()+30 min, reserved_for_hash=HMAC(email)
-         where code_hash=$1 and not expired
-           and (state='open' or (state='reserved' and reserved_until < now()))
-         returning id        -- zero rows = generic error (E44)
-       a pending_registrations row is created (30 min); a verification email with a single-use link is queued
-       the response is identical whether the address is new, existing, blocked or rate-limited
-  3. Open the link         GET /join/verify  shows a landing with a "Confirm" button (E48); the button POSTs
-       join_verify, one transaction with the page row lock: registration not expired, code still reserved for
-       this registration, cap not exceeded, then create the Auth user + guest_accounts row,
-       code → redeemed (redeemed_user_id, redeemed_at)
+  2. Start sign-up         POST /api/join/register  {code, email, display name?}     (no password or updates consent here)
+       the code is checked again and reserved in ONE statement, under the page row lock. A live reservation is
+       refused to a different address and reused by the same address (idempotent retry, E44). A lapsed
+       reservation is treated as gone, for the same address too (E45):
+         delete from pending_registrations where invite_code_id=$id and expires_at < now() and state='pending'   -- explicit expiry first; a 'confirming' row is cleaned up with its Auth user (below)
+         update invite_codes
+            set state='reserved',
+                reserved_for_hash = HMAC(email),
+                reserved_until    = case when state='reserved' and reserved_for_hash = HMAC(email)
+                                          and reserved_until >= now()
+                                         then reserved_until          -- live, same address: keep the original window
+                                         else min(now()+30 min, code.expires_at if set) end -- fresh window, bounded by invite deadline
+          where code_hash=$1 and not expired
+            and ( state='open'
+               or (state='reserved' and reserved_until < now())
+               or (state='reserved' and reserved_until >= now() and reserved_for_hash = HMAC(email)) )
+          returning id, reserved_until
+         -- zero rows = generic error (a different address on a live reservation, or wrong/used/revoked/expired)
+       no live pending_registrations row for this code: create one (expires_at = reserved_until) and queue the email
+       a live row exists (same address, retry): a resend. Replace link_secret_hash (the previous link stops
+                     working) and queue a new email; resend_count + 1, at most 3 per reservation. Nothing else
+                     changes; a retry cannot set or change anything about the account
+       the response is identical whether the address is new, existing, blocked, retried or rate-limited. If the
+       address already belongs to a confirmed account, nothing is reserved and no verification email is sent
+       (equal latency)
+  3. Open the link         GET /join/verify shows a landing with a password field (new-password, show-password
+       button), the display name, an unchecked updates consent checkbox and a "Confirm" button (E48). The password and consent are chosen here by the person who
+       controls the mailbox, so nobody can plant a password for someone else's address. The button POSTs
+       join_verify, which is NOT one database transaction because Auth is a separate service. Three idempotent
+       phases, each safe to repeat with the same link:
+         a. DB transaction (page row lock): registration live, link secret matches, code still reserved for
+            this registration, invite deadline not passed, cap not exceeded; persist the confirmation checkbox value and consent version/time in the transition from 'pending' to 'confirming', and generate the new Auth user id, stored as auth_user_id before any Auth call. A second concurrent request finds 'confirming' and answers "in progress, try again" without changing consent or touching Auth; a request that finds the code already redeemed by this registration's user answers success (idempotent)
+         b. Auth: create the user with the stored auth_user_id as its id (if Auth cannot take a chosen id, the
+            id is recorded from user_metadata.registration_id by reconciliation; **unverified**, Phase 1), the email
+            confirmed and the chosen password. Because the id is stored before the call, a crash right after Auth
+            creation is recoverable: the job finds the user by that id. If a user with this email already exists and
+            it is NOT the user recorded in auth_user_id (any Owner account, an existing Member, anyone else), stop
+            with the generic error: nothing is reused, changed or deleted. Reuse (set the chosen password) only the
+            user recorded in auth_user_id
+         c. DB transaction (page row lock) that REVALIDATES everything: registration still exists in state
+            'confirming' with the same link secret and auth_user_id, code still reserved for this registration (not
+            revoked, not redeemed), reserved_until and invite deadline not passed, cap not exceeded. If any check fails: roll back,
+            durably enqueue cleanup of the exact recorded Auth user (§3.8 of the data model), return the generic error. If all pass: insert
+            guest_accounts (display name, tour state) and email_prefs (updates, consent version, consent_at), code
+            -> redeemed (redeemed_user_id, redeemed_at), delete the registration row and its email address
+       Resends are refused while the registration is 'confirming'. Failure between b and c leaves state
+       'confirming' with auth_user_id set; opening the same link again finishes phase c with the same
+       revalidation, and so does the daily job. The job deletes an Auth user only when its id equals a stored
+       auth_user_id, it has no guest_accounts row and no membership, checked under the page lock; it then deletes the
+       registration row and reopens the code only if the invite remains unexpired and still `reserved` for that registration (a
+       revoked or redeemed code keeps its state). Rows in state 'confirming' are never
+       removed by expiry alone: they are removed only after the Auth cleanup succeeds, and a re-registration of a
+       lapsed code that finds a 'confirming' row runs that cleanup first, inline. The person sees "Something went
+       wrong, nothing was saved, try again"; the same link works until the original expiry.
   4. Signed in             later visits: /signin with email + password; forgot password by emailed link
 ```
 
-- **Why reserve, then consume (E45):** a typo in the email would otherwise burn the code. After 30 minutes without verification the code is `open` again.
-- **Revoke:** `open` or `reserved` → `revoked` at once; a pending registration for it fails at step 3. Revoking a `redeemed` code does nothing; the owner uses Remove account (O15), which deletes the `guest_accounts` row and the Auth user.
+- **Why reserve, then consume (E45):** a typo in the email would otherwise burn the code. A reservation lasts at most 30 minutes and never beyond the invite deadline. When it lapses, the code is `open` again only if the invite itself is still valid; an expired invite stays unusable.
+- **Revoke:** `open` or `reserved` → `revoked` at once; a pending registration for it fails at step 3. Revoking a `redeemed` code does nothing; Remove account (O15) revokes access and enqueues durable Auth cleanup (data model §3.8).
 - **Owner list (O16):** label, state, created, expires, reserved until. The code itself is never shown again; a lost code is revoked and replaced.
+- **Password handoff:** the password is entered only at step 3 and goes once from the confirmation landing to Auth over TLS, which creates the user already confirmed. No unconfirmed Auth user exists, so there is nothing to overwrite, clean up or hijack, and a resend cannot touch a password. Creating a confirmed user from the server is an Auth admin call (`auth.admin.createUser` with the email marked confirmed); its exact parameters are **unverified** and checked in Phase 1 against the Supabase docs (context7). Fallback if it is unavailable: Auth's own signup with Resend as SMTP (Q41), with the reservation logic unchanged.
 - **Passwords:** handled by Supabase Auth (never by our code). Proposal: minimum 10 characters, no composition rules, a breached-password check if the vendor offers it (**unverified**).
 - **Email unavailable (Q37):** until a verified sending domain exists, step 2 returns an "email is not available yet" state; no account is created without a verified email and nothing bypasses it. The owner sees the same warning in O16 and in O14.
-- **Rotation (§3.1):** rotating the guest link no longer affects sign-up, because a token session is not required. Existing accounts and codes are untouched.
-- A user is a registered guest or a member (owner, co-editor), never both (data model §3.2 trigger).
+- **Rotation (§3.1):** rotating the guest link no longer affects sign-up or a pending registration, because a token session is not required. Existing accounts, codes and pending registrations are untouched.
+- A user is a Member (registered guest) or an owner account, never both (data model §3.2 trigger).
 
-### 10.4 Owner-access request (Q80)
+### 10.4 (retired)
 
-`account_request_owner_access(message)` is executable by `authenticated`, takes no user id (the identity comes from `auth.uid()`, design 3 §3.9), message 1–280 characters, one **pending** request per account (partial unique index), one request per account per day. The owner sees it in the queue (O17) and runs `owner_decide_access_request(request_id, approve, reason)`. Approval, in one transaction: the co-editor slot must be free (PRD S1: one invited co-editor); delete the `guest_accounts` row; insert the `memberships` row with role `co_editor`; mark the request approved. The Auth user is the same, and RLS re-evaluates on the next call. Decline stores an optional reason (up to 200 characters) shown in the requester's Settings. **Default until Q80 is answered:** the Approve button is disabled with "Co-editor access is not set up yet / Chưa thiết lập quyền cộng tác", because Q35 deferred the co-editor screens; requests are still collected. Both outcomes queue a notification mail (S18).
+The Member request to co-manage the owner's page (Q80) was withdrawn by the owner on 2026-10-27. A later, low-priority "request a workspace" flow is recorded as Q84 and is not designed here.
 
 ### 10.5 Email subscribers and updates (Q81, S19a)
 
@@ -270,6 +315,7 @@ After a sent wish / after another interaction / Settings → "Get updates by ema
 
 - **Cap:** 50 active subscribers per page (Q81 proposal); the cap is checked at confirmation inside the page row lock.
 - **Updates digest:** the daily job (shared with the keep-alive job) finds pages with something newly published since the last digest and the owner's "Notify subscribers" switch on (O14). Recipients are active subscribers plus registered guests who turned updates on, de-duplicated by address hash, minus `email_suppressions`. One mail per recipient per day (`dedupe_key = digest:<page>:<date>:<recipient_hash>`), counts and a link only (E50). **Resend budget (plan §R: 100 a day):** the owner's reminders and digest to the owner are sent first; subscriber mail uses what remains and the rest carries over to the next day, oldest first.
+- **Dispatch gate:** before each subscriber or Member digest send and retry, re-check that the page still exists, is not Private, notifications remain enabled, the recipient is still active and opted in, and the address is not suppressed. Cancel ineligible queued mail; count only currently published content from enabled sections. Serialize this check and provider submission against the corresponding privacy or consent change. A provider submission already begun before a change commits cannot be recalled; record uncertain outcomes without blindly resending. Owner-only transactional mail follows its own authorization and preference rules. Test queued and retried messages after Private, unpublish, unsubscribe, suppression, account removal and page deletion, including a change racing submission.
 - **Bounces and complaints** add the address to `email_suppressions`.
 - **Privacy (rule 3):** addresses never go to Git, docs, logs, analytics, error reports or Codex; the examples in this repo use `[EMAIL]`. Consent text is shown in the language of the page and stored with a version number.
 
@@ -277,7 +323,7 @@ After a sent wish / after another interaction / Settings → "Get updates by ema
 
 - **Sending:** server only. The vendor API key lives in an environment variable and is never in Git, CI or the browser. A dedupe key per message prevents double sends; a daily cap guards the free quota; a bounce disables the address.
 - **Content rules:** emails never contain a guest token, a guest-cookie link, private memory text or media. They link to the login page. Non-account mail carries a one-click opt-out.
-- **Which mail:** welcome (after verification), anniversary reminder to the owner (N days before, from the page's anniversaries), new-wish digest to the owner (once a day, not one mail per wish), wish-approved thank-you to a registered guest that posted, verify and reset mail, subscription confirmation, the updates digest to subscribers and opted-in registered guests (§10.5), and the owner-access decision (§10.4).
+- **Which mail:** welcome (after verification), anniversary reminder to the owner (N days before, from the page's anniversaries), new-wish digest to the owner (once a day, not one mail per wish), wish-approved thank-you to a registered guest that posted, verify and reset mail, subscription confirmation, the updates digest to subscribers and opted-in registered guests (§10.5).
 - **Idempotency:** the vendor supports an `Idempotency-Key` header kept for 24 hours (plan §R), so a retry in that window cannot double-send; our own `email_log` dedupe key covers longer gaps.
 - **Scheduling:** reuse the daily keep-alive job to dispatch reminders (the host's cron limits on the free plan are **unverified**).
 - **Zodiac (corrected by the owner 2026-10-22):** the section is about the **couple**. Guests never enter a birthday. The owner enters the partners' birth dates in the dashboard; the server computes the signs and stores the dates encrypted (design 3 §3.10, Q46-Q49). Before that table exists, the design must specify: AES-256-GCM with a unique random nonce per value, key id and user id as associated data, key backup and rotation, behaviour when the key is missing, server-side validation, consent withdrawal, and removal from queues and backups under a stated retention. An environment variable is where the key lives, not a key-management plan. Analytics, error reports and session recordings must not capture the date field.

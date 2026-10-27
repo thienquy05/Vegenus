@@ -113,7 +113,7 @@ Static mode and effective Reduce motion use **0 ms** for every duration and dela
 - **Slow network:** show the destination's stable shell and loading text; stop after the normal interval. A late response fills the content once without repeating the route transition. Images reserve their layout space. Errors are immediately usable.
 - **Disabled/removed section:** omit it from menu and Home shortcuts. If a stale link reaches it, use the existing unavailable state; do not render hidden content for an animation.
 - **Access failure or revocation:** immediately remove protected DOM, outgoing visual layers, scene resources and pending media work, and show the neutral access state. No decorative fade retains protected content. Issued media URLs still have the existing expiry limitation; this does not change Q29.
-- **Sign-in, code and updates sheets (guest UI §11, G20–G27):** use the standard sheet entrance; nothing plays on arrival and nothing blocks reading. Field errors change border colour and reveal text in 160 ms without shake; success is a check that fades and scales in 200 ms. Reduced motion: no movement, static check, spinner replaced by “Sending…”. An interrupted sheet (route change, access failure) is removed immediately with its typed values discarded, never persisted.
+- **Sign-in, code and updates sheets (guest UI §11, G20–G26):** use the standard sheet entrance; nothing plays on arrival and nothing blocks reading. Field errors change border colour and reveal text in 160 ms without shake; success is a check that fades and scales in 200 ms. Reduced motion: no movement, static check, spinner replaced by “Sending…”. An interrupted sheet (route change, access failure) is removed immediately with its typed values discarded, never persisted.
 - **Runtime downgrade:** keep current route, focus, scroll, sheet, language and unsent wish; settle the background, dispose 3D as in design 5 and continue with the still composition. A mode change must not resubmit a form.
 
 ## 8. Phone budgets and implementation boundaries
@@ -232,7 +232,7 @@ D uses **`--line-gold: #927132`**, approved Q72, contrast about4.03:1 on `#f4f1e
 | **Always / Luôn bật** | Full entrance on the first eligible section visit in a document session; later deliberate returns use a short settle at 40% of the full duration. |
 | **Off / Tắt** | No signature entrances. Ordinary permitted navigation and control feedback retain their own motion rules. |
 
-An eligible visit is a deliberate navigation to a different section, or a genuinely first direct arrival. Refresh, Back/Forward, selecting the current section, loading more, changing language, filtering, opening another album page and closing an overlay never replay the section introduction.
+An eligible visit is a deliberate navigation to a different section. A first direct arrival (tag tap, link, refresh into a section) does **not** play the section introduction (owner, Q71, 2026-10-26: first-direct-arrival exception off); the page simply opens settled, and the introduction plays when the guest next navigates to that section. Refresh, Back/Forward, selecting the current section, loading more, changing language, filtering, opening another album page and closing an overlay never replay the section introduction.
 
 For Together, the short settle lasts **480 ms**: map translation `-8px → 0`, scale `1.015 → 1`, one fading contact shadow; no fall, rebound, particles, pin stagger or route highlight. No automatic “after 24 hours” replay is recommended.
 
