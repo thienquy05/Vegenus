@@ -1,8 +1,8 @@
 # Editable wording: what the owner writes and what the system generates
 
-**Status:** DRAFT v0.3, 2026-10-26: owner answered all Q82 points (see §7). Branch `docs/editable-copy` (stacked on `docs/guest-screens-v3`). Documentation only; no application code. Rule 3: every example is invented sample text with placeholders; nothing here is a real name, date or message.
+**Status:** DRAFT v0.4, 2026-10-27 (complete key inventory §2.1, validation rules §2.2, storage moved to design 3 §3.12). v0.3, 2026-10-26: owner answered all Q82 points (see §7). Branch `docs/editable-copy` (stacked on `docs/guest-screens-v3`). Documentation only; no application code. Rule 3: every example is invented sample text with placeholders; nothing here is a real name, date or message.
 **Why:** owner direction (2026-10-26): the template should give the couple more control. Greetings, placeholders and similar wording must not be fixed; the couple edits them. Anything the system works out (zodiac, counts, dates) stays generated: the owner supplies the inputs, never the output text.
-**Related:** [screens](vegenus_screens.md), [guest UI](vegenus_guest_ui.md), [owner UI](vegenus_owner_ui.md), [data model](vegenus_data_model.md) §3.10-3.11, PRD Q82 (new, open).
+**Related:** [screens](vegenus_screens.md), [guest UI](vegenus_guest_ui.md), [owner UI](vegenus_owner_ui.md), [data model](vegenus_data_model.md) §3.12 (wording storage and publication), PRD Q82 (answered).
 
 ## 1. The rule in one table
 
@@ -15,7 +15,7 @@
 
 Why D is not editable: these lines state facts the system must keep true (what is stored, what a limit is, what an email will do). A wrong edit would make them false or hide a safety message. The owner still sees them in the preview.
 
-Rule for B (owner, 2026-10-26): **guests only see wording the owner has saved.** The shipped example is a suggestion shown in the empty field, with a one-tap "Use example". A language is offered to guests only once all of its B fields are filled (§4).
+Rule for B (owner, 2026-10-26): **guests only see wording that is saved.** A new page is created with the shipped examples as drafts in both languages. The owner publishes them with one explicit action, "Use the suggested wording", in the last setup step; editing in O18 comes after setup is complete (data model §3.12). Guests see nothing until that publication. The owner edits any field in O18; clearing a field removes it, shows the example as a suggestion with a one-tap "Use example", and a language is offered to guests only while all of its B fields are filled (§4).
 
 ## 2. Token insertion: editing the sentence, not the number
 
@@ -29,21 +29,53 @@ Some wording wraps a generated value. The owner edits the sentence; the value ar
 | `{count}` | A count (wishes, memories) | Section intro lines |
 | `{wait}` | The server-provided wait | Not offered: limit messages are kind D |
 
-The allowlist is exact per key. The key-to-token mapping (the O18 board implements exactly this):
+### 2.1 The 27 keys (the complete inventory)
 
-| Key | Allowed tokens | Required |
-|---|---|---|
-| `home.greeting`, `wishes.sent`, `tour.1.title`, `page.title`, `email.greeting` | `partner_a`, `partner_b` | none |
-| `home.days` | `days` | `days` |
-| `wishes.sentBody` | `owner`, `partner_a`, `partner_b` | none |
-| `memories.intro`, `together.intro`, `wishes.intro` | `count` | none |
-| every other key | none | none |
+This table is the contract. The O18 board, the `copy_keys` seed ([data model §3.12](vegenus_data_model.md)) and the examples in §3 must all equal it; a test compares them. Caps count user-perceived characters (the Q73 rule) of the template as typed, so a token counts as its literal text such as `{days}`. Every field is a single line.
 
-Besides tokens, every field rejects `<`, `>`, links (`http://`, `https://`, `www.`) and, for single-line fields, line breaks; stored text is NFC-normalised.
+| # | Key | Where it shows | Cap | Allowed tokens | Required token |
+|---|---|---|---|---|---|
+| 1 | `home.greeting` | G1 greeting above the title | 120 | `partner_a`, `partner_b` | none |
+| 2 | `home.days` | G1 days-together line | 120 | `days` | `days` |
+| 3 | `home.photoHint` | G1 photo stack hint | 120 | none | none |
+| 4 | `home.scrollCue` | G1 scroll cue | 120 | none | none |
+| 5 | `memories.intro` | G2 intro line | 120 | `count` | none |
+| 6 | `memories.empty` | G2 empty state | 120 | none | none |
+| 7 | `together.intro` | G4 intro line | 120 | `count` | none |
+| 8 | `together.search` | G4 search placeholder | 60 | none | none |
+| 9 | `together.empty` | G4 empty state | 120 | none | none |
+| 10 | `wishes.intro` | G5 intro line | 120 | `count` | none |
+| 11 | `wishes.button` | G5 "Leave a wish" button label | 24 | none | none |
+| 12 | `wishes.empty` | G5 empty state | 120 | none | none |
+| 13 | `wishes.namePlaceholder` | G6 name placeholder | 60 | none | none |
+| 14 | `wishes.messagePlaceholder` | G6 message placeholder | 120 | none | none |
+| 15 | `wishes.sent` | G7 heading | 60 | `partner_a`, `partner_b` | none |
+| 16 | `wishes.sentBody` | G7 thank-you | 120 | `owner`, `partner_a`, `partner_b` | none |
+| 17 | `wishes.back` | G7 back button | 40 | none | none |
+| 18 | `tour.1.title` | G9 step 1 title | 60 | `partner_a`, `partner_b` | none |
+| 19 | `tour.1.body` | G9 step 1 body | 200 | none | none |
+| 20 | `tour.2.title` | G9 step 2 title | 60 | none | none |
+| 21 | `tour.2.body` | G9 step 2 body | 200 | none | none |
+| 22 | `tour.3.title` | G9 step 3 title | 60 | none | none |
+| 23 | `tour.3.body` | G9 step 3 body | 200 | none | none |
+| 24 | `updates.question` | G26 updates card question | 120 | none | none |
+| 25 | `page.title` | browser tab title | 60 | `partner_a`, `partner_b` | none |
+| 26 | `page.description` | link preview description | 120 | none | none |
+| 27 | `email.greeting` | digest and reminder greeting line | 120 | `partner_a`, `partner_b` | none |
 
-The allowlist above is the whole rule (one list per `page_copy` key). **Every shipped example must pass the same validation as owner input**, checked by a test, so "Use example" can never be rejected and block a language from completing.
+Each key exists once per language (`en`, `vi`), so a language is complete at 27 filled fields. The first-visit tour has exactly three steps in the wording system; the former fourth step, "save your place", is replaced by the sign-in surfaces of Q77 ([guest UI §11](vegenus_guest_ui.md)) and is no longer a tour step. Token sources: `{days}` the counter (E14); `{partner_a}`, `{partner_b}` the two partner names entered in O3 step 2 (`pages.label_a`, `pages.label_b`); `{owner}` both labels joined; `{count}` the number of published memories, published places or approved wishes for that section, taken from the published snapshot only (never drafts, never pending wishes).
 
-Tokens are inserted from chips under the field, shown as locked chips in the preview. Unknown tokens are rejected on save with a plain message. Text is plain: no HTML, no links, NFC-normalised, with a per-field cap.
+### 2.2 Validation rules (one function, used on save and again on publish)
+
+1. Trim leading and trailing space; normalise to NFC. A value that is empty after trimming means "not set" (clearing a field), never an empty string.
+2. Reject every control character, including line breaks and tabs (U+0000 to U+001F, U+007F). All fields are single-line.
+3. Reject `<` and `>`, and any `http://`, `https://`, `www.`, `mailto:` or `javascript:` (case-insensitive).
+4. Tokens are written `{name}` with `name` made of lowercase letters and underscore. Each token must be on the key's allowed list, a required token must appear at least once, a token may repeat. Any other `{` or `}` is rejected, so a typo such as `{day}` or `{{days}` fails with a plain message.
+5. Length cap per the table, in user-perceived characters (an emoji or an accented Vietnamese letter counts once); the server and the form use the same counting rule.
+6. Tokens are replaced by plain text when rendering and escaped like any text; wording is never interpreted as HTML or markdown.
+7. **Every shipped example, in both languages, passes rules 1 to 5**, checked by a test, so "Use example" can never be rejected and block a language from completing.
+
+Tokens are inserted from chips under the field and shown as locked chips in the preview. Unknown or malformed tokens are rejected on save with a plain message (§2.2).
 
 ## 3. Catalogue: every text, classified, with an example
 
@@ -131,7 +163,7 @@ Menu items, page headings and Home shortcuts keep their product names in both la
 | Text | Kind | Note |
 |---|---|---|
 | "Tap the tag or scan the QR code" (G-E1) | D | Identical for every blocked case, no hints (E47) |
-| Sign-in, invite code, account screens (G20-G27) | D | Security and consent wording |
+| Sign-in, invite code, account screens (G20-G26) | D | Security and consent wording |
 | Settings (G8) labels | D | Controls keep stable names |
 
 ### 3.9 Page-level and outside the page
@@ -142,11 +174,11 @@ Menu items, page headings and Home shortcuts keep their product names in both la
 | Link preview description (when shared) | **B** (≤ 120) | "A small place for our memories." / "Một góc nhỏ lưu giữ kỷ niệm của mình." |
 | Email greeting line in the daily digest and reminders | **B** | "Hi from {partner_a} and {partner_b}," / "Chào bạn, {partner_a} và {partner_b} gửi tin nhé," |
 | Email body: counts, link, unsubscribe | C / D | No memory text, no token (S18, E50) |
-| Owner area (O1-O17) | D | Plain, same for everyone |
+| Owner area (O1-O16, O18) | D | Plain, same for everyone |
 
 ## 4. The owner's editing screen: O18 "Wording / Lời văn" (all in Settings)
 
-- **Where:** Owner menu → Settings → "Wording / Lời văn": one screen, every editable text in one place. No wizard step (owner, 2026-10-26: all templates at once in Settings, the owner goes through and fills the empty spaces).
+- **Where:** Owner menu → Settings → "Wording / Lời văn": one screen, every editable text in one place. Editing has no wizard step (owner, 2026-10-26: all templates at once in Settings, the owner goes through and fills the empty spaces). The wizard has exactly one wording action, accepting the suggested wording (data model §3.12), which is not editing.
 - **Layout:** grouped by section in the guest menu order. Each row: where it appears (a small guest-preview snippet), an EN input and a VI input, a character counter against the cap, token chips, the example shown as placeholder, "Use example / Dùng mẫu" and "Clear / Xóa". Per group and per language a "Use all examples / Dùng tất cả mẫu" shortcut, so a language can be completed in one tap and then edited.
 - **Progress:** a header per language, "English: 11 of 27 set / Tiếng Anh: đã điền 11/27", with "Show empty fields only / Chỉ hiện ô còn trống".
 - **Language availability (owner, 2026-10-26):** a language is **set up** when all its B fields are filled. Guests can pick only set-up languages in Settings (G8). The other option is shown but disabled with: "English hasn't been set up by the owner yet. / Chủ trang chưa thiết lập tiếng Anh." (and the Vietnamese equivalent for VI). At least the page's default language must be complete before the owner can publish wording; the page wizard (O3) default-language choice decides which.
@@ -154,35 +186,34 @@ Menu items, page headings and Home shortcuts keep their product names in both la
 - **Memories are different:** memory titles and text keep Q67 (original text with a note when a language is missing); the language rule above concerns wording only.
 - **Preview:** a "Preview as guest / Xem như khách" frame beside (laptop, tablet) or below (phone) the form updates as the owner types, in any of the four themes and either language.
 - **Publish:** one "Publish wording / Đăng lời văn" button on this screen publishes all wording at once (draft until then, like `items`, data model §1 principle 3). Unsaved and unpublished states are visible in the header.
-- **Validation:** plain text only; per-field cap; tokens must be from the allowed list for that field; a button label cannot contain a line break.
-- **Limits proposal:** 27 fields per language (the O18 board lists them), each ≤ 120 characters except the tour bodies (≤ 200) and the welcome note (≤ 600, existing).
+- **Validation:** exactly the rules of §2.2, applied by the same database function on save and again on publish; caps, tokens and required tokens per key are in §2.1.
+- **Limits:** 27 keys per language (§2.1). The welcome note (≤ 600, kind A) is not part of this table.
 - **Privacy:** wording is public once published. The screen says so beside the first field: "Everything here is visible to guests / Mọi nội dung ở đây khách đều nhìn thấy."
 
 States of O18: default (examples as placeholders), empty field, language incomplete, language complete, unsaved changes, publishing, publish failed (input kept), over the cap, unknown token, offline, conflict with another session (compare, never overwrite), long Vietnamese text (wraps; button labels grow in height, never truncate), loading, permission lost.
 
-## 5. Data model sketch (input for design 3, not a schema yet)
+## 5. Data model: specified in design 3 §3.12
 
-One table `page_copy` keyed by `(page_id, key, lang)` with `text`, `version`, `updated_at`, plus a `published_at` snapshot like `items`. `key` is a code constant (for example `home.greeting`, `wishes.empty`), so the product defines the full list and its example text; the owner never creates a key. Examples live in code (the same strings files as the D texts), not in the database. Guests read only the published snapshot; a language with a missing key is not offered (§4). Row-level security matches the other page tables.
+The sketch that stood here is superseded by [data model §3.12](vegenus_data_model.md): the `copy_keys` reference table (the 27 keys of §2.1 with caps and tokens), `page_copy` (draft and published text per page, key and language), the `pages` revision columns, the `owner_copy_get` / `owner_copy_save` / `owner_copy_publish` functions, atomic publication, language completeness derived from the published snapshot, the access rules and the tests. Examples stay in code, beside the D texts, and are tested against §2.2. Guests read only the published snapshot through `public_open`, `guest_open` and `account_open`.
 
-## 6. Canvas: built 2026-10-27, owner review pending
+## 6. Canvas status (2026-10-27)
 
-Theme Preview canvas, version 93 (not in Git). Delivered:
+Two states are kept apart. **Live canvas:** Theme Preview, version 95 (not in Git); the lists below describe it. **Prepared locally, not yet published:** 63 boards completed in a local session, with 169 source and state checks and 432 browser cases passing (figures from the 2026-10-27 review; the session's own notes, including Q83, are not in the repository). Publishing them is a separate synchronisation step; until it is done, treat them as unpublished.
 
-1. **O18 Wording / Lời văn**, owner area (page 10), phone, tablet and laptop, interactive. Language tabs with "filled/27", per-field example as placeholder, "Dùng mẫu", "Xóa", per-group and per-language "use examples", locked code chips, live length and code validation, guest preview (collapsible on phone), one publish button gated on the default language. Tweaks > scenario: midway, fresh, bothDone, errors, long, loading, publishing, publishFailed, offline, conflict.
-2. **Guest Settings (G8), 12 boards**: Tweaks > langSetup (vi default, both, en). A language that is not set up shows "· chưa thiết lập", a dashed border, `aria-disabled`, and the sentence "Chủ trang chưa thiết lập tiếng Anh." under the group. The same engine feeds Wishes and Leave-a-wish, so those 24 boards also carry the new wording.
-3. **Example wording on guest boards**: Wishes intro, button, empty state, name and message placeholders, thank-you (plus the fixed "not public until approved" line), back button and tour steps (Wishes, Leave a wish, Settings: 36 boards); Home greeting, days line, photo hint and scroll cue (12 boards); Memories intro on the 4 laptop boards; Together search placeholder (12 boards).
+Built:
+1. O18 Wording / Lời văn at phone, tablet and laptop: language tabs with filled count, example as placeholder, use example, clear, per-group and per-language "use examples", locked token chips, live length and token validation, guest preview, one publish button gated on the default language, ten scenarios (midway, fresh, both done, errors, long, loading, publishing, publish failed, offline, conflict) plus permission lost.
+2. G8 language-not-set-up state (dashed border, `aria-disabled`, explanatory sentence) on 12 boards; the same engine feeds the Wishes and Leave-a-wish boards.
+3. Example wording on the Wishes, Leave-a-wish and Settings boards (36), Home (12), Memories laptop (4) and Together search placeholder (12).
 
-Known gaps, to close in the next round:
+Open:
+- Boards are not yet rendered and checked in a browser for this feature; longer Home lines are unchecked.
+- No guest slot for the Memories intro on phone and tablet, the Together intro (all sizes), or the empty states of Memories, Together and Home; each needs a one-line slot per theme.
+- No guest or email board for the updates question, page title, link description or email greeting (they appear only in O18).
+- O18 has no theme selector in its preview; theme D has no greeting slot on Home; Home shows the days sentence as number plus suffix, not the full tokenised sentence.
+- Home previously had a tagline per theme; the greeting and days line are now one owner-written text across A-D (Q82). Theme D keeps its editorial decor.
+- O18 has no motion (reduced-motion safe by default).
 
-- Not rendered or checked in a browser (the canvas is private and the boards need the canvas runtime); layout of longer example lines on Home (greeting and days line) is unchecked, and the O18 menu button is a static placeholder.
-- Home previously had a different tagline per theme; the B greeting and days line are now one owner-written text across A-D (a consequence of Q82). Theme D keeps its editorial decor ("Tập 01", "Tuyển tập").
-- Memories intro and Together intro have no slot yet on phone and tablet (Memories) or on any size (Together); each needs a one-line slot designed per theme. Memories, Together and Home empty states are not drawn.
-- Updates-card question, page title, link description and email greeting appear only in O18 (no guest or email board).
-- Not yet reviewed by Codex; O18 motion is none (reduced-motion safe by default).
-
-**Codex review of the boards (2026-10-27, read-only, 14 findings).** Fixed: all 12 Write boards threw on render (placeholders read `t` out of scope; now `v.t`, confirmed by executing `renderVals()` before and after); O18 retry button, stale publish timer, default language no longer hard-coded (tweak `defaultLang`), per-key token allowlists aligned with §2 (table above), validation of HTML, links, line breaks and NFC, availability messages computed from both languages and a visible "unsaved changes" line, working conflict comparison, a permission-lost scenario, a long button label, a preview of all 27 fields, unique error ids tied to their inputs, `aria-describedby` only when the notice exists, Home theme D photo hint, and the two statements in this document that contradicted §3.2 and the field count. Still open: no theme selector in the O18 preview; Together intro, Memories phone/tablet intro, and empty states for Memories, Together and Home have no guest slot; updates card, page title, link description and email greeting have no guest or email board; Home shows the days sentence as number plus suffix, not the full tokenised sentence, and theme D has no greeting slot.
-
-## 7. Owner answers (2026-10-26) and what is still open
+## 7. Owner answers (2026-10-26)
 
 1. **The split:** yes, A / B / C / D as in §1.
 2. **Zodiac:** the owner cannot edit anything in it; they give birth data and the system computes (owner, 2026-10-26). Everything else in Zodiac stays as designed. The Q50 reword field is removed (data model, Z1, Q50 text).

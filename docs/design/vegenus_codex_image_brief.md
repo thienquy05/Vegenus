@@ -1,6 +1,6 @@
 # Codex image brief (for the next session)
 
-**Status:** v0.2, 2026-10-24. Home run done (owner approved the host for the whole design system). Owner chose Codex for the art (Q62) and will continue the run in the next session.
+**Status:** v0.3, 2026-10-27 (status refresh). The runs for Home, Zodiac and the sign art are **generated and converted** (files and bytes in §4); the owner approved the Codex host for the whole design system and decided that these images are the Page-mode art (Q62, 2026-10-24). Images reached the owner through canvas pages, so **approval is recorded per canvas page** in the log: Home page 1 and Zodiac page 3 were approved on 2026-10-24, and every row below is covered by one of those approvals. Generating an image, Claude's check, the owner's approval and publishing it to the canvas are separate steps, and none of them is the production payload (WebP optimisation happens in the code phase).
 **Branch:** `docs/guest-screens-v3`.
 **Privacy (rule 3):** text prompts only. No real names, dates, places, photos, messages or tag ids go to Codex. Nothing from `.env`, `.claude-flow/`, `.swarm/` or `ruvector.db`.
 **Network (rule 1):** Codex image generation calls OpenAI's image model through the owner's own Codex sign-in. Before the run, state the host (`api.openai.com`, via Codex CLI) and wait for the owner's go.
@@ -53,18 +53,18 @@ Shared rules for every prompt: no text, letters, numbers or logos; no people or 
 ## 3. After generation (Claude)
 - Check: transparent corners where asked, no text, no faces, no recognisable real place; 1 image per prompt, re-run at most once on a miss.
 - Convert to WebP (q≈82); targets: motif ≤ 120 KB, galaxy ≤ 250 KB, map ≤ 250 KB, button ≤ 30 KB. Keep PNG masters out of the site payload.
-- Design 5 §1 principle 4 ("procedural before assets") and §6.1 ("0 model and texture bytes in Page mode") change if these images ship: proposal in Q62, owner decides.
+- Design 5 §1 principle 4 and §6.1 already say this (Q62 answered 2026-10-24): approved images are the Page-mode art, the code-drawn versions are the Static and reduced-motion fallback.
 - Upload the approved WebP to the preview canvas and swap the code-drawn shapes; keep the code-drawn versions as the Static fallback.
 
 ## 4. Log (fill in during the run)
-| # | File | Codex call (time) | Result | Bytes (WebP) | Owner OK |
+| # | File | Codex call (time) | Result | Bytes (WebP) | Owner approval |
 |---|---|---|---|---|---|
-| 1-4 | home-a-heart, home-b-planets, home-c-blocks, home-d-sphere (768 px) | codex exec, 2026-10-24 | transparent, no text/faces | 127 082 / 101 602 / 60 078 / 159 662 (D over the 120 KB target: recompress in code phase) | pending |
-| 10-12 | fab-a, fab-b, fab-c (256 px) | same run | transparent; fab-d made but not used (D keeps the code ribbon) | 14 010 / 14 666 / 8 278 | pending |
-| new | bg-a-tall/wide (dusk clouds), bg-b-tall/wide (nebula) | same run | opaque, calm middle | 77 810 / 78 072 / 134 094 / 152 300 | pending |
+| 1-4 | home-a-heart, home-b-planets, home-c-blocks, home-d-sphere (768 px) | codex exec, 2026-10-24 | transparent, no text/faces | 127 082 / 101 602 / 60 078 / 159 662 (D over the 120 KB target: recompress in code phase) | Approved with Home, canvas page 1 (2026-10-24) |
+| 10-12 | fab-a, fab-b, fab-c (256 px) | same run | transparent; fab-d made but not used (D keeps the code ribbon) | 14 010 / 14 666 / 8 278 | Approved with Home, canvas page 1 (2026-10-24) |
+| new | bg-a-tall/wide (dusk clouds), bg-b-tall/wide (nebula) | same run | opaque, calm middle | 77 810 / 78 072 / 134 094 / 152 300 | Approved with Home, canvas page 1 (2026-10-24) |
 
 Prompts used: the Home prompt (photoreal 3D render style, same colours as §2) is kept in the session scratchpad, not in Git. Masters (PNG) stay out of Git and out of the site payload.
-| new | bg-c-tall/wide (playroom wall), bg-d-tall/wide (gallery wall) | codex exec, 2026-10-24 | opaque, calm centre | 45 750 / 37 618 / 91 992 / 72 298 | pending |
-| 5 (replaced) | zodiac-sky-tall (1024×1536), zodiac-sky-wide (1536×1024): bright star field with a Milky Way band, colourful nebula, no planets or spiral galaxy (owner, 2026-10-24: "drop the solar system, keep a bright twinkling star field") | codex exec, 2026-10-24 | opaque, calmer zones for the signs and the reading card | 264 080 / 275 292 (q 62 with Pillow in `.venv`; over the 250 KB target: dense star noise, trim in code phase) | pending |
-| 5 (v2) | zodiac-sky2-tall, zodiac-sky2-wide: simpler, darker night sky, sparse stars, one soft Milky Way haze (owner: v1 too busy, content hard to see) | codex exec, 2026-10-24 | opaque, dark and calm | 18 062 / 23 136 | pending |
-| signs | sign-w-* (12), sign-v-* (12): re-render of each approved atlas cell at 1024×1024 transparent, the cell attached as image reference (owner approved, 2026-10-24) | codex exec -i, 2026-10-24 | same figures, sharper; Con Giáp cloud bases lighter blue | 800 px WebP avg 163 549, max 198 036 | pending |
+| new | bg-c-tall/wide (playroom wall), bg-d-tall/wide (gallery wall) | codex exec, 2026-10-24 | opaque, calm centre | 45 750 / 37 618 / 91 992 / 72 298 | Used in the approved Home boards (page 1, 2026-10-24) |
+| 5 (replaced) | zodiac-sky-tall (1024×1536), zodiac-sky-wide (1536×1024): bright star field with a Milky Way band, colourful nebula, no planets or spiral galaxy (owner, 2026-10-24: "drop the solar system, keep a bright twinkling star field") | codex exec, 2026-10-24 | opaque, calmer zones for the signs and the reading card | 264 080 / 275 292 (q 62 with Pillow in `.venv`; over the 250 KB target: dense star noise, trim in code phase) | Replaced by 5 (v2); not used |
+| 5 (v2) | zodiac-sky2-tall, zodiac-sky2-wide: simpler, darker night sky, sparse stars, one soft Milky Way haze (owner: v1 too busy, content hard to see) | codex exec, 2026-10-24 | opaque, dark and calm | 18 062 / 23 136 | Approved with Zodiac, canvas page 3 (2026-10-24) |
+| signs | sign-w-* (12), sign-v-* (12): re-render of each approved atlas cell at 1024×1024 transparent, the cell attached as image reference (owner approved, 2026-10-24) | codex exec -i, 2026-10-24 | same figures, sharper; Con Giáp cloud bases lighter blue | 800 px WebP avg 163 549, max 198 036 | Approved with Zodiac, canvas page 3 (2026-10-24) |

@@ -1,6 +1,6 @@
 # Design 4: Theme system
 
-**Status:** DRAFT v0.13 for owner review. Phase 0 design deliverable "theme system". Replaces the sketch in plan §6. No code. Codex adversarial review rounds 1-10: 20 findings, all fixed (round-by-round log in `docs/vegenus_progress.md`); v0.9 adds a consistency pass over those fixes; v0.10 adds the decor rule (rounds 9-10). v0.11: owner answers Q53-Q55 (2026-10-23); fonts verified and chosen (§8.1). v0.12 (branch `docs/theme-nav-icons`): per-theme icon families and a circular menu replace the bottom bar (owner, 2026-10-23; §2, menu tokens §4, test 12). v0.13: the menu moves to the top left and opens by stepping the page back as a card, so it covers no text; the dashboard uses it too (owner, 2026-10-23; §2, §4, §5, test 12).
+**Status:** Draft v0.13, awaiting owner review. Phase 0 deliverable "theme system"; replaces plan §6. Owner answers Q53-Q76 are applied. No code.
 **Date:** 2026-10-23
 **Inputs:** PRD §4.1 (S2, S11, S21), §6.1-6.2, §7 (accessibility, language), E12, E18, E19, Q3, Q39; plan §6; design 2 (O3, G8, Z2); design 3 §3.1 (`pages.theme`); the owner's mood board (private artifact, read 2026-10-23 with the owner's approval; only colours, font names and layout notes are copied here).
 **Owner decisions used (2026-10-23):** designs 1-3 approved; Zodiac art always sits on a night-sky panel; fonts are self-hosted open-licence (OFL) files.
@@ -50,7 +50,7 @@ CSS custom properties on `[data-theme="<id>"]`, so any element can be a theme ro
 
 | Group | Tokens | Notes |
 |---|---|---|
-| Colour: ground | `--bg`, `--bg-image` (gradient or `none`), plus the theme's decor (orbs, sparkles, stars, circles) | **Decor never sits directly behind text or functional graphics** (icons, controls, focus rings, chart or counter marks); anything over decor needs a surface. Contrast is measured against the worst point of the gradient *and* the brightest (dark themes) or darkest (light themes) decor that can sit behind a surface |
+| Colour: ground | `--bg`, `--bg-image` (gradient or `none`), plus the theme's decor (orbs, sparkles, stars, circles) | **Decor never sits directly behind text or functional graphics** (icons, controls, focus rings, chart or counter marks); anything over decor needs a surface (for Zodiac, the 72 % night-glass card of Q61 is that surface). Contrast is measured against the worst point of the gradient *and* the brightest (dark themes) or darkest (light themes) decor that can sit behind a surface |
 | Colour: surfaces | `--surface`, `--surface-border`, `--scrim` | Cards, sheets; `--scrim` sits behind text placed over photos. **Only `--text` may sit on a photo** (on `--scrim`); muted, accent and small labels never do (C and D muted text fall to 4.16 and 3.64 over a black photo) |
 | Colour: text | `--text`, `--text-muted`, `--text-on-accent` | `--text-muted` is still body text and must pass 4.5:1 |
 | Colour: accent | `--accent` (graphics, large text ≥ 24 px), `--accent-text` (small text, links) | Two tokens because a decorative accent may pass 3:1 but not 4.5:1 (theme C) |
@@ -120,10 +120,10 @@ Computed 2026-10-23 with a standard-library script (WCAG relative luminance; tra
 |---|---|---|---|
 | A muted text on gradient light end | `#ffd9e6` on `#a94a6b` | **4.21 fail** | on `#934060`: 5.19 |
 | A nav label on white glass | `#ffd9e6` on `#b56380` (composited) | **3.22 fail** | on dark glass at 75 %: 10.97 |
-| A nav label on glass over a white sparkle (Codex round 9) | at 40 % glass | **2.53 fail** | at 75 % glass: 6.82 (pink orb 9.20); B over a gold star 5.13; C text and graphics on its decor circles not allowed (accent text there 3.70; accent graphic on mint 2.92, Codex round 10) |
+| A nav label on glass over a white sparkle | at 40 % glass | **2.53 fail** | at 75 % glass: 6.82 (pink orb 9.20); B over a gold star 5.13; C text and graphics on its decor circles not allowed (accent text there 3.70; accent graphic on mint 2.92, Codex round 10) |
 | A body text on light end | `#fff6f0` on `#a94a6b` | 5.08 | on `#934060`: 6.27 |
 | C rust as small text | `#b9553a` on `#fff1de` | **4.27 fail** | `#a3472e`: 5.40 (rust `#b9553a` kept for graphics and large text: 4.27 ≥ 3) |
-| A accent graphic on gradient light end (Codex round 1) | `#ff7fab` on `#934060` | **2.82 fail** | `#ff9cbf`: 3.42 (dark end 8.80) |
+| A accent graphic on gradient light end | `#ff7fab` on `#934060` | **2.82 fail** | `#ff9cbf`: 3.42 (dark end 8.80) |
 | Text on accent, all themes | see §4 | — | 4.75 (C) to 15.37 (B) |
 | Focus ring on bg, cards and menu bubbles, all themes | see §4 | — | 3.0 needed; lowest 5.06 (D) |
 | Menu (§2): icons on bubbles and active bubbles, button glyph (3:1); labels on their chips (4.5:1), including over decor on the uncovered ground (v0.13) | see §4 | B gold glyph on the blue button: **2.97 fail** | navy `#0a0e2e`: 5.18; all menu pairs pass; lowest label on its chip 13.68 (A, chip over a pink orb) |
@@ -189,7 +189,7 @@ C now uses three families (one weight each for display and handwriting), so its 
 ## 9. How a theme is applied
 
 1. `pages.theme` (design 3 §3.1, enum `a_dreamy` … `d_elegant`) comes back in the page summary of every open call: `guest_open` (token), `public_open` (Published page) and `account_open` (signed-in guest account), design 1 §5 and §5.1.
-2. G0 (Opening), G11 (guest sign-in, which a returning guest can open without a token) and the error screens G-E1 to G-E3 use the neutral set, because no theme is known before the access check passes (and the error screens must not hint which page a token belonged to). The first content screen sets `data-theme` on `<html>` and loads only that theme's token file and fonts.
+2. G0 (Opening), the **standalone** account routes (G24 verification landing, G25 sign-in / forgot password and the other links opened from an email, which a returning guest can open without a token) and the error screens G-E1 to G-E3 use the neutral set, because no theme is known before the access check passes. The same account screens opened as sheets inside a page (G20–G26 from the menu, Settings or the card after a wish) use the page theme; see [screens, neutral and themed](vegenus_screens.md) (and the error screens must not hint which page a token belonged to). The first content screen sets `data-theme` on `<html>` and loads only that theme's token file and fonts.
 3. Per theme, the repo holds `themes/<id>/tokens.css` and `themes/<id>/scene.json` (paths are proposals until the stack is fixed in Phase 1).
 4. The owner/co-editor dashboard (`/app`) uses one fixed neutral look (Q56). The O3 wizard preview and the "view as guest" preview are containers with their own `data-theme`; they load that theme's token file and fonts, and the dashboard around them stays neutral.
 5. Changing the theme (E19) changes only `pages.theme`; no content is touched.
