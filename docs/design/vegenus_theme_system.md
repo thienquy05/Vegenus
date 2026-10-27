@@ -54,7 +54,7 @@ CSS custom properties on `[data-theme="<id>"]`, so any element can be a theme ro
 | Colour: surfaces | `--surface`, `--surface-border`, `--scrim` | Cards, sheets; `--scrim` sits behind text placed over photos. **Only `--text` may sit on a photo** (on `--scrim`); muted, accent and small labels never do (C and D muted text fall to 4.16 and 3.64 over a black photo) |
 | Colour: text | `--text`, `--text-muted`, `--text-on-accent` | `--text-muted` is still body text and must pass 4.5:1 |
 | Colour: accent | `--accent` (graphics, large text ≥ 24 px), `--accent-text` (small text, links) | Two tokens because a decorative accent may pass 3:1 but not 4.5:1 (theme C) |
-| Colour: lines and state | `--line`, `--focus`, `--danger`, `--success` | `--focus` ring: 2 px, ≥ 3:1 against every surface it can sit on (`--bg` at its worst point, `--surface`, cards, night panel) |
+| Colour: lines and state | `--line`, `--focus`, `--danger`, `--success`; optional D-only `--line-gold` (`#927132`, about 4.03:1 on `#f4f1ec`, ≥ 3:1 graphic; used only for the transient Together entrance perimeter hairline, never for text, focus, ordinary borders or the settled map; Q72). Token-completeness tests do not require it in A/B/C or the neutral dashboard | `--focus` ring: 2 px, ≥ 3:1 against every surface it can sit on (`--bg` at its worst point, `--surface`, cards, night panel) |
 | Colour: menu (§2) | `--menu-button-bg`, `--menu-button-fg`, `--menu-item-bg`, `--menu-item-border`, `--menu-item-fg`, `--menu-item-active-bg`, `--menu-item-active-fg`, `--menu-card-shadow`, `--menu-ring` | Replaces the bottom bar's `--nav-*` tokens (2026-10-23). Bubbles take the page `--focus` ring |
 | Scheme | `--color-scheme` → `color-scheme` (`dark` / `light`) | Native controls and scrollbars match the theme |
 | Type | `--font-display`, `--font-body`, `--font-hand` (C only, else = body), `--display-style` (normal/italic), `--display-weight`, scale `--fs-xs … --fs-display` | Scale is shared (§3.1); only the families and display style change |
@@ -96,6 +96,7 @@ Values are from the mood board, except the changes marked **fix** (§5). `--dang
 | `--text-on-accent` | `#24123a` | `#0a0e2e` | `#ffffff` | `#f4f1ec` |
 | `--scrim` (under text on photos) | `#24123a` at 70 % | `#0a0e2e` at 70 % | `#fff1de` at 75 % | `#f4f1ec` at 75 % |
 | `--line` | white at 28 % | `#8fa0ff` | `#e9cfae` | `#1a1a1a` |
+| `--line-gold` (entrance perimeter only; Q72, 2026-10-26) | not defined | not defined | not defined | `#927132` |
 | `--focus` | `#fff6f0` | `#ffe6a8` | `#4a2c1d` | `#b3402a` |
 | `--danger` / `--success` | `#ffb3b3` / `#b8f0c8` | `#ffb3b3` / `#b8f0c8` | `#a3262e` / `#2e6b3a` | `#a3262e` / `#2e6b3a` |
 | `--menu-button-bg` / `-fg` | radial `#ffe3ee` → `#ff9cbf` → `#8e2f6b`, pink glow / `#24123a` | radial `#d6e4ff` → `#5b7cff` → `#101a63`, `#8fa0ff` edge / `#0a0e2e` | `#4a2c1d`, toy shadow / `#ffd36b` | `#1a1a1a` / `#f4f1ec` |
