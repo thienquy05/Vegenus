@@ -336,3 +336,11 @@ The route interval and section entrance overlap from destination readiness. Neve
 | **Settings G8 — a quiet control folio** | **A:** a glass edge resolves.<br>**B:** a fine orbit becomes the panel divider.<br>**C:** one paper index tab unfolds.<br>**D:** a hairline extends beside the title. | `--dur-intro-settings`. No particles. Still: fully open sheet. Global policy affects only edge decoration; ordinary open/close remains functional motion. |
 
 **Owner area:** one neutral look, system fonts, no themed backgrounds, particles, ornamental stamps, hero animation or ambient motion. Allowed micro-motions: 120 ms opacity for feedback and disclosure, 80 ms button press, bounded progress updates, and the shared functional menu/sheet choreography. No animated chart count-up, shaking errors or automatically moving focus. Theme motion appears only inside an explicitly opened guest preview.
+
+### 10.3 Editable wording and empty surfaces (local completion, 2026-10-27)
+
+New greetings, intro lines, empty notices and the days sentence appear without a separate entrance, count-up or text animation. O18 theme selection updates only its preview and keeps keyboard focus on the selected button. Phone Home uses normal vertical flow so a longer greeting moves later content rather than covering it. Phone/tablet Together gains vertical reading room while keeping the map box dimensions and pin coordinates; its existing themed entrance remains the motion source.
+
+The updates card keeps fields stationary. Validation shows text, marks the relevant field and focuses it; simulated confirmation replaces the form and focuses its status. Reduced motion uses the same static wording/empty-state presentation. Existing dialogs retain their Escape, focus trap and focus restoration rules; no new dialog is introduced by these changes.
+
+These sources are prepared outside the repository. Browser checks and live-canvas limits are recorded in [editable wording §6.1](vegenus_editable_copy.md#61-local-completion-prepared-2026-10-27-canvas-synchronization-pending); publication to the existing canvas is still pending.
