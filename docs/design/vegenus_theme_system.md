@@ -6,6 +6,8 @@
 **Owner decisions used (2026-10-23):** designs 1-3 approved; Zodiac art always sits on a night-sky panel; fonts are self-hosted open-licence (OFL) files.
 **Privacy:** placeholders only.
 
+**Guest motion supplement (draft):** [connected sections and living backgrounds](vegenus_guest_motion.md), direction recorded in PRD Q69 and reference limits in Q70. It extends this design with overlapping menu/route choreography, grouped content reveals and background treatments for all four themes. Exact motion values remain prototype defaults; the existing contrast checks must be repeated over the new composited frames.
+
 ## 1. Principles
 
 **Brand asset handoff:** PRD Q60 records the approved Vegenus swan/galaxy emblem. Use the SVG and PNG exports in [assets/logo](../../assets/logo/README.md). Plum, navy, cream and ivory variants are supplied; the transparent ivory/gold mark needs a dark plain surface. These brand colours are scoped to the logo and do not replace the theme token values or their contrast checks. The emblem is static in all presentation modes. Integration should check its favicon at actual size and give any linked logo an accessible name and touch target.
@@ -40,6 +42,8 @@ The mood board shows one phone home screen (390 × 844) per theme. Each has a ce
 
 Tests: §11 tests 5 and 12.
 
+**Transition handoff:** the menu's opening, cancellation and destination selection follow [guest motion §3](vegenus_guest_motion.md#3-menu-choreography). Destination selection overlaps card expansion, background adjustment and incoming content instead of playing three effects consecutively. The fallback list uses the same route/focus rules. Page-mode WebGL Views use still motifs while the card transforms, so a fixed canvas cannot detach visually from the card.
+
 ## 3. Token contract
 
 CSS custom properties on `[data-theme="<id>"]`, so any element can be a theme root: `<html>` for the guest site, a preview container inside the neutral dashboard (§9), like the night panel (§6). Names are the contract; values per theme are in §4.
@@ -50,12 +54,12 @@ CSS custom properties on `[data-theme="<id>"]`, so any element can be a theme ro
 | Colour: surfaces | `--surface`, `--surface-border`, `--scrim` | Cards, sheets; `--scrim` sits behind text placed over photos. **Only `--text` may sit on a photo** (on `--scrim`); muted, accent and small labels never do (C and D muted text fall to 4.16 and 3.64 over a black photo) |
 | Colour: text | `--text`, `--text-muted`, `--text-on-accent` | `--text-muted` is still body text and must pass 4.5:1 |
 | Colour: accent | `--accent` (graphics, large text ≥ 24 px), `--accent-text` (small text, links) | Two tokens because a decorative accent may pass 3:1 but not 4.5:1 (theme C) |
-| Colour: lines and state | `--line`, `--focus`, `--danger`, `--success` | `--focus` ring: 2 px, ≥ 3:1 against every surface it can sit on (`--bg` at its worst point, `--surface`, cards, night panel) |
+| Colour: lines and state | `--line`, `--focus`, `--danger`, `--success`; optional D-only `--line-gold` (`#927132`, about 4.03:1 on `#f4f1ec`, ≥ 3:1 graphic; used only for the transient Together entrance perimeter hairline, never for text, focus, ordinary borders or the settled map; Q72). Token-completeness tests do not require it in A/B/C or the neutral dashboard | `--focus` ring: 2 px, ≥ 3:1 against every surface it can sit on (`--bg` at its worst point, `--surface`, cards, night panel) |
 | Colour: menu (§2) | `--menu-button-bg`, `--menu-button-fg`, `--menu-item-bg`, `--menu-item-border`, `--menu-item-fg`, `--menu-item-active-bg`, `--menu-item-active-fg`, `--menu-card-shadow`, `--menu-ring` | Replaces the bottom bar's `--nav-*` tokens (2026-10-23). Bubbles take the page `--focus` ring |
 | Scheme | `--color-scheme` → `color-scheme` (`dark` / `light`) | Native controls and scrollbars match the theme |
 | Type | `--font-display`, `--font-body`, `--font-hand` (C only, else = body), `--display-style` (normal/italic), `--display-weight`, scale `--fs-xs … --fs-display` | Scale is shared (§3.1); only the families and display style change |
 | Space and shape | `--space-1 … --space-8` = 4, 8, 12, 16, 24, 32, 48, 64 px; `--radius-sm`, `--radius-md`, `--radius-pill` | Spacing is shared; radius is per theme |
-| Motion | `--dur-fast`, `--dur-slow`, `--ease`, `--ease-enter` | Set to `0ms` under reduced motion (§7) |
+| Motion | `--dur-fast`, `--dur-slow`, `--ease`, `--ease-enter`; proposed guest extension: `--dur-route`, `--dur-menu`, `--dur-reveal`, `--delay-stagger`, `--motion-enter-distance`, `--ease-route` | Durations and delays become `0ms`, entrance distance zero under effective reduced motion or Static. Guest extension values and scope: [motion §6](vegenus_guest_motion.md#6-motion-tokens-and-timing-defaults) |
 | Elevation | `--shadow` | `none` allowed |
 | 3D (read by scenes, not CSS) | `scene.json`: palette (3-5 colours taken from the tokens above), fog colour and density, ambient light, particle style, motif id | Design 5 defines the scene side; this design fixes only that scenes take colours from tokens |
 
@@ -92,6 +96,7 @@ Values are from the mood board, except the changes marked **fix** (§5). `--dang
 | `--text-on-accent` | `#24123a` | `#0a0e2e` | `#ffffff` | `#f4f1ec` |
 | `--scrim` (under text on photos) | `#24123a` at 70 % | `#0a0e2e` at 70 % | `#fff1de` at 75 % | `#f4f1ec` at 75 % |
 | `--line` | white at 28 % | `#8fa0ff` | `#e9cfae` | `#1a1a1a` |
+| `--line-gold` (entrance perimeter only; Q72, 2026-10-26) | not defined | not defined | not defined | `#927132` |
 | `--focus` | `#fff6f0` | `#ffe6a8` | `#4a2c1d` | `#b3402a` |
 | `--danger` / `--success` | `#ffb3b3` / `#b8f0c8` | `#ffb3b3` / `#b8f0c8` | `#a3262e` / `#2e6b3a` | `#a3262e` / `#2e6b3a` |
 | `--menu-button-bg` / `-fg` | radial `#ffe3ee` → `#ff9cbf` → `#8e2f6b`, pink glow / `#24123a` | radial `#d6e4ff` → `#5b7cff` → `#101a63`, `#8fa0ff` edge / `#0a0e2e` | `#4a2c1d`, toy shadow / `#ffd36b` | `#1a1a1a` / `#f4f1ec` |
@@ -134,16 +139,21 @@ The fixes keep each hue and only darken. They need the owner's eye (Q53).
 
 The approved blue celestial art (`assets/zodiac-sign/`) is never recoloured. In every theme the Zodiac section (Z2, and the Z1 preview) sits on a **night panel**: a scoped override `[data-surface="night"]` that sets the colour tokens to theme B's values. Fonts, radius and motion stay the page theme's, so the panel still belongs to the page.
 
-- Theme B: the panel matches the page; it is set off only by `--line`.
-- Themes A, C, D: the panel is a block with the theme's `--radius-md` (D: square) and a 16 px margin, so it reads as a window into the sky, not a broken page.
+- **Full page (owner, 2026-10-23 v3, confirmed in Zodiac v4, 2026-10-24):** in every theme the night sky is the whole Zodiac page, not an inset block. The earlier rule (A, C, D: a block with `--radius-md` and a 16 px margin) is replaced. The page still belongs to its theme through fonts, radius, the menu button and the accent glow around the sign art.
+- **Tone, not colour (owner, 2026-10-24):** the owner asked for brighter sign art. Allowed: a brightness change only (no hue, saturation or palette change), per system (Con Giáp less than Cung Hoàng Đạo); in the code phase it is baked into the exported images, not applied as a runtime CSS filter. A soft glow around the art in the theme accent is decoration, not recolouring.
 - The 3D sky-at-birth scene (design 5) uses the same panel tokens.
 - Owner-uploaded replacement art (design 3 §3.3) is shown on the same panel; the upload screen says so.
 
 ## 7. Reduced motion, data saver and modes
 
-- `prefers-reduced-motion: reduce`, or "Reduce motion" in G8, sets `--dur-*` to `0ms` and swaps the theme's animated decor (orbs, stars, blocks, sphere) for its still frame. The page stays fully usable (E18).
+- Effective Reduce motion (G8's explicit choice when set, otherwise `prefers-reduced-motion`, design 5 §3.2) sets all durations and delays to `0ms`, entrance distance to zero, and swaps animated decor (orbs, stars, blocks, sphere) for its still frame. The page stays fully usable (E18). G8 can explicitly override the system preference, as already specified in design 5.
 - Static mode (no WebGL) uses the same tokens; the centre object is a 2D SVG drawn from tokens, as on the mood board.
 - The theme never decides the mode; FR13 does.
+- The proposed guest motion handoff makes Static fully still, including CSS backgrounds, menu effects and smooth scrolling. New ambient motion pauses for menus/forms/sheets/tours and stops when hidden or idle. A mid-transition motion change settles the destination while retaining focus, scroll and input ([motion §§6-7](vegenus_guest_motion.md#6-motion-tokens-and-timing-defaults)).
+
+### 7.1 Connected backgrounds (draft)
+
+[Guest motion §5](vegenus_guest_motion.md#5-dynamic-backgrounds-by-theme) defines the theme-specific compositions: A soft light fields and orbs; B a sparse star field, haze and recurring orbit; C layered cream, yellow/mint shapes and soft paper shadows; D a quiet tonal plane and hairline arc. Preserve the ground across section routes and change only its decorative composition. The approved logo stays static. These layers share design 5's budgets and obey §3's decor exclusion rule throughout movement; existing static contrast results do not approve their new frames.
 
 ## 8. Fonts (owner: self-hosted OFL)
 
@@ -210,4 +220,4 @@ C now uses three families (one weight each for display and handwriting), so its 
 9. Night panel: the Zodiac section uses theme B colour values in all four themes; the art files are byte-identical to the manifest.
 10. Preview isolation: switching the O3 preview through all four themes leaves the dashboard's computed tokens and fonts unchanged (neutral set).
 11. Theme on every entry path: `guest_open`, `public_open` and `account_open` each return the page's theme, and the first content screen renders in it.
-12. Circular menu (§2), in every theme: the button has an accessible name and `aria-expanded`; while open, Tab and the screen reader reach only the menu items (in arc order) and the × button, which can be reached and activated; Escape and the × button close it and focus returns to the button; activating each item closes the menu, the page is no longer inert, and focus lands on the destination's main heading (Settings: G8's first control); at 320 px and at 200 % text the list fallback is used and nothing overlaps or leaves the screen; while open, no menu item or label overlaps text on the page card (bounding boxes, every theme, on Home, the longest section page, Zodiac, the G8 sheet and both dashboard looks, including focus order there); a tap on the card closes the menu while the card stays inert; with the button in either corner, closed and after scrolling, no page text is under, beside or behind it; with reduced motion no step-back or fly-out runs; the "Nút menu" option mirrors it to the top right. Manual, Phase 4 on the test phones: taps on each item with the phone held normally, 20 taps; more than one miss means switching to a two-ring layout.
+12. Circular menu (§2), in every theme: the button has an accessible name and `aria-expanded`; while open, Tab and the screen reader reach only the menu items (in arc order) and the × button, which can be reached and activated; Escape and the × button close it and focus returns to the button; activating each item closes the menu, the page is no longer inert, and focus lands on the destination's main heading (Settings: G8's first control); at 320 px and at 200 % text the list fallback is used and nothing overlaps or leaves the screen; while open, no menu item or label overlaps text on the page card (bounding boxes, every theme, on Home, the longest section page, Zodiac, the G8 sheet and both dashboard looks, including focus order there); a tap on the card closes the menu while the card stays inert; with the button in either corner, closed and after scrolling, no page text is under, beside or behind it; with reduced motion nothing animates: the page takes the open pose at once without tilt (translate and scale only, so the menu items stay uncovered) and the items appear in place without the fly-out (matches the canvas Menu note, 2026-10-23); the "Nút menu" option mirrors it to the top right. Manual, Phase 4 on the test phones: taps on each item with the phone held normally, 20 taps; more than one miss means switching to a two-ring layout.

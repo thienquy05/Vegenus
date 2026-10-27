@@ -91,9 +91,13 @@ Approved brand asset handoff (PRD Q60): [logo inventory and usage](../../assets/
 
 Superseded by design 4 (`docs/design/vegenus_theme_system.md`): token contract, values per theme from the owner's mood board, contrast results, Zodiac night panel, self-hosted fonts, tests.
 
+Guest motion supplement (draft, PRD Q69-Q70): [connected sections and living backgrounds](../design/vegenus_guest_motion.md). Phase 3 keeps usable still screens and route/focus/history behavior; Phase 4 adds one coordinated menu/route interval, grouped content entrances and backgrounds across all four themes. Tokens and timings are prototype defaults. Tests in its §9 must fail before implementation, then pass with recorded phone footage and budget measurements. Public reference descriptions were read; live Layers motion remains unverified.
+
 ## 7. 3D approach and performance budgets
 
 Superseded by design 5 (`docs/design/vegenus_3d_approach.md`): mode rules and runtime downgrade, one shared WebGL context, procedural theme motifs, the Zodiac sky scene, budgets, tests. The order Static → Page → World (owner confirmed) is unchanged.
+
+The motion supplement shares these budgets, pauses section Views during the menu's DOM card transform, and retains only shared ground state across section changes. Optional World uses its existing rail flight without stacking a Page transition delay on top. No new dependency or background asset download is selected.
 
 ## 8. Tools, MCP servers and orchestration
 

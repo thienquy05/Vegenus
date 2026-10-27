@@ -4,6 +4,8 @@
 **Date:** 2026-10-23
 **Inputs:** PRD §4.1 (S10, S11, S16, S21), §6.4-6.5, §7 (performance, accessibility), FR9, FR13, E2, E17, E18, E26, E30, E41, Q3, Q21, Q50; plan §1-§3, §7; design 2 (G1-G8, Z1, Z2); design 3 §3.10-3.11 (`birth_sky`, `published`); design 4 (token contract, `scene.json`, night panel, decor rule, §7, tests 2, 5, 7).
 **Privacy:** placeholders only. Scenes read only what the guest calls already return; no new data, endpoint or third-party host.
+
+**Proposed supplement:** [guest motion](vegenus_guest_motion.md) coordinates the existing modes with menu/route handoffs and dynamic theme grounds (PRD Q69-Q70). This supplement is a draft, not part of the approval above. It keeps the one-canvas budget, native scrolling, no scroll-driven parallax and published-snapshot boundary.
 **Labels:** **Verified** = read 2026-10-23 on the publisher's own documentation or data (sources in plan §R). **Unverified** = background knowledge; check before relying on it. All numbers marked "proposal" are set from a prototype on the test phones in Phase 4.
 
 ## 1. Principles
@@ -92,6 +94,8 @@ Normal scrolling layout. One `<Canvas>` fixed behind the DOM (`pointer-events: n
 - Views outside the viewport do not render. Touch scrolling is never captured by the canvas; pinch-zoom is never disabled.
 - A tap on the motif (for example A's "tap a glowing orb") is optional delight: decorative only, and given a DOM button if it ever carries meaning.
 
+**Route continuity (draft):** preserve the same-page guest ground and motif phase across authorized section changes; incoming and outgoing content share the interval in [guest motion §§2-4](vegenus_guest_motion.md#2-continuity-contract). During the menu's card transform, pause/hide section Views and use token-based still motifs in their DOM boxes; restore the live View only when aligned. This avoids moving a fixed canvas with the card or allocating another context. Static gets the same composition without movement. New atmospheric layers stay outside View boxes or below the shared canvas so the layer rule still holds.
+
 ### 4.3 World (Phase 5, after Page mode is evaluated)
 The whole site is one scene of **stations**, one per enabled section; disabled sections have no station.
 
@@ -179,6 +183,8 @@ Code and site assets come from Vercel (100 GB transfer), not Supabase egress (5 
 
 ### 6.3 Disposal (E26)
 Leaving a mode or a section disposes its geometries, materials and textures; leaving 3D entirely disposes the renderer and releases the context. Ten mode switches end with the same GPU object counts as one (`renderer.info.memory`, test 6).
+
+The proposed guest handoff retains only the shared same-page ground state and motif phase across routes; it does not retain outgoing section resources or guest media. Dispose persistent scene resources on page/theme replacement, access denial or leaving 3D. Measure the atmospheric work inside the existing budgets. See [guest motion §§7-9](vegenus_guest_motion.md#7-interruptions-loading-and-access) for interruption, access-loss and repeated-navigation checks.
 
 ## 7. Accessibility
 - Canvas `aria-hidden="true"`; every 3D thing that means something has a DOM equivalent (World stations = nav buttons; Zodiac ring = the §5.3 list).
