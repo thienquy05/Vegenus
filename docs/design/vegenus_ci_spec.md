@@ -41,10 +41,10 @@ Two findings confirm earlier designs: the 2026 middleware bypasses are why desig
 |---|---|---|---|
 | `changes` | always | Lists the PR's changed files with `git diff --no-renames`, so a file moved from app code into `docs/` counts as a deletion of the app path too. `app=false` only if every path is under `docs/` or is a root-level `*.md`. An empty list, a dispatch run, or an error gives `app=true` or a failure, never a silent skip | 1 |
 | `privacy-scan` | always | The repo script from plan §12.2 (secrets, real-looking emails/tokens/UIDs, image files only where allowed, Zodiac and Q60 logo SVG/PNG manifests), plus the commit check (§8) on every commit in `origin/$BASE..HEAD`, not only the final tree: a backstop only, because a pushed commit is already public | 1 |
-| `lint-types` | app | ESLint, `tsc --noEmit`, ban on `.only`/`.skip`, `npm audit --omit=dev --audit-level=high`, route-table check (E32) | 2 |
+| `lint-types` | app | ESLint, `tsc --noEmit`, ban on `.only`/`.skip`, `npm audit --omit=dev --audit-level=high` | 2 |
 | `unit` | app | Vitest with coverage | 2 |
 | `db` | app | `supabase start -x studio,imgproxy,mailpit,logflare,vector,edge-runtime,supavisor,realtime` (exclude list checked in the walking skeleton), then `supabase test db` (pgTAP: RLS, every `public_*`/`guest_*`/`account_*` function, designs 1 and 3 tests) | 4 |
-| `e2e` | app | Matrix `[chromium, webkit]`, phone viewports. Starts Supabase like `db`, but also keeps storage, auth and the API gateway, then builds and runs Playwright. Traces uploaded on failure only. **Unsharded** at first; shard a browser only when its job passes 10 minutes | 8 + 9 |
+| `e2e` | app | Matrix `[chromium, webkit]`, phone viewports. Starts Supabase like `db`, but also keeps storage, auth and the API gateway, then builds and runs Playwright; the build includes the route-table check (E32, `postbuild`) and Playwright the route crawler (E31, E37). Traces uploaded on failure only. **Unsharded** at first; shard a browser only when its job passes 10 minutes | 8 + 9 |
 | `a11y-perf` | app | axe in Playwright; Lighthouse CI (`@lhci/cli`, a pinned dev dependency) on the guest pages with the budgets from designs 4 and 5 | 6 |
 | `red-proof` | app, advisory | §5.2. **Not** in `gate`'s `needs` | 2 |
 | `gate` | always (`if: always()`) | Passes only by the rule in §4.1 | 1 |
@@ -65,7 +65,7 @@ Anything else fails `gate`: failure, cancellation, a skip on an app change, a mi
 
 ### 4.2 Security checks (design 7, Q85)
 
-No new job and no new download. The security checks that run in CI are the ones already listed: `npm audit` (`lint-types`), pgTAP (`db`), the route-table check (`lint-types`) and one added Playwright header test inside `e2e` (design 7 §7). GitHub's secret scanning, Dependabot alerts and CodeQL default setup are repository settings, not workflow files (Q87). The agent-led audit is a phase-end process step, not a CI job (design 7 §6).
+No new job and no new download. The security checks that run in CI are the ones already listed: `npm audit` (`lint-types`), pgTAP (`db`), the route-table check (`postbuild` of every `next build`, so in `e2e` and `a11y-perf`) and one added Playwright header test inside `e2e` (design 7 §7). GitHub's secret scanning, Dependabot alerts and CodeQL default setup are repository settings, not workflow files (Q87). The agent-led audit is a phase-end process step, not a CI job (design 7 §6).
 
 ## 5. Rules inside the jobs
 
