@@ -6,7 +6,7 @@ Update this file after every step. Rule: a task is Done only when its test was s
 
 ## 1. Status (2026-10-28)
 
-- **Phase 0 is done: the owner approved the PRD, the plan and all designs on 2026-10-28.** Next: Phase 1, starting with T1.1 (CI walking skeleton). No application code or CI workflow exists yet; harness-os is not enabled (enable only with the owner's OK, it commits).
+- **Phase 0 is done: the owner approved the PRD, the plan and all designs on 2026-10-28.** Phase 1 in progress: T1.1 (CI walking skeleton) is GREEN on PR #21 (`feature/ci-walking-skeleton`); review and the owner's merge are pending. harness-os is not enabled (enable only with the owner's OK, it commits).
 - Approved by the owner: PRD v0.7, plan v0.4, designs 1-7, guest UI, owner UI, guest motion and editable wording (2026-10-28); earlier: designs 1, 2, 3, 5, 6 (2026-10-23), logo (Q60), Home and Zodiac (2026-10-24).
 - Open decisions: none blocking Phase 1. Q16 (NFC tag model) and Q37 (sending domain) are parked by the owner until the final phase. Answered 2026-10-28: Q66 (album limits approved as proposed), Q70 (shortlist 01, 02, 04; owner leans to 04; final choice in Phase 4 on the running app), Q92 (Together phone pins may overlap; zoom or the chip list), Q91 (the 24 approved Codex sign renders ship as the built-in Zodiac art). Deferred by the owner: co-editor role (Q35) and multi-tenant workspace requests (Q84, low priority).
 - Answered 2026-10-27: Q78 (per-IP wish limit 20 per rolling 24 h), Q79 (two tiers: Owner and Member), Q80 (withdrawn the same day: no Member request to co-manage; see Q84), Q81 (defaults kept).
@@ -59,12 +59,27 @@ Security gate (design 7 §6, Q85): Not started. Pass criteria: no open critical 
 
 | Task | Test first | Status |
 |---|---|---|
-| T1.1 CI skeleton with the `gate` check (D6) | one failing test shown red on GitHub, then green | Not started |
+| T1.1 CI skeleton with the `gate` check (D6) | one failing test shown red on GitHub, then green | GREEN (CI `gate` green on PR #21, 2026-10-28); owner merges (see T1.1 evidence below) |
 | T1.2 Route table and deny-by-default checks | crawler test, build fails on an unclassified route | Not started |
 | T1.3 Supabase project, RLS on every table, `guest_*` and `public_*` read functions with the `page_is_live` guard (`pages.copy_published_at` exists from Phase 1; test fixtures set it directly, seeding and acceptance come with T2.7), `vegenus_server` role. `account_*` functions come with their tables in T3.6 (D3 §3.6) | schema lint and anon-role tests (D3 §9) | Not started |
 | T1.4 Owner auth (closed registration, Google for pre-created accounts) | E22, E25, E29, E33-E35 | Not started |
 | T1.5 Pages, sections, guest token (hash, fragment, cookie, rotation), visibility, publication status | E3-E6, E21, E27, E28, E30 | Not started |
 | T1.6 Privacy scan job | seed and repo contain only placeholders | Not started |
+
+T1.1 evidence:
+
+- Versions (exact, `package-lock.json`): next 16.4.3, react 19.3.1, typescript 6.0.3 (7.0 is outside typescript-eslint's `<6.1.0` range), eslint 10.13.0, vitest 5.0.5, @playwright/test 1.64.1, @axe-core/playwright 4.14.0, @lhci/cli 0.15.1, supabase 2.122.0. `npm audit --omit=dev`: 0 advisories; dev tools carry 13 high advisories, outside the CI rule.
+- Gate rule (`scripts/gate_test.sh`, 14 cases of D6 §10): RED with the stub rule `true` (11 should-fail cases passed); GREEN with `scripts/gate.jq`.
+- Focused-test ban (`scripts/no-focused-tests.sh`) and docs-reference check (`scripts/no-docs-refs.sh`): each fails on a fixture with the offending line and passes on clean input.
+- Unit, RED: `npx vitest run` fails `src/lib/site.test.ts` with `Cannot find module './site'`; `tsc --noEmit` fails with TS2307 for the same import. GREEN (checked locally, then removed again for the red push): `src/lib/site.ts` exporting `SITE_NAME`.
+- DB, RED: `supabase test db` failed test 2 (`has_schema` on a schema that does not exist); GREEN with `has_schema('public')`.
+- E2E and a11y (Chromium Pixel 7, WebKit iPhone 15, production build): axe found `document-title` (serious) on the first run; fixed with page metadata; 3 of 3 pass. Lighthouse: FCP ≤ 3 s and total bytes ≤ 3 MB pass; a 1-byte budget fails as expected.
+- RED on GitHub, PR #21 run 40731497397: `gate` failure. `unit` (Cannot find module './site'), `lint-types` (TS2307 in typecheck), `e2e` chromium and webkit and `a11y-perf` (TS2307 in `next build`) failed; `changes`, `privacy-scan` and `db` passed. Job times: changes 7 s, privacy-scan 3 s, lint-types 22 s, unit 24 s, db 132 s, e2e 65 s (chromium) and 113 s (webkit), a11y-perf 45 s, gate 6 s (failed jobs stop early, so these are not full-run times).
+- First GREEN push, run 40732095546: every job passed except `a11y-perf`; Lighthouse could not start Chrome for Testing from `node_modules` (`No usable sandbox`, Ubuntu 24.04 AppArmor). Fix: Lighthouse uses the runner's system Chrome in CI; Playwright keeps its own browsers.
+- GREEN on GitHub, run 40733024497: all jobs and `gate` passed, tested merge `16d84ef` = PR head `44084f9` into `master` `ad15639` (design 6 §3 merge requirement holds). Job times: changes 9 s, privacy-scan 3 s, lint-types 28 s, unit 24 s, db 125 s, e2e 91 s (chromium) and 82 s (webkit), a11y-perf 80 s, gate 5 s; about 7.5 runner-minutes per app run, against the 36 estimated in design 6 §6.
+- Review: `code-reviewer` and `security-review` skipped for T1.1 by the owner (2026-10-28: nothing critical in this unit). The Phase 1 security gate still covers this code. Required check on `master`: `CI passed` (the `gate` job's check name), with branches up to date (design 6 §1, §8).
+- Placeholders in CI until their units: `privacy-scan` (T1.6), route-table check (T1.2), Supabase in `e2e` (first unit that reads from it), `red-proof` (advisory, later).
+- Open: Dependabot alerts (Q87) are not on yet (the agent's settings call was blocked; the owner turns them on); required `gate` check on `master` after the first green run.
 
 Edge cases required in this phase:
 
@@ -255,8 +270,8 @@ One list of the **unverified** facts that block a build step, so Phase 1 does no
 
 | Needed by | Fact to verify | Source |
 |---|---|---|
-| T1.1 (CI, first app) | Framework and i18n library choice (Next.js ≥ 16.4.1, next-intl) through context7, because T1.1 already builds an app | plan §2; D6 §2, §5.1 |
-| T1.1 (CI) | Supabase CLI exact version; the `supabase start -x` exclude list; inputs of the new `checkout`/`setup-node` majors; hosts the runner contacts; `npm` cache and `PLAYWRIGHT_BROWSERS_PATH=0` stay inside the project | D6 §4, §5.1, §7, §7.1 |
+| ~~T1.1 (CI, first app)~~ | Done 2026-10-28: Next.js 16.4.3 (React 19.3.1). context7 was unreachable; versions and peer ranges read from the npm registry and the installed packages. i18n library deferred to the first unit that needs translations | plan §2; D6 §2, §5.1 |
+| T1.1 (CI) | Done locally 2026-10-28: Supabase CLI 2.122.0 (npm package ships the binary, no extra host); the §4 exclude list is valid and the db tests pass with it (the CLI still pulls `realtime` while it sets up the schema); action SHAs unchanged from §7, inputs read from each `action.yml`; local hosts: `registry.npmjs.org`, `cdn.playwright.dev`, `public.ecr.aws`; npm cache in `.npm-cache/`, browsers in `node_modules/`. Still open: the hosts the runner contacts and minutes per job, from the first GitHub run | D6 §4, §5.1, §7, §7.1 |
 | T1.3 (database) | How the server connects as `vegenus_server` (pooler login or signed token); if neither works, guest writes wait for an owner decision, never the service role (D3 §3.9); pgTAP through the Supabase CLI; the Supabase security-advisor command | D3 §3.9, §9; D7 §8 |
 | T1.3, Q89 | Command and connection for applying migrations to production by hand | D7 §6.5 rule 4, §8 |
 | T1.4 (auth) | `auth.admin.createUser` with a confirmed email, a chosen user id and a password, else the SMTP fallback; breached-password check availability | D1 §10.3 |
