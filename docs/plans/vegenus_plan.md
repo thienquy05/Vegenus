@@ -1,6 +1,6 @@
 # Plan: Vegenus
 
-**Status:** v0.4, 2026-10-27, awaiting owner review. v0.3 was **approved by the owner 2026-10-23**, with the instruction not to start Phase 1 yet while the frontend design continues (progress file). v0.2 was revised after the Codex adversarial challenge (harness step 5); v0.3 added §12 (test-first rule and parallel CI on GitHub) and the cookie change from design 1; v0.4 records the guest-access changes of Q77-Q82 (below) and refreshes the phase table. Derived from the PRD (now v0.6 plus the 2026-10-26 sign-in and wording changes). No code is written.
+**Status:** v0.4, 2026-10-27, awaiting owner review. v0.3 was **approved by the owner 2026-10-23**, with the instruction not to start Phase 1 yet while the frontend design continues (progress file). v0.2 was revised after the Codex adversarial challenge (harness step 5); v0.3 added §12 (test-first rule and parallel CI on GitHub) and the cookie change from design 1; v0.4 records the guest-access changes of Q77-Q82 (below) and refreshes the phase table; 2026-10-28 adds the security audit gate (Q85) to §9 and §12.1 and a status sync. Derived from PRD v0.7. No code is written.
 **Date:** 2026-10-21
 **Privacy:** placeholders only.
 **Single-source rule:** decisions and open questions live only in PRD §12; this plan links to them and never restates them. Research facts live only in §R of this plan.
@@ -146,7 +146,7 @@ Proposed scope until the owner says otherwise:
 
 | Phase | Weeks | Tasks | Tests first (PRD §9.2) | Gate |
 |---|---|---|---|---|
-| 0 Design | 1–2 | Design docs in `docs/design/`: 1 token flow, 2 screens, 3 data model (all approved 2026-10-23), 4 theme system (draft v0.13, awaiting owner review; its decisions Q53-Q76 are answered), 5 3D approach (approved 2026-10-23); CI spec: design 6 (approved 2026-10-23); guest UI, owner UI, motion and editable wording: design consolidation of 2026-10-26/27, owner review per canvas page | — | Owner review of each |
+| 0 Design | 1–2 | Design docs in `docs/design/`: 1 token flow, 2 screens, 3 data model (all approved 2026-10-23), 4 theme system (draft v0.13, awaiting owner review; its decisions Q53-Q76 are answered), 5 3D approach (approved 2026-10-23); CI spec: design 6 (approved 2026-10-23); security: design 7 (draft v0.1, 2026-10-28); guest UI, owner UI, motion and editable wording: design consolidation of 2026-10-26/27, owner review per canvas page | — | Owner review of each |
 | 1 Foundations | 3–4 | **First:** CI walking skeleton (§12.4). Then route table + deny-by-default checks, skeleton app, Supabase project, RLS + `guest_*` functions, auth (closed owner registration, Google; guest sign-up only by owner-issued invite code, P1 and needs Q37), pages/memberships/tokens, visibility, publication status, privacy scan | E4–E6, E21, E22, E27–E37 | Before harness-os / spend |
 | 2 Owner tools | 5–7 | Setup wizard (six steps, including the wording acceptance), wording storage, validator and seeding (design 3 §3.12), CRUD with draft/publish, media pipeline, usage meter and triggers, keep-alive + alerts | E7–E10, E15, E16, E23–E25 | Owner review |
 | 3 Guest (Static + Page shell) | 8–10 | Token exchange, `public_open` for Published pages, guest views, EN/VI, guestbook queue with the Q75/Q78 limits (token, account and visitor wishes), QR/NFC, mode selector, `copy` returned by the open functions. P1 after core: invite codes and Members, email subscribers, the O18 wording editor | E1, E2, E11–E14, E17, E26, E44–E48, E50 | Owner review |
@@ -161,7 +161,7 @@ Proposed scope until the owner says otherwise:
 
 ## 10. Open decisions
 
-See PRD §12 (single source). Q29–Q32 are answered (5-minute media window, closed registration, best-effort availability at $0, limited ruflo scope). Added 2026-10-22: Q36-Q41 (visitor rules, Resend, guest accounts, Zodiac, tour, auth email). Answered 2026-10-22: Q33 (CD route), Q34a-d (show once, 30 days, limits, hidden pending), Q35 (one shared account), Q36, Q38-Q41, Q20 (optional, owner supplies art). Still open: Q16 (tag model, left open by the owner) and the Q37 domain (deferred).
+See PRD §12 (single source); the PRD status line lists what is still open. This section deliberately keeps no copy of that list, so it cannot go stale.
 
 ## 11. Changes after the Codex challenge (2026-10-21)
 
@@ -208,7 +208,7 @@ One workflow, `ci.yml`, on `pull_request` and on `push` to `master`. Jobs run **
 | `db` | Local Supabase (Docker) + SQL tests for RLS and every `guest_*` function | Isolation and visibility: E3–E6, E28, E29 | Docker, Supabase CLI |
 | `e2e` | Playwright on phone viewports, WebKit (iPhone-like) and Chromium (Android-like), split into shards | Guest and owner flows from design 2; E1, E5, E21, E27, E30 | Built app + local Supabase |
 | `a11y-perf` | axe checks in Playwright; Lighthouse budget on the guest pages | WCAG 2.2 AA target; first visit ≤ 3 MB; first content budget | Built app |
-| `privacy-scan` | Repo script: no secrets, no real-looking emails, tokens or tag UIDs, no image files outside `docs/**/placeholder*`, except (a) the built-in per-sign Zodiac SVGs listed in `assets/zodiac-sign/western/manifest.json` and `assets/zodiac-sign/vietnamese/manifest.json` (Q39), which must have no scripts, event handlers, external references or embedded raster content and must match the manifest checksums; (b) the two owner-approved non-personal PNG source sheets listed in `assets/zodiac-sign/source-sheets.json`, checked for file type, dimensions and checksums (artwork handoff only, never runtime payloads); and (c) the Q60 logo SVG/PNG files explicitly listed in `assets/logo/manifest.json`, with the same static-vector safety checks for SVGs and type, dimension and checksum checks for PNGs. The logo's `approved-source.png` is a handoff reference, not a runtime payload. These are file-level exceptions, never a directory wildcard; the base-branch binary approval rule in design 6 §8 still applies | CLAUDE.md rule 3 | Shell only |
+| `privacy-scan` | Repo script: no secrets, no real-looking emails, tokens or tag UIDs, no image files outside `docs/**/placeholder*`, except (a) the built-in per-sign Zodiac SVGs listed in `assets/zodiac-sign/western/manifest.json` and `assets/zodiac-sign/vietnamese/manifest.json` (Q39), which must have no scripts, event handlers, external references or embedded raster content and must match the manifest checksums; (b) the two owner-approved non-personal PNG source sheets listed in `assets/zodiac-sign/source-sheets.json`, checked for file type, dimensions and checksums (artwork handoff only, never runtime payloads); and (c) the Q60 logo SVG/PNG files explicitly listed in `assets/logo/manifest.json`, with the same static-vector safety checks for SVGs and type, dimension and checksum checks for PNGs. The logo's `approved-source.png` is a handoff reference, not a runtime payload. From T3.9, also (d) the 24 Zodiac WebP sign renders listed in `assets/zodiac-sign/renders.json` (Q91), with type, dimension and checksum checks; that manifest reaches `master` before the files (design 6 §8). These are file-level exceptions, never a directory wildcard; the base-branch binary approval rule in design 6 §8 still applies | CLAUDE.md rule 3 | Shell only |
 | `red-proof` (optional, advisory first) | Run the PR's new or changed tests against the `master` code; pass if they **fail** there | Evidence that new tests can fail | Node |
 | `gate` | `needs:` all of the above | One required status for merging | — |
 
@@ -230,7 +230,7 @@ The first unit of Phase 1 is CI itself: an empty app, one trivial test written t
 
 ### 12.5 Facts to verify before writing the workflow
 
-Checked 2026-10-23: results in design 6 §2 (private repo; 2,000 Actions minutes and no protected branches on GitHub Free, PRD Q59; Supabase CLI and Docker on runners; Next.js advisories, floor 16.4.1; Vercel cron already in §R). Still **unverified**: Resend sending without a domain, data location and DPA, DNS records (test only after the owner creates an account, rule 1).
+Checked 2026-10-23: results in design 6 §2 (then a private repo with 2,000 Actions minutes and no protected branches on GitHub Free; public since 2026-10-25, PRD Q59, so minutes are free and `master` has a ruleset; Supabase CLI and Docker on runners; Next.js advisories, floor 16.4.1; Vercel cron already in §R). Still **unverified**: Resend sending without a domain, data location and DPA, DNS records (test only after the owner creates an account, rule 1).
 
 ---
 

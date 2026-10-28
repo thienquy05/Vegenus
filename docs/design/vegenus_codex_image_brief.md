@@ -1,7 +1,7 @@
-# Codex image brief (for the next session)
+# Codex image brief
 
 **Status:** v0.3, 2026-10-27 (status refresh). The runs for Home, Zodiac and the sign art are **generated and converted** (files and bytes in §4); the owner approved the Codex host for the whole design system and decided that these images are the Page-mode art (Q62, 2026-10-24). Images reached the owner through canvas pages, so **approval is recorded per canvas page** in the log: Home page 1 and Zodiac page 3 were approved on 2026-10-24, and every row below is covered by one of those approvals. Generating an image, Claude's check, the owner's approval and publishing it to the canvas are separate steps, and none of them is the production payload (WebP optimisation happens in the code phase).
-**Branch:** `docs/guest-screens-v3`.
+**Where the approved files are (2026-10-28):** on the canvas, and copied with names and a `SHA256SUMS` file into the git-ignored `.design/art/` (`home/` 16 files, `zodiac/western/` and `zodiac/vietnamese/` 12 each, `zodiac/sky-tall`, `zodiac/sky-wide`). They enter Git with a checksum manifest when the code phase integrates them (design 6 §8). The 24 sign renders are the shipped sign art (PRD Q91).
 **Privacy (rule 3):** text prompts only. No real names, dates, places, photos, messages or tag ids go to Codex. Nothing from `.env`, `.claude-flow/`, `.swarm/` or `ruvector.db`.
 **Network (rule 1):** Codex image generation calls OpenAI's image model through the owner's own Codex sign-in. Before the run, state the host (`api.openai.com`, via Codex CLI) and wait for the owner's go.
 
@@ -9,7 +9,7 @@
 
 1. Claude opens Terminal on the owner's Mac (computer use, owner approves screen access) in `~/Project/anni-demo`.
 2. Check the installed Codex version and its image tool: `codex --version`, `codex exec --help` (the image skill is reported as `$imagegen` with `gpt-image-2`; **unverified**, confirm in the help text or the official Codex docs before use).
-3. One `codex exec` call per image group below, sandbox limited to writing `assets/generated/` only. Prompt = the group's text from this file, nothing else.
+3. One `codex exec` call per image group below, sandbox limited to writing `.design/art/` only (git-ignored). Prompt = the group's text from this file, nothing else.
 4. Claude checks each file (size, transparency, no text or faces), converts to WebP, and records bytes in §4. The owner approves each image before it replaces a code-drawn shape on the canvas.
 
 ## 1. Images to make

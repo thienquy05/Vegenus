@@ -1,6 +1,6 @@
 # Editable wording: what the owner writes and what the system generates
 
-**Status:** DRAFT v0.4, 2026-10-27 (complete key inventory §2.1, validation rules §2.2, storage moved to design 3 §3.12). v0.3, 2026-10-26: owner answered all Q82 points (see §7). Branch `docs/editable-copy` (stacked on `docs/guest-screens-v3`). Documentation only; no application code. Rule 3: every example is invented sample text with placeholders; nothing here is a real name, date or message.
+**Status:** DRAFT v0.4, 2026-10-27 (complete key inventory §2.1, validation rules §2.2, storage moved to design 3 §3.12). v0.3, 2026-10-26: owner answered all Q82 points (see §7). Documentation only; no application code. Rule 3: every example is invented sample text with placeholders; nothing here is a real name, date or message.
 **Why:** owner direction (2026-10-26): the template should give the couple more control. Greetings, placeholders and similar wording must not be fixed; the couple edits them. Anything the system works out (zodiac, counts, dates) stays generated: the owner supplies the inputs, never the output text.
 **Related:** [screens](vegenus_screens.md), [guest UI](vegenus_guest_ui.md), [owner UI](vegenus_owner_ui.md), [data model](vegenus_data_model.md) §3.12 (wording storage and publication), PRD Q82 (answered).
 
@@ -154,7 +154,7 @@ Menu items, page headings and Home shortcuts keep their product names in both la
 
 | Text | Kind | Example EN / VI |
 |---|---|---|
-| Tour step titles and bodies (3-4 steps) | **B** | Step 1: "Hi, we're {partner_a} and {partner_b}." / "Chào bạn, tụi mình là {partner_a} và {partner_b}." Step 2: "Look around: memories, places and more." / "Cứ thong thả xem kỷ niệm, địa điểm và nhiều thứ khác." |
+| Tour step titles and bodies (3 steps, §2.1) | **B** | Step 1: "Hi, we're {partner_a} and {partner_b}." / "Chào bạn, tụi mình là {partner_a} và {partner_b}." Step 2: "Look around: memories, places and more." / "Cứ thong thả xem kỷ niệm, địa điểm và nhiều thứ khác." |
 | Tour buttons Next, Back, Skip, Done | D | |
 | Updates card question | **B** | "Want a note when we add something new?" / "Muốn nhận tin khi tụi mình thêm điều mới không?" |
 | Consent text and unsubscribe note | D | Legal wording stays fixed |

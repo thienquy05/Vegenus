@@ -52,6 +52,10 @@ agentdb.rvf*
 .vercel/
 .supabase/
 .playwright-mcp/
+graphify-out/
+
+# Local design workspace: generators, board drafts, Codex design output, approved art awaiting integration (never committed)
+.design/
 
 # Dependencies and build output
 node_modules/

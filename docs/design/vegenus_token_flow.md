@@ -1,6 +1,6 @@
 # Design 1: NFC/QR guest token flow and access model
 
-**Status:** v0.2, **approved by the owner 2026-10-23** (v0.2, 2026-10-22: token lifecycle and rotation §3.1, show-once discussion §3.2, deny-by-default §9, guest accounts §10, email and Zodiac data rules §11) (Phase 0 design deliverable "NFC flow"). No code.
+**Status:** v0.2, **approved by the owner 2026-10-23** (v0.2, 2026-10-22: token lifecycle and rotation §3.1, show-once discussion §3.2, deny-by-default §9, guest accounts §10, email and Zodiac data rules §11) (Phase 0 design deliverable "NFC flow"). Later revisions are under owner review: §5.1 and §10 rewritten for Q77-Q81 (2026-10-26/27, entry without a gate, visitor wishes, invite codes, subscribers; §10.4 retired with Q80); 2026-10-28 renamed the owner route class to `owner`. No code.
 **Date:** 2026-10-21
 **Inputs:** PRD §4, §9.2, §12 (Q12, Q14, Q16, Q19, Q26, Q29, Q30); plan §1, §4, §5.
 **Privacy:** placeholders only. `<host>` = the free `*.vercel.app` address (Q19). `<token>` is never a real value.
@@ -31,7 +31,7 @@ A guest who taps the tag or scans the QR sees the enabled, published sections an
 | Co-editor | **Deferred** (Q35): no account has this role; both partners use the Owner account | RLS by `memberships`, role `co_editor` reserved | Would edit content and moderate wishes (Q15) |
 | Guest with token | Guest cookie holding the token (§4) | Inside `guest_*` functions | Read published content of enabled sections; post one message to the queue at a time |
 | Visitor without token | None | `public_*` functions: Published pages only; wishes through the server-only `public_guestbook_post` (§10.2) | Token-only or Private page: the "tap the tag" screen only. Published page: read published sections; post a wish to the queue, rate-limited (Q78, supersedes the read-only rule of Q36) |
-| Registered guest (invite code, Q79; was "guest account", Q38) | Email-verified login bound to one page, created with a single-use invite code (§10.3) | `account_*` functions: validated identity + an active `guest_accounts` row for that page (§5.1) | Same reads as a token holder; post with a prefilled name; keep email preferences and updates; request owner access (§10.4) |
+| Registered guest (invite code, Q79; was "guest account", Q38) | Email-verified login bound to one page, created with a single-use invite code (§10.3) | `account_*` functions: validated identity + an active `guest_accounts` row for that page (§5.1) | Same reads as a token holder; post with a prefilled name; keep email preferences and updates |
 | Email subscriber (Q81) | A confirmed address, no login | Mail only; confirm and unsubscribe landings (§10.5) | Receive the updates digest; nothing else |
 
 ## 3. Token
@@ -81,7 +81,7 @@ Recovery rules that make A safe:
 Tag/QR ──> https://<host>/g#<token>
   1. Browser loads the /g shell (static, no data, noindex, no analytics).
   2. Script reads location.hash. Empty → screen G-E1 "Tap the tag or scan the QR".
-  3. POST /api/guest/session  {token}   (header X-vegenus-Guest: 1; Origin checked; rate limited per IP)
+  3. POST /api/guest/session  {token}   (header X-Vegenus-Guest: 1; Origin checked; rate limited per IP)
   4. Server calls guest_open(token) with the anon role:
        hash → active token? → page visibility ≠ private? → returns page summary, enabled sections, theme, default lang
        Otherwise it returns one generic "not available" result (no hint whether the token is wrong, rotated or the page is private)
@@ -162,7 +162,7 @@ Each row is written and **observed failing** before the code that makes it pass 
 | Guest account or co-editor on an owner-only action, or another page's ID, refused | API + DB | E33 |
 | After log out, back button shows no private content; authed responses `no-store` | E2E | E34 |
 | Login `next=https://other.site` is ignored | API | E35 |
-| As the anon database role: `select` on every table returns nothing or is denied; only `guest_*` execute | DB | E36 |
+| As the anon database role: `select` on every table returns nothing or is denied; only the `public_*` and `guest_*` read functions execute (`account_*` needs `authenticated`) | DB | E36 |
 | Guessed paths (`/home`, `/admin`, `/dashboard`) are not-found or login redirect and reveal nothing | E2E | E37 |
 | Registered-guest sign-up: needs a valid unused code, verified email, attempt lockout, per-page cap; wrong, used, revoked and expired codes give one identical response; rotating the guest link changes nothing | DB + API | E38 |
 | Two concurrent registrations on one code: exactly one reserves it; a retry by the same address inside the window reuses the reservation and its one pending registration (new link replaces the old, expiry not extended, at most 3 resends, no password or account field changes); a different address on a live reservation gets the generic error; a retry by the same address at minute 31 deletes the lapsed registration and starts a fresh window if the invite is still valid; a password supplied by anyone before the link is opened has no effect because none is accepted | DB + API | E44 |
@@ -185,9 +185,9 @@ Owner requirement (2026-10-22): nobody may open an owner page such as `/home` or
 
 | Layer | Rule | Why a single layer is not enough |
 |---|---|---|
-| 1. Route table | One file lists every route and server action with a class: `public` (landing, `/g` shell, login, `/signin`, `/join` and `/join/verify`, the subscribe-confirm and unsubscribe landings, health check, static, the read-only Published-page routes that call `public_*` only, and the rate-limited POST routes for a wish, a code check, registration and subscription), `guest` (token or account), `member` (the owner account). An unlisted route is not-found, and CI fails if the build contains a route that is not in the table | Stops "forgot to protect the new page" |
-| 2. Handler check | Every page, route handler and server action starts with `requireMember()` or `requireGuest()`. It asks the auth service to validate the session (not just "a cookie exists"). Server actions are public POST endpoints, so they get the same check | Middleware-only protection has failed in this ecosystem before (a middleware bypass in Next.js was disclosed in 2025; **unverified, from background knowledge**, check when the framework is approved), so middleware is a convenience, never the only gate |
-| 3. Database | Row-level security on every table with no anon access. Guests reach data only through `guest_*` functions that take a token. Owner-account rows are filtered by `memberships` | A bug in the web server still cannot hand out another page's rows |
+| 1. Route table | One file lists every route and server action with a class: `public` (landing, `/g` shell, login, `/signin`, `/join` and `/join/verify`, the subscribe-confirm and unsubscribe landings, health check, static, the read-only Published-page routes that call `public_*` only, and the rate-limited POST routes for a wish, a code check, registration and subscription), `guest` (token or account), `owner` (the owner account; named so it cannot be confused with a Member, the registered guest of Q79). An unlisted route is not-found, and CI fails if the build contains a route that is not in the table | Stops "forgot to protect the new page" |
+| 2. Handler check | Every page, route handler and server action starts with `requireOwner()` or `requireGuest()` (routes of class `public` need neither). It asks the auth service to validate the session (not just "a cookie exists"). Server actions are public POST endpoints, so they get the same check | Middleware-only protection has failed in this ecosystem before (a middleware bypass in Next.js was disclosed in 2025; **unverified, from background knowledge**, check when the framework is approved), so middleware is a convenience, never the only gate |
+| 3. Database | Row-level security on every table with no anon access. Guests reach data only through the `public_*`, `guest_*` and `account_*` functions (§5.1). Owner-account rows are filtered by `memberships` | A bug in the web server still cannot hand out another page's rows |
 | 4. Storage | Private buckets; signed URLs minted only after the same checks; 5-minute expiry (Q29) | Direct bucket links do not exist |
 
 Behaviour for the owner's example:
@@ -227,7 +227,7 @@ Only the owner can create a door. A **code** is a credential for one registratio
 ```
 Menu / Settings / after-wish card → "I have an invite code"
   1. Enter the code        POST /api/join/code  {code}
-       header X-vegenus-Guest: 1, Origin checked, rate limit per IP and per device
+       header X-Vegenus-Guest: 1, Origin checked, rate limit per IP and per device
        5 wrong tries per hour, then a one-hour lockout; global daily budget
        answer: valid or one generic "not valid" (wrong, used, revoked, expired look identical, same latency)
   2. Start sign-up         POST /api/join/register  {code, email, display name?}     (no password or updates consent here)
@@ -325,6 +325,6 @@ After a sent wish / after another interaction / Settings → "Get updates by ema
 - **Content rules:** emails never contain a guest token, a guest-cookie link, private memory text or media. They link to the login page. Non-account mail carries a one-click opt-out.
 - **Which mail:** welcome (after verification), anniversary reminder to the owner (N days before, from the page's anniversaries), new-wish digest to the owner (once a day, not one mail per wish), wish-approved thank-you to a registered guest that posted, verify and reset mail, subscription confirmation, the updates digest to subscribers and opted-in registered guests (§10.5).
 - **Idempotency:** the vendor supports an `Idempotency-Key` header kept for 24 hours (plan §R), so a retry in that window cannot double-send; our own `email_log` dedupe key covers longer gaps.
-- **Scheduling:** reuse the daily keep-alive job to dispatch reminders (the host's cron limits on the free plan are **unverified**).
+- **Scheduling:** reuse the daily keep-alive job to dispatch reminders (Vercel Hobby cron runs at most once a day, ±59 minutes: verified, plan §3).
 - **Zodiac (corrected by the owner 2026-10-22):** the section is about the **couple**. Guests never enter a birthday. The owner enters the partners' birth dates in the dashboard; the server computes the signs and stores the dates encrypted (design 3 §3.10, Q46-Q49). Before that table exists, the design must specify: AES-256-GCM with a unique random nonce per value, key id and user id as associated data, key backup and rotation, behaviour when the key is missing, server-side validation, consent withdrawal, and removal from queues and backups under a stated retention. An environment variable is where the key lives, not a key-management plan. Analytics, error reports and session recordings must not capture the date field.
 
