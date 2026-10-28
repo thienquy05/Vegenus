@@ -7,7 +7,7 @@
 
 ## 1. Principles
 
-1. **One required check.** Jobs run in parallel; one `gate` job decides. The owner merges only when `gate` is green (rule 4).
+1. **One required check.** Jobs run in parallel; one `gate` job decides. The owner merges only when `gate` is green (rule 4). On GitHub the `gate` job reports its check as **`CI passed`** (owner, 2026-10-28); that name is the required status check. The job ID stays `gate`.
 2. **Fail closed.** A job that is skipped when it should have run, cancelled, or missing counts as a failure. Only a docs-only change may skip the heavy jobs, and `privacy-scan` never skips (§4).
 3. **$0 and no surprise bills.** The repo is public since 2026-10-25 (Q59), so standard runners are free (§2). No payment method is added. If the repo ever goes private again, §6 applies.
 4. **Pinned downloads only.** Every third-party action is pinned to a commit SHA, and the CLI and package versions are pinned. The full download list (§7) is approved under rule 1 before `ci.yml` is written.
@@ -129,7 +129,7 @@ Option b of three (a: keep private, merge by habit; b: public; c: GitHub Pro, pr
 
 **State on 2026-10-28** (read-only API): the repo is public and `master` has an active ruleset that requires a pull request and blocks deletion and force-pushes. Still to add: the required `gate` check and "up to date before merging" (they need the workflow, so in T1.1), and the Actions approval setting below.
 
-**After the switch** (owner, or Claude on request; settings changes are outward-facing): protect `master`. Require the `gate` status check and "branches up to date before merging" (this enforces the §3 merge requirement), block force-pushes and deletions, and require a pull request. Under Actions settings, require approval before workflows run for outside contributors. Exact setting names are confirmed when they are set.
+**After the switch** (owner, or Claude on request; settings changes are outward-facing): protect `master`. Require the `CI passed` status check (the `gate` job) and "branches up to date before merging" (this enforces the §3 merge requirement), block force-pushes and deletions, and require a pull request. Under Actions settings, require approval before workflows run for outside contributors. Exact setting names are confirmed when they are set.
 
 ## 9. Sketch (not a file; Phase 1 writes `ci.yml` from it)
 
