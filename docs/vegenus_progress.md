@@ -6,7 +6,7 @@ Update this file after every step. Rule: a task is Done only when its test was s
 
 ## 1. Status (2026-10-28)
 
-- **Phase 0 is done: the owner approved the PRD, the plan and all designs on 2026-10-28.** Phase 1 in progress: T1.1 (CI walking skeleton) is GREEN on PR #21 (`feature/ci-walking-skeleton`); review and the owner's merge are pending. harness-os is not enabled (enable only with the owner's OK, it commits).
+- **Phase 0 is done: the owner approved the PRD, the plan and all designs on 2026-10-28.** Phase 1 in progress: T1.1 (PR #21) and T1.2 (PR #22) are Done (merged, CI `gate` green); T1.3 is Reviewed (Codex approve) on `feature/supabase-rls`; its CI `gate` runs when the PR is opened. harness-os is not enabled (enable only with the owner's OK, it commits).
 - Approved by the owner: PRD v0.7, plan v0.4, designs 1-7, guest UI, owner UI, guest motion and editable wording (2026-10-28); earlier: designs 1, 2, 3, 5, 6 (2026-10-23), logo (Q60), Home and Zodiac (2026-10-24).
 - Open decisions: none blocking Phase 1. Q16 (NFC tag model) and Q37 (sending domain) are parked by the owner until the final phase. Answered 2026-10-28: Q66 (album limits approved as proposed), Q70 (shortlist 01, 02, 04; owner leans to 04; final choice in Phase 4 on the running app), Q92 (Together phone pins may overlap; zoom or the chip list), Q91 (the 24 approved Codex sign renders ship as the built-in Zodiac art). Deferred by the owner: co-editor role (Q35) and multi-tenant workspace requests (Q84, low priority).
 - Answered 2026-10-27: Q78 (per-IP wish limit 20 per rolling 24 h), Q79 (two tiers: Owner and Member), Q80 (withdrawn the same day: no Member request to co-manage; see Q84), Q81 (defaults kept).
@@ -59,9 +59,9 @@ Security gate (design 7 §6, Q85): Not started. Pass criteria: no open critical 
 
 | Task | Test first | Status |
 |---|---|---|
-| T1.1 CI skeleton with the `gate` check (D6) | one failing test shown red on GitHub, then green | GREEN (CI `gate` green on PR #21, 2026-10-28); owner merges (see T1.1 evidence below) |
-| T1.2 Route table and deny-by-default checks | crawler test, build fails on an unclassified route | Reviewed (Codex approve, round 4); CI `gate` pending on the PR (see T1.2 evidence below) |
-| T1.3 Supabase project, RLS on every table, `guest_*` and `public_*` read functions with the `page_is_live` guard (`pages.copy_published_at` exists from Phase 1; test fixtures set it directly, seeding and acceptance come with T2.7), `vegenus_server` role. `account_*` functions come with their tables in T3.6 (D3 §3.6) | schema lint and anon-role tests (D3 §9) | Not started |
+| T1.1 CI skeleton with the `gate` check (D6) | one failing test shown red on GitHub, then green | Done (CI `gate` green, merged as PR #21; see T1.1 evidence below) |
+| T1.2 Route table and deny-by-default checks | crawler test, build fails on an unclassified route | Done (Codex approve, round 4; CI `gate` green, merged as PR #22; see T1.2 evidence below) |
+| T1.3 Supabase project, RLS on every table, `guest_*` and `public_*` read functions with the `page_is_live` guard (`pages.copy_published_at` exists from Phase 1; test fixtures set it directly, seeding and acceptance come with T2.7), `vegenus_server` role. `account_*` functions come with their tables in T3.6 (D3 §3.6) | schema lint and anon-role tests (D3 §9) | Reviewed (Codex approve, round 2); CI `gate` pending on the PR (see T1.3 evidence below) |
 | T1.4 Owner auth (closed registration, Google for pre-created accounts) | E22, E25, E29, E33-E35 | Not started |
 | T1.5 Pages, sections, guest token (hash, fragment, cookie, rotation), visibility, publication status | E3-E6, E21, E27, E28, E30 | Not started |
 | T1.6 Privacy scan job | seed and repo contain only placeholders | Not started |
@@ -94,19 +94,32 @@ T1.2 evidence:
 - Codex round 4: approve, no material findings.
 - Local: lint, typecheck, unit 10 of 10, gate rule 14 cases, build, Playwright 7 of 7 (chromium, webkit, a11y).
 
+T1.3 evidence:
+
+- Scope (owner, 2026-10-28): the core read path. Migration `supabase/migrations/20261028120000_core_read_path.sql` creates `pages`, `page_sections` (five disabled rows seeded per page), `memberships`, `guest_tokens`, `items`, `guestbook_entries` with the D3 §3 checks (NFC, length caps, per-kind fields, alt language, date precision, one home, one active token), RLS on every table with no policies, no table grant to `anon`, `authenticated` or `vegenus_server`, and the read functions `guest_open`, `guest_list`, `guest_guestbook_list`, `public_open`, `public_list`, `public_guestbook_list` (definer, empty `search_path`, granted to `anon` only) behind `page_is_live`. Media tables and `*_media_url` come with T2.3 (Postgres cannot mint storage signed URLs itself; the signing path is settled there); `items.cover_media_id` with media; `guestbook_entries.account_id` with T3.6; owner policies with T1.4/T1.5; the `version` trigger with the first owner update function.
+- `vegenus_server` (owner, 2026-10-28): created `NOLOGIN` with no table privileges and no `BYPASSRLS`; the owner enables login per environment by hand (`alter role vegenus_server login password '…'`), never in Git. Supabase documents custom-role logins through the shared pooler as `vegenus_server.<project-ref>`; the live check happens when the hosted development project is created.
+- Hosted Supabase project (owner, 2026-10-28): created by the owner at the first deploy; all tests use the local database.
+- Guestbook lists return `id` and `created_at` beside `display_name`, `body`, `lang` and `approved_at`: the keyset cursor needs them (D3 §6 index order).
+- DB, RED: `supabase test db` failed `guest_read.test.sql` (`relation "public.pages" does not exist`, 0 of 39 ran) and `schema_lint.test.sql` 3 of 9 (missing tables, missing `vegenus_server`, no anon read functions). GREEN: 50 of 50 (skeleton 2, schema lint 9, guest read 39; 52 after Codex round 1). The first GREEN run failed one lint case on `pages` (the tenant root has `id`, not `page_id`); `pages` is now the first listed exception.
+- Lint bites: inside a rolled-back transaction, `grant select on public.items to anon` and a definer function without `search_path` (executable by `anon` through the PUBLIC default) were each reported by the lint queries.
+- Security advisor: `supabase db advisors --local --type security --fail-on warn` exits 0; only INFO `rls_enabled_no_policy` on the six tables (deny by default until owner policies exist).
+- Codex adversarial review, round 1: needs-attention, 2 findings (medium), both fixed. (1) Revoking the schema defaults from `anon` and `authenticated` left PostgreSQL's PUBLIC execute default, so a future function would be callable by guests: the migration now revokes it globally for the migration role (a schema-scoped revoke cannot remove a PUBLIC default). Consequence: a later unit that installs an extension as that role grants its functions explicitly. (2) An anniversary with a NULL `date_precision` passed the check (NULL is not a failure): now `is not distinct from 'day'`. RED: a schema-lint case that creates a function and checks `anon` cannot execute it, and an anniversary insert without precision, each failed (`caught: no exception` for the second). GREEN: 52 of 52.
+- Codex round 2: approve, no material findings (both fixes confirmed; the six anon read functions keep their explicit grants; future functions or extensions created by the migration role need deliberate execute grants).
+- Local: lint, typecheck, unit 10 of 10, `supabase test db` 52 of 52.
+
 Edge cases required in this phase:
 
 | ID | Case | Expected | Level | Spec | Status |
 |---|---|---|---|---|---|
-| E3 | Link leaked or tag lost | Rotate; old token dead for view and post | DB + API + E2E | D1, D3 | Specified |
-| E4 | Page set to Private while a guest has it open | Next request returns nothing, no media URL | DB + API | D1 | Specified |
-| E5 | Disabled section requested by URL | Not found, no data | DB + E2E | D1 | Specified |
-| E6 | Another account or another page's token | Denied on every route | DB + API | D1, D3 | Specified |
+| E3 | Link leaked or tag lost | Rotate; old token dead for view and post | DB + API + E2E | D1, D3 | GREEN at DB level (T1.3); API and E2E levels with T1.5 |
+| E4 | Page set to Private while a guest has it open | Next request returns nothing, no media URL | DB + API | D1 | GREEN at DB level (T1.3); API and E2E levels with T1.5 |
+| E5 | Disabled section requested by URL | Not found, no data | DB + E2E | D1 | GREEN at DB level (T1.3); API and E2E levels with T1.5 |
+| E6 | Another account or another page's token | Denied on every route | DB + API | D1, D3 | GREEN at DB level (T1.3); API and E2E levels with T1.5 |
 | E21 | Token-only or Private page crawled | `noindex`, not in sitemap | API | D1 | Specified |
 | E22 | Account takeover, reset abuse | Rate limit, verification, one generic answer | API | D3 | Specified |
 | E25 | Invite or reset mail to a non-team address | Owner provisions accounts; no such mail | API | D3 | Specified |
 | E27 | Token in history, logs, screenshot | Fragment only; never in logs or referrers; rotation is one action | API + E2E | D1 | Specified |
-| E28 | Drafts or pending entries inside an enabled section | Never returned, including media URLs | DB | D1, D3 | Specified |
+| E28 | Drafts or pending entries inside an enabled section | Never returned, including media URLs | DB | D1, D3 | GREEN at DB level (T1.3); API and E2E levels with T1.5 |
 | E29 | Attacker registers the owner account's email first | Registration closed | API | D3 | Specified |
 | E30 | In-app browser drops fragment or cookies | Works in memory or shows "open in your browser" | E2E | D1 | Specified |
 | E31 | Unauthenticated request to owner route or token route | Allowed result only | API (crawler) | D1 | GREEN for `public` and not-found (T1.2); owner login redirect with T1.4 |
@@ -114,7 +127,7 @@ Edge cases required in this phase:
 | E33 | Member or other-page user attempts an owner action | Refused by RLS and handler (the Member case is added with the account tables in T3.6) | API + DB | D1, D3 | Specified |
 | E34 | Back button or cache after log out | No private content; `no-store` | E2E | D1 | Specified |
 | E35 | Login `next` to another site | Relative paths only | API | D1 | Specified |
-| E36 | Anonymous call to the database API | Nothing without a valid credential | DB | D1, D3 | Specified |
+| E36 | Anonymous call to the database API | Nothing without a valid credential | DB | D1, D3 | GREEN at DB level (T1.3); API and E2E levels with T1.5 |
 | E37 | Guessed paths (`/home`, `/admin`) | Not found or login; nothing revealed | E2E | D1 | GREEN for not-found (T1.2); `/app` login redirect with T1.4 |
 | E56 | Id or route that does not exist or belongs to another page | Same not-found, status and timing as E5, E6, E37 | API | D3, D2 flow 11 | Specified |
 
@@ -285,7 +298,7 @@ One list of the **unverified** facts that block a build step, so Phase 1 does no
 |---|---|---|
 | ~~T1.1 (CI, first app)~~ | Done 2026-10-28: Next.js 16.4.3 (React 19.3.1). context7 was unreachable; versions and peer ranges read from the npm registry and the installed packages. i18n library deferred to the first unit that needs translations | plan §2; D6 §2, §5.1 |
 | T1.1 (CI) | Done locally 2026-10-28: Supabase CLI 2.122.0 (npm package ships the binary, no extra host); the §4 exclude list is valid and the db tests pass with it (the CLI still pulls `realtime` while it sets up the schema); action SHAs unchanged from §7, inputs read from each `action.yml`; local hosts: `registry.npmjs.org`, `cdn.playwright.dev`, `public.ecr.aws`; npm cache in `.npm-cache/`, browsers in `node_modules/`. Still open: the hosts the runner contacts and minutes per job, from the first GitHub run | D6 §4, §5.1, §7, §7.1 |
-| T1.3 (database) | How the server connects as `vegenus_server` (pooler login or signed token); if neither works, guest writes wait for an owner decision, never the service role (D3 §3.9); pgTAP through the Supabase CLI; the Supabase security-advisor command | D3 §3.9, §9; D7 §8 |
+| T1.3 (database) | Answered from the Supabase docs 2026-10-28: `vegenus_server` logs in through the shared pooler as `vegenus_server.<project-ref>` (live check when the hosted project exists); pgTAP runs through `supabase test db`; the advisor command is `supabase db advisors --local --type security --fail-on warn` (CLI 2.122.0) | D3 §3.9, §9; D7 §8 |
 | T1.3, Q89 | Command and connection for applying migrations to production by hand | D7 §6.5 rule 4, §8 |
 | T1.4 (auth) | `auth.admin.createUser` with a confirmed email, a chosen user id and a password, else the SMTP fallback; breached-password check availability | D1 §10.3 |
 | T1.5 (headers) | HSTS on `*.vercel.app` | D7 §3 |
