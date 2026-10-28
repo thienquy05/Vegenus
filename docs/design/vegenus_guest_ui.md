@@ -1,6 +1,6 @@
 # Guest UI design: sections, status and specifications
 
-**Status:** v1.0 consolidation, 2026-10-26. This is the single guest-UI design document (it absorbed the earlier guest-screens notes and the Wishes, Leave a wish and Settings specifications). Documentation only; no application code. Rule 3: placeholders only.
+**Status:** v1.0, **Approved by the owner 2026-10-28 (Phase 0 sign-off).** Consolidated 2026-10-26. This is the single guest-UI design document (it absorbed the earlier guest-screens notes and the Wishes, Leave a wish and Settings specifications). Documentation only; no application code. Rule 3: placeholders only.
 **Where things live:** screen inventory and responsive matrix: [screens](vegenus_screens.md). Owner area: [owner UI](vegenus_owner_ui.md). Motion and signature entrances: [guest motion](vegenus_guest_motion.md). Themes, menu, tokens: [theme system](vegenus_theme_system.md). 3D and Zodiac scene: [3D approach](vegenus_3d_approach.md). Image prompts: [Codex image brief](vegenus_codex_image_brief.md). Logo: [assets/logo](../../assets/logo/README.md).
 **Canvas:** "Theme Preview" on the owner's claude.ai account (not in Git). Boards were built by scratchpad generators that are not in the repo; the Wishes, Leave a wish, Settings and Owner generator is stored on the canvas as the asset `anni-gen-pages7-10.txt`. Decision comparison boards (Q71-Q74) are page 13.
 
@@ -17,11 +17,11 @@
 | Wishes G5 | 7 | Generated 2026-10-26 (Codex lead design); Codex review done, most findings fixed, canvas version 95; owner review pending | §7 below |
 | Leave a wish G6/G7 | 8 | Same, with the daily-limit notice (page 14) and example wording | §8 below |
 | Settings G8 | 9 | Same, plus the language-not-set-up state; Claude's Playwright check of 72 boards found no page errors | §9 below |
-| Owner area | 10 | Rebuilt; plain look (Q56). O18 Wording built at three sizes (canvas version 93-95, rendered check and some slots still open: editable wording §6); O16 specified here and in owner UI, **no boards yet** | [owner UI](vegenus_owner_ui.md) |
+| Owner area | 10 | Rebuilt; plain look (Q56). O18 Wording built at three sizes (canvas version 93-95, rendered check and some slots still open: editable wording §6); O16 boards on canvas page 15 "Account and invites" (phone, tablet, laptop), approved by the owner 2026-10-28 | [owner UI](vegenus_owner_ui.md) |
 | Nav icons | 11 | Approved 2026-10-23 | [theme system §2](vegenus_theme_system.md) |
 | Logo | 12 | Approved emblem; canvas page updated 2026-10-26 | [assets/logo](../../assets/logo/README.md); PRD Q60 |
 | Decisions | 13 | Built, checked in Playwright and **answered by the owner 2026-10-26** (Q71-Q74); page 14 "Daily limit notice" boards (12) built for Q75 | PRD §12 |
-| Sign in, invite code, updates G20–G26 | none | **Specified (§11), including the confirmation consent change; canvas boards not built**, so this design is not complete under the complete-designs rule | §11 below |
+| Sign in, invite code, updates G20–G26 | 12 | Approved by the owner 2026-10-28. Canvas page 15 "Account and invites": four themes × phone, tablet, laptop; every screen and state; themed and neutral look; reduced motion. Source boards and generator: `.design/g20-o16/` | §11 below |
 
 ## 2. History: owner feedback of the 2026-10-23 round (superseded where later rounds say so)
 

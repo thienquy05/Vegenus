@@ -1,6 +1,6 @@
 # Plan: Vegenus
 
-**Status:** v0.4, 2026-10-27, awaiting owner review. v0.3 was **approved by the owner 2026-10-23**, with the instruction not to start Phase 1 yet while the frontend design continues (progress file). v0.2 was revised after the Codex adversarial challenge (harness step 5); v0.3 added §12 (test-first rule and parallel CI on GitHub) and the cookie change from design 1; v0.4 records the guest-access changes of Q77-Q82 (below) and refreshes the phase table; 2026-10-28 adds the security audit gate (Q85) to §9 and §12.1 and a status sync. Derived from PRD v0.7. No code is written.
+**Status:** v0.4, **Approved by the owner 2026-10-28 (Phase 0 sign-off).** Phase 1 may start. v0.3 was approved 2026-10-23. v0.2 was revised after the Codex adversarial challenge (harness step 5); v0.3 added §12 (test-first rule and parallel CI on GitHub) and the cookie change from design 1; v0.4 records the guest-access changes of Q77-Q82 (below) and refreshes the phase table; 2026-10-28 adds the security audit gate (Q85) to §9 and §12.1 and a status sync. Derived from PRD v0.7. No code is written.
 **Date:** 2026-10-21
 **Privacy:** placeholders only.
 **Single-source rule:** decisions and open questions live only in PRD §12; this plan links to them and never restates them. Research facts live only in §R of this plan.
@@ -146,7 +146,7 @@ Proposed scope until the owner says otherwise:
 
 | Phase | Weeks | Tasks | Tests first (PRD §9.2) | Gate |
 |---|---|---|---|---|
-| 0 Design | 1–2 | Design docs in `docs/design/`: 1 token flow, 2 screens, 3 data model (all approved 2026-10-23), 4 theme system (draft v0.13, awaiting owner review; its decisions Q53-Q76 are answered), 5 3D approach (approved 2026-10-23); CI spec: design 6 (approved 2026-10-23); security: design 7 (draft v0.1, 2026-10-28); guest UI, owner UI, motion and editable wording: design consolidation of 2026-10-26/27, owner review per canvas page | — | Owner review of each |
+| 0 Design | 1–2 | Design docs in `docs/design/`: 1 token flow, 2 screens, 3 data model (all approved 2026-10-23), 4 theme system (v0.13), 5 3D approach (approved 2026-10-23); CI spec: design 6 (approved 2026-10-23); security: design 7 (v0.2); guest UI, owner UI, motion and editable wording. All approved; Phase 0 signed off 2026-10-28 | — | Done |
 | 1 Foundations | 3–4 | **First:** CI walking skeleton (§12.4). Then route table + deny-by-default checks, skeleton app, Supabase project, RLS + `guest_*` functions, auth (closed owner registration, Google; guest sign-up only by owner-issued invite code, P1 and needs Q37), pages/memberships/tokens, visibility, publication status, privacy scan | E4–E6, E21, E22, E27–E37 | Before harness-os / spend |
 | 2 Owner tools | 5–7 | Setup wizard (six steps, including the wording acceptance), wording storage, validator and seeding (design 3 §3.12), CRUD with draft/publish, media pipeline, usage meter and triggers, keep-alive + alerts | E7–E10, E15, E16, E23–E25 | Owner review |
 | 3 Guest (Static + Page shell) | 8–10 | Token exchange, `public_open` for Published pages, guest views, EN/VI, guestbook queue with the Q75/Q78 limits (token, account and visitor wishes), QR/NFC, mode selector, `copy` returned by the open functions. P1 after core: invite codes and Members, email subscribers, the O18 wording editor | E1, E2, E11–E14, E17, E26, E44–E48, E50 | Owner review |

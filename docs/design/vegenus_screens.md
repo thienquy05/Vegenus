@@ -1,6 +1,6 @@
 # Design 2: Screen inventory (low fidelity, no visuals)
 
-**Status:** v0.4, **approved by the owner 2026-10-23** (v0.2, 2026-10-22: tour, guest account, Zodiac, email settings added; v0.3, 2026-10-23, owner on the preview canvas: G1 lower area on branch `docs/theme-nav-icons`; v0.4, same day: G1 lower area replaced by section shortcuts). Rows added after that approval are under owner review: G20-G26, O15, O16, O18, the Z1 wording changes and flows 8-11 (Q77-Q83, 2026-10-26/27). Purpose: fix *what each screen shows and lets you do*, so the data model (design 3) can be drawn from it. Colours, type, layout and 3D come later (theme system, 3D approach).
+**Status:** v0.4, **approved by the owner 2026-10-23** (v0.2, 2026-10-22: tour, guest account, Zodiac, email settings added; v0.3, 2026-10-23, owner on the preview canvas: G1 lower area on branch `docs/theme-nav-icons`; v0.4, same day: G1 lower area replaced by section shortcuts). Rows added after that approval (G20-G26, O15, O16, O18, the Z1 wording changes and flows 8-11, Q77-Q83) were approved 2026-10-28 (Phase 0 sign-off). Purpose: fix *what each screen shows and lets you do*, so the data model (design 3) can be drawn from it. Colours, type, layout and 3D come later (theme system, 3D approach).
 **Date:** 2026-10-21
 **Inputs:** PRD §3.1, §4.1, §6; design 1 (`vegenus_token_flow.md`).
 **Privacy:** placeholders only.

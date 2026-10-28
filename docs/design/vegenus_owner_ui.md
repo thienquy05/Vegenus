@@ -1,6 +1,6 @@
 # Owner UI design: setup, content, moderation and account
 
-**Status:** DRAFT v1.0, 2026-10-26, written on `docs/guest-screens-v3` (merged into `master`). Documentation only; no application code. Lead design by Codex, edited by Claude. Placeholders only (rule 3).
+**Status:** v1.0, **Approved by the owner 2026-10-28 (Phase 0 sign-off).** Documentation only; no application code. Lead design by Codex, edited by Claude. Placeholders only (rule 3).
 **Look:** one plain look for every theme (PRD Q56), system fonts, no themed backgrounds, one shared account for both partners (Q35). Guest previews inside the owner area use the guest composition in a neutral shell. Related: [screens](vegenus_screens.md) (O1-O15 and the responsive matrix), [guest UI](vegenus_guest_ui.md) (shared shell and state contract in §6), [guest motion](vegenus_guest_motion.md) (owner micro-motions in §10.2).
 **Canvas:** page 10, boards OwnerDash, OwnerQueue, OwnerSetup, OwnerLogin at phone, tablet and laptop (plus the older DashNeutral, DashThemed, EditA, EditLapA). DashThemed is obsolete after Q56. Not yet built as boards: O4 content list, O5 item editor, O6 upload, O10 usage, O14 email, O15 guest accounts (modules inside OwnerDash only).
 

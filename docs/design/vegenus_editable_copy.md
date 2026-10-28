@@ -1,6 +1,6 @@
 # Editable wording: what the owner writes and what the system generates
 
-**Status:** DRAFT v0.4, 2026-10-27 (complete key inventory §2.1, validation rules §2.2, storage moved to design 3 §3.12). v0.3, 2026-10-26: owner answered all Q82 points (see §7). Documentation only; no application code. Rule 3: every example is invented sample text with placeholders; nothing here is a real name, date or message.
+**Status:** v0.4, **Approved by the owner 2026-10-28 (Phase 0 sign-off).** Last revised 2026-10-27 (complete key inventory §2.1, validation rules §2.2, storage moved to design 3 §3.12). v0.3, 2026-10-26: owner answered all Q82 points (see §7). Documentation only; no application code. Rule 3: every example is invented sample text with placeholders; nothing here is a real name, date or message.
 **Why:** owner direction (2026-10-26): the template should give the couple more control. Greetings, placeholders and similar wording must not be fixed; the couple edits them. Anything the system works out (zodiac, counts, dates) stays generated: the owner supplies the inputs, never the output text.
 **Related:** [screens](vegenus_screens.md), [guest UI](vegenus_guest_ui.md), [owner UI](vegenus_owner_ui.md), [data model](vegenus_data_model.md) §3.12 (wording storage and publication), PRD Q82 (answered).
 

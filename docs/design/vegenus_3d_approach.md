@@ -1,6 +1,6 @@
 # Design 5: 3D approach
 
-**Status:** v0.6, approved by the owner 2026-10-23. Phase 0 design deliverable "3D approach"; replaces plan §7. The motion supplement ([guest motion](vegenus_guest_motion.md)) is a draft and not part of the approval. Page-mode art follows Q61 and Q62. No code.
+**Status:** v0.6, approved by the owner 2026-10-23. Phase 0 design deliverable "3D approach"; replaces plan §7. The motion supplement ([guest motion](vegenus_guest_motion.md)) was approved separately on 2026-10-28. Page-mode art follows Q61 and Q62. No code.
 **Date:** 2026-10-23
 **Inputs:** PRD §4.1 (S10, S11, S16, S21), §6.4-6.5, §7 (performance, accessibility), FR9, FR13, E2, E17, E18, E26, E30, E41, Q3, Q21, Q50; plan §1-§3, §7; design 2 (G1-G8, Z1, Z2); design 3 §3.10-3.11 (`birth_sky`, `published`); design 4 (token contract, `scene.json`, night panel, decor rule, §7, tests 2, 5, 7).
 **Privacy:** placeholders only. Scenes read only what the guest calls already return; no new data, endpoint or third-party host.
