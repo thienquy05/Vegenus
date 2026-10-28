@@ -15,6 +15,7 @@ Update this file after every step. Rule: a task is Done only when its test was s
 - Wording boards, locally prepared versus live canvas (reported by the 2026-10-27 review; the original handoff entry, including Q83, was overwritten when this file was rewritten and its text is not in the repository): 63 boards completed locally, with 169 source and state checks and 432 browser cases passing. The live canvas (version 95) does not yet contain them; synchronising them is pending. Until then the wording work is "prepared locally", not "published", and the open list in editable wording §6 describes the live canvas. Q83 was re-entered in the PRD on 2026-10-27 from the review's quotation; the originating session should confirm the wording.
 - Documentation consistency review of 2026-10-27 is closed (section 6).
 - Security review follow-up: five source-level design gaps have proposed documentation fixes (Auth cleanup, invite deadlines, digest dispatch, mailbox-holder consent, UTF-8 byte caps). These contracts and their tests are specified, not implemented or runtime-validated. G24 confirmation consent needs the complete phone/tablet/laptop, four-theme, state and accessibility preview before design approval.
+- Security (2026-10-28): design 7 `docs/design/vegenus_security.md` adds the security concept, tool selection and a per-phase audit gate (Q85, answered). The Cloudflare `security-audit` skill is installed at project level in `.claude/skills/` (git-ignored, pinned; Q86 answered); GitHub secret scanning, push protection and Dependabot alerts are to be enabled at the start of Phase 1 and CodeQL once code exists (Q87 answered). Phase 0 version of the gate = Codex review of this document.
 
 ## 2. How to read the tracker
 
@@ -52,6 +53,8 @@ Open before leaving Phase 0: owner review of the drafts above; Q16, Q37, Q66, Q7
 ### Phase 1: Foundations (weeks 3-4)
 
 Content: skeleton, auth, tenancy, visibility, token, privacy rules, CI. First unit: the CI walking skeleton (plan §12.4: a failing test, a push that shows CI red, then green). Exit criterion: visibility, token and isolation tests green. Gate: owner OK before enabling harness-os or any spend. Status: Not started.
+
+Security gate (design 7 §6, Q85): Not started. Pass criteria: no open critical or high finding, mediums fixed or accepted, every `needs_validation` resolved or explicitly accepted in PRD §12, Codex security review clean, audit run complete (`run_status` not incomplete, validators pass), all on one recorded `master` SHA.
 
 | Task | Test first | Status |
 |---|---|---|
@@ -94,6 +97,8 @@ Evidence (fill in): RED run, GREEN run, CI run link, review result. None yet.
 
 Content: setup wizard, content CRUD with draft and publish, media pipeline, limits, keep-alive, usage meter. Exit criterion: the owner publishes an empty-to-live page. Gate: owner review. Status: Not started.
 
+Security gate (design 7 §6, Q85): Not started. Pass criteria: no open critical or high finding, mediums fixed or accepted, every `needs_validation` resolved or explicitly accepted in PRD §12, Codex security review clean, audit run complete (`run_status` not incomplete, validators pass), all on one recorded `master` SHA.
+
 | Task | Test first | Status |
 |---|---|---|
 | T2.1 Setup wizard O3 (six steps, partner names, wording acceptance, Finish and publish), dashboard O2, empty state | E55 | Not started |
@@ -124,6 +129,8 @@ Acceptance rows due: free-tier usage within limits with alerts configured; the o
 ### Phase 3: Guest experience, Static and Page (weeks 8-10)
 
 Content: token exchange, `public_open`, guest views, EN and VI, guestbook with limits and moderation, NFC and QR flow, mode selector. After the core of the phase (priority P1): invite codes and Members, email subscribers, editable wording, Zodiac, email. Exit criterion: a real tag and QR tested on both phone types. Gate: owner review. Status: Not started.
+
+Security gate (design 7 §6, Q85): Not started. Pass criteria: no open critical or high finding, mediums fixed or accepted, every `needs_validation` resolved or explicitly accepted in PRD §12, Codex security review clean, audit run complete (`run_status` not incomplete, validators pass), all on one recorded `master` SHA.
 
 | Task | Test first | Status |
 |---|---|---|
@@ -168,6 +175,8 @@ Acceptance rows due: EN and VI complete with no hard-coded strings; verified on 
 
 Content: four token sets, scene presets, per-section scenes, fallbacks, menu, signature entrances, connected backgrounds. Exit criterion: performance and accessibility checks pass. Gate: owner review per theme. Status: Not started.
 
+Security gate (design 7 §6, Q85): Not started. Pass criteria: no open critical or high finding, mediums fixed or accepted, every `needs_validation` resolved or explicitly accepted in PRD §12, Codex security review clean, audit run complete (`run_status` not incomplete, validators pass), all on one recorded `master` SHA.
+
 | ID | Case | Expected | Level | Spec | Status |
 |---|---|---|---|---|---|
 | E18 | Reduced motion, data saver, battery saver | Motion and 3D reduced or off; reduced motion forces Static | E2E | D4, D5 | Specified |
@@ -182,6 +191,8 @@ Acceptance rows due: all four themes pass visual, contrast and performance check
 
 Content: whole-site 3D world, capability check, switch. Exit criterion: meets budget on test phones or auto-bypasses. Gate: owner go or no-go on keeping it in the release. Status: Not started.
 
+Security gate (design 7 §6, Q85): Not started. Pass criteria: no open critical or high finding, mediums fixed or accepted, every `needs_validation` resolved or explicitly accepted in PRD §12, Codex security review clean, audit run complete (`run_status` not incomplete, validators pass), all on one recorded `master` SHA.
+
 | ID | Case | Expected | Level | Spec | Status |
 |---|---|---|---|---|---|
 | E17 | WebGL context loss, low memory, slow 3G, offline | Downgrade or retry message; never a blank screen | E2E | D5 | Specified |
@@ -191,6 +202,8 @@ Content: whole-site 3D world, capability check, switch. Exit criterion: meets bu
 ### Phase 6: Hardening (weeks 15-16)
 
 Content: rate limits, monitoring, backups, real-tag test, buffer. Exit criterion: PRD §9.3 core rows ticked. Gate: owner go or no-go. Status: Not started.
+
+Security gate (design 7 §6, Q85): Not started. Runs twice, before any real couple content goes live or a tag is written for guests.
 
 Tasks: re-run every E1-E58 row end to end against production-like data; restore drill (E23); egress alert drill (E24); abuse drills (E11, E22, E38, E46); real tag and QR on an iPhone, an Android phone and one in-app browser (E1, E2); event-day check; privacy scan of the whole history before publishing.
 
@@ -227,6 +240,9 @@ Definition of Done (PRD §1.6): a phase is done when its exit criteria pass, its
 | Co-editor role (Q35) and multi-tenant workspace request (Q84) | Deferred by the owner, low priority |
 | Supabase CLI version to pin; `vegenus_server` connection method; storage CORS for photo textures | Before Phase 1 and 2 |
 | Private-email push block and `noreply` commit email (D6 §8) | Owner, before the repository is switched public |
+| Q88 answered: owner turns on the Vercel promotion hold and Deployment Protection at Phase 6; Q89 answered: the owner applies production migrations manually; confirm the Supabase command in Phase 1 | Owner, Claude (Phase 1) |
+| Q90 backups: deferred by the owner (no backup for now); design 7 §6.7 applies if one is added | Owner, later |
+| Enable GitHub secret scanning, push protection and Dependabot alerts (Q87); CodeQL once code exists; read `SKILL.md` and the chosen attack-class files before the first audit run | Claude, at the start of Phase 1 |
 | Git: all branches uncommitted or unmerged; commits, pushes and PRs only when the owner asks | Owner |
 
 ## 6. History (summary)
@@ -239,4 +255,5 @@ Definition of Done (PRD §1.6): a phase is done when its exit criteria pass, its
 - 2026-10-26: guest motion, signature entrances (Q71), Wishes, Leave a wish, Settings and owner area designed; decision boards (Q71-Q74) answered; wordmark font decided (Q76); sign-in redesign with no gate, invite codes, subscribers, owner-access request (Q77-Q81); editable wording (Q82).
 - 2026-10-27: owner withdrew the Member request to co-manage the page (Q80; O17, G27, E49 and `access_requests` removed); a multi-tenant "request a workspace" flow is recorded as Q84, deferred and low priority.
 - 2026-10-27: per-theme Together falls built; daily-limit notice and wording boards built and reviewed (canvas version 95); Codex consistency review of all 24 documents: nine findings fixed (wish permissions, 24-hour windows, registration retry, wording contract, motion and art rules, Zodiac text, coverage, status summaries); Q78-Q81 answered; this tracker written; edge cases E51-E58 (missing information) added.
+- 2026-10-28: owner asked for a security section and a security audit after each phase with direct fixes; Cloudflare `security-audit-skill` README read (read-only); design 7 written; PRD §4.3, §9.3, §10, Q85-Q87, plan §9 and §12.1, design 6 §4.2 updated.
 - Canvas: private design canvas "Theme Preview" on the owner's account (not in Git); generators live in the session scratchpad and are not committed.

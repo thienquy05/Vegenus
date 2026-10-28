@@ -157,6 +157,8 @@ Proposed scope until the owner says otherwise:
 
 **Verification loop per step:** write the test → run it and **see it fail (RED)** → implement → run until it passes (GREEN) → refactor with tests green → CI green on GitHub → update `docs/vegenus_progress.md`. Details in §12. Frontend steps also use Playwright MCP on a phone viewport and Lighthouse/performance traces.
 
+**Security audit gate (Q85):** the last step of every phase from 1 on, after CI is green and before the owner is asked to approve the phase. Procedure, per-phase focus, tools and pass criteria: `docs/design/vegenus_security.md` §4-§6. Phase 6 runs it before any real content goes live.
+
 ## 10. Open decisions
 
 See PRD §12 (single source). Q29–Q32 are answered (5-minute media window, closed registration, best-effort availability at $0, limited ruflo scope). Added 2026-10-22: Q36-Q41 (visitor rules, Resend, guest accounts, Zodiac, tour, auth email). Answered 2026-10-22: Q33 (CD route), Q34a-d (show once, 30 days, limits, hidden pending), Q35 (one shared account), Q36, Q38-Q41, Q20 (optional, owner supplies art). Still open: Q16 (tag model, left open by the owner) and the Q37 domain (deferred).
@@ -185,7 +187,7 @@ The owner asked: follow the harness, see a test fail before making it pass, and 
 2. **RED.** Write the test(s) and run them. They must fail **for the expected reason** (assertion fails or the function does not exist yet), not because of a typo or broken setup. Record the command and the failing test names in the progress file. With harness-os on, it observes the failing run and the gate will not open without it.
 3. **GREEN.** Write the least code that passes. Run the full local suite.
 4. **Refactor** with everything green.
-5. **Review** (`code-reviewer`, `security-reviewer` for anything touching tokens, RLS or media; Codex at phase gates).
+5. **Review** (`code-reviewer`, `security-reviewer` for anything touching tokens, RLS, auth, email or media, and the built-in `security-review` on every other PR; Codex and the audit gate at phase ends, design 7 §6).
 6. **CI green** on GitHub for the branch before the owner is asked to approve the **merge** (a first push to run CI is a separate owner request, rule 2).
 7. **Branch and PR** (CLAUDE.md rule 4): work on `docs/`, `feature/`, `chore/` or `fix/<name>`, open a PR to `master`, owner approves and merges.
 
@@ -220,7 +222,7 @@ Hardening rules for the workflow:
 
 ### 12.3 CD (deployments)
 
-Proposal: Vercel's own Git integration creates a preview deployment for each PR and a production deployment from `master`. The preview must point at a separate **development** Supabase project with fake data, never at the real memories. The NFC tag and QR always point at the production address (Q19). Production deploys only after `gate` is green and the owner merges. Connecting Vercel to GitHub is a login and is approved under rule 1 when it happens. Decision: PRD Q33.
+Proposal: Vercel's own Git integration creates a preview deployment for each PR and a production deployment from `master`. The preview must point at a separate **development** Supabase project with fake data, never at the real memories. The NFC tag and QR always point at the production address (Q19). Production deploys only after `gate` is green and the owner merges. **After go-live (real content entered, tag written for guests) production promotion is held until the merged commit passes the security audit and the owner promotes it** (proposal Q88, design 7 §6.5); before go-live production holds no real data. Connecting Vercel to GitHub is a login and is approved under rule 1 when it happens. Decision: PRD Q33.
 
 ### 12.4 Phase 1 starts with a walking skeleton
 
