@@ -159,10 +159,10 @@ jobs:
       - run: npx playwright install --with-deps chromium
       - run: npm run build
       - run: npx playwright test --project=a11y
+      # The runner's system Chrome: Ubuntu 24.04 AppArmor blocks the sandbox of the
+      # Chrome for Testing copy in node_modules ("No usable sandbox"), and --no-sandbox is not wanted.
       - name: Lighthouse budgets (design 5 §6.1)
-        run: |
-          export CHROME_PATH=$(node -p "require('playwright-core').chromium.executablePath()")
-          npx lhci autorun
+        run: npx lhci autorun
       - if: failure()
         uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:

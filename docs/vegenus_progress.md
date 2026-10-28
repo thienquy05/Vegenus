@@ -75,6 +75,7 @@ T1.1 evidence:
 - DB, RED: `supabase test db` failed test 2 (`has_schema` on a schema that does not exist); GREEN with `has_schema('public')`.
 - E2E and a11y (Chromium Pixel 7, WebKit iPhone 15, production build): axe found `document-title` (serious) on the first run; fixed with page metadata; 3 of 3 pass. Lighthouse: FCP ≤ 3 s and total bytes ≤ 3 MB pass; a 1-byte budget fails as expected.
 - RED on GitHub, PR #21 run 40731497397: `gate` failure. `unit` (Cannot find module './site'), `lint-types` (TS2307 in typecheck), `e2e` chromium and webkit and `a11y-perf` (TS2307 in `next build`) failed; `changes`, `privacy-scan` and `db` passed. Job times: changes 7 s, privacy-scan 3 s, lint-types 22 s, unit 24 s, db 132 s, e2e 65 s (chromium) and 113 s (webkit), a11y-perf 45 s, gate 6 s (failed jobs stop early, so these are not full-run times).
+- First GREEN push, run 40732095546: every job passed except `a11y-perf`; Lighthouse could not start Chrome for Testing from `node_modules` (`No usable sandbox`, Ubuntu 24.04 AppArmor). Fix: Lighthouse uses the runner's system Chrome in CI; Playwright keeps its own browsers.
 - Placeholders in CI until their units: `privacy-scan` (T1.6), route-table check (T1.2), Supabase in `e2e` (first unit that reads from it), `red-proof` (advisory, later).
 - Open: Dependabot alerts (Q87) are not on yet (the agent's settings call was blocked; the owner turns them on); required `gate` check on `master` after the first green run.
 
