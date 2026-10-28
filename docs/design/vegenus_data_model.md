@@ -225,7 +225,7 @@ O10's meter shows used plus charged. Egress cannot be measured from the database
 | `account_id` | uuid null FK `guest_accounts` on delete set null | set when `author_kind = account` |
 | `moderated_at`, `moderated_by` | null | |
 
-Guests never read this table. `guest_guestbook_list`, `account_guestbook_list` and `public_guestbook_list` return only `display_name`, `body`, `lang` and the approval date of `approved` rows; a guest does not see their own pending message (Q34d).
+Guests never read this table. `guest_guestbook_list`, `account_guestbook_list` and `public_guestbook_list` return only `display_name`, `body`, `lang`, the approval date, and `id` and `created_at` as the keyset cursor (§6) of `approved` rows; a guest does not see their own pending message (Q34d).
 
 ### 3.6 Guest accounts (P1; phase B email, Q37/Q38)
 
@@ -304,7 +304,7 @@ Guest accounts hold no Zodiac data: the Zodiac section is about the couple, not 
 **Decision.** Every guest function that **writes** is not executable by `anon` or `authenticated`. It is executable only by a dedicated database role, `vegenus_server`:
 - `vegenus_server` is a login role with `EXECUTE` on the write functions and the rate limiter only. It has no table privileges, does not bypass RLS, and is not the service role (plan §1 stays true).
 - Its credentials are a server-only environment variable. The browser never holds them; only the server's guest-write module uses them, and a lint rule forbids importing that module anywhere else.
-- How the server connects as this role (direct Postgres connection through the vendor's pooler, or a server-signed token carrying the role) is **unverified** for Supabase; check in Phase 1 before the first migration. If neither works, there is **no service-role fallback** (PRD §4.3 and plan §1 keep the service role off guest paths): the guest-write features wait, and the alternative goes to the owner as a PRD §12 question before any code uses it.
+- The server connects as this role through the vendor's shared pooler with the username `vegenus_server.<project-ref>` (Supabase documents custom-role logins this way; checked in the docs 2026-10-28, live check when the hosted project exists). The migration creates the role `NOLOGIN`; login and password are set per environment by hand, never in Git. If neither works, there is **no service-role fallback** (PRD §4.3 and plan §1 keep the service role off guest paths): the guest-write features wait, and the alternative goes to the owner as a PRD §12 question before any code uses it.
 
 Write functions behind `vegenus_server`: `guest_guestbook_post`, `public_guestbook_post` (Published page, no credential, Q78: the same three buckets with a higher IP bucket, 20 per rolling 24 hours, because a venue shares one address), `join_register` (replaces `guest_register`; reserves the invite code atomically), `subscribe_request`, and the rate limiter used by the token exchange, code check and login routes. These are the writes made **without** a verified identity, where the server's device and IP keys are the only basis for limits.
 
