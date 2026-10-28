@@ -59,7 +59,7 @@ Security gate (design 7 §6, Q85): Not started. Pass criteria: no open critical 
 
 | Task | Test first | Status |
 |---|---|---|
-| T1.1 CI skeleton with the `gate` check (D6) | one failing test shown red on GitHub, then green | RED (local, 2026-10-28; see T1.1 evidence below) |
+| T1.1 CI skeleton with the `gate` check (D6) | one failing test shown red on GitHub, then green | RED on GitHub (PR #21, 2026-10-28); GREEN pushed, waiting for CI (see T1.1 evidence below) |
 | T1.2 Route table and deny-by-default checks | crawler test, build fails on an unclassified route | Not started |
 | T1.3 Supabase project, RLS on every table, `guest_*` and `public_*` read functions with the `page_is_live` guard (`pages.copy_published_at` exists from Phase 1; test fixtures set it directly, seeding and acceptance come with T2.7), `vegenus_server` role. `account_*` functions come with their tables in T3.6 (D3 §3.6) | schema lint and anon-role tests (D3 §9) | Not started |
 | T1.4 Owner auth (closed registration, Google for pre-created accounts) | E22, E25, E29, E33-E35 | Not started |
@@ -74,6 +74,7 @@ T1.1 evidence:
 - Unit, RED: `npx vitest run` fails `src/lib/site.test.ts` with `Cannot find module './site'`; `tsc --noEmit` fails with TS2307 for the same import. GREEN (checked locally, then removed again for the red push): `src/lib/site.ts` exporting `SITE_NAME`.
 - DB, RED: `supabase test db` failed test 2 (`has_schema` on a schema that does not exist); GREEN with `has_schema('public')`.
 - E2E and a11y (Chromium Pixel 7, WebKit iPhone 15, production build): axe found `document-title` (serious) on the first run; fixed with page metadata; 3 of 3 pass. Lighthouse: FCP ≤ 3 s and total bytes ≤ 3 MB pass; a 1-byte budget fails as expected.
+- RED on GitHub, PR #21 run 40731497397: `gate` failure. `unit` (Cannot find module './site'), `lint-types` (TS2307 in typecheck), `e2e` chromium and webkit and `a11y-perf` (TS2307 in `next build`) failed; `changes`, `privacy-scan` and `db` passed. Job times: changes 7 s, privacy-scan 3 s, lint-types 22 s, unit 24 s, db 132 s, e2e 65 s (chromium) and 113 s (webkit), a11y-perf 45 s, gate 6 s (failed jobs stop early, so these are not full-run times).
 - Placeholders in CI until their units: `privacy-scan` (T1.6), route-table check (T1.2), Supabase in `e2e` (first unit that reads from it), `red-proof` (advisory, later).
 - Open: Dependabot alerts (Q87) are not on yet (the agent's settings call was blocked; the owner turns them on); required `gate` check on `master` after the first green run.
 
