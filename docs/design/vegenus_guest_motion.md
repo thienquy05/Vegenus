@@ -1,6 +1,6 @@
 # Guest motion: connected sections and living backgrounds
 
-**Status:** DRAFT v0.2; §10 signature entrances added 2026-10-26). Documentation only. Owner direction and open questions: PRD §12, Q69-Q70. Numerical values below are prototype defaults, not measured reference values or owner-approved final timings. Existing approvals for designs 2 and 5 do not approve this supplement.
+**Status:** v0.2, **Approved by the owner 2026-10-28 (Phase 0 sign-off).** Documentation only. Owner direction: PRD §12, Q69-Q70 (section transitions are chosen in Phase 4). Numerical values below are prototype defaults; tune them against measurements in Phase 4.
 **Inputs:** [screens](vegenus_screens.md), [theme system](vegenus_theme_system.md), [3D approach](vegenus_3d_approach.md). This document supplies the missing choreography between their screens, menu states and scene motifs. It does not change access rules, content, routes or the Static → Page → optional World delivery order.
 **Privacy:** placeholders only; reference sites receive no guest content or uploads.
 

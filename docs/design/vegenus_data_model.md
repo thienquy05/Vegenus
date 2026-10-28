@@ -1,6 +1,6 @@
 # Design 3: Data model
 
-**Status:** v1.2 draft. v1.0 approved by the owner 2026-10-23; v1.1-v1.2 (2026-10-26/27) add invite codes, Members, subscribers, visitor wishes, the 24-hour limits and editable wording (§3.12), under owner review. Facts marked **unverified** are checked before the feature that needs them is built. No code. Tables and columns are a contract for Phase 1 migrations, not SQL.
+**Status:** v1.2, **Approved by the owner 2026-10-28 (Phase 0 sign-off).** v1.0 approved 2026-10-23; v1.1-v1.2 add invite codes, Members, subscribers, visitor wishes, the 24-hour limits and editable wording (§3.12). Facts marked **unverified** are checked before the feature that needs them is built. No code. Tables and columns are a contract for Phase 1 migrations, not SQL.
 **Date:** 2026-10-22
 **Inputs:** PRD §3.1, §4.3, §5, §9.2, §12 (Q15, Q17, Q27, Q29, Q30, Q34, Q35, Q38, Q39); design 1 (`vegenus_token_flow.md`) §3, §5, §10, §11; design 2 (`vegenus_screens.md`) "What this tells the data model"; plan §1, §3, §4.
 **Supersedes:** the sketch in plan §4. Changes from it are listed in §2.

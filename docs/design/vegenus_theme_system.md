@@ -1,6 +1,6 @@
 # Design 4: Theme system
 
-**Status:** Draft v0.13, awaiting owner review. Phase 0 deliverable "theme system"; replaces plan §6. Owner answers Q53-Q76 are applied. No code.
+**Status:** v0.13, **Approved by the owner 2026-10-28 (Phase 0 sign-off).** Phase 0 deliverable "theme system"; replaces plan §6. Owner answers Q53-Q76 are applied. No code.
 **Date:** 2026-10-23
 **Inputs:** PRD §4.1 (S2, S11, S21), §6.1-6.2, §7 (accessibility, language), E12, E18, E19, Q3, Q39; plan §6; design 2 (O3, G8, Z2); design 3 §3.1 (`pages.theme`); the owner's mood board (private artifact, read 2026-10-23 with the owner's approval; only colours, font names and layout notes are copied here).
 **Owner decisions used (2026-10-23):** designs 1-3 approved; Zodiac art always sits on a night-sky panel; fonts are self-hosted open-licence (OFL) files.

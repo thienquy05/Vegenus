@@ -6,16 +6,15 @@ Update this file after every step. Rule: a task is Done only when its test was s
 
 ## 1. Status (2026-10-28)
 
-- Phase 0 (planning and design) is in progress. No application code exists, no CI workflow exists, harness-os is not enabled. Code starts only after the owner approves the PRD, the plan and all design previews (CLAUDE.md).
-- Approved by the owner: PRD ("looks good", 2026-10-21), plan (2026-10-23, Phase 1 not to start yet), designs 1, 2, 3, 5, 6 (2026-10-23), logo (Q60), Home (2026-10-24), Zodiac (2026-10-24).
-- Draft, awaiting owner review: PRD v0.7 consolidated text (each decision keeps its PRD §12 status), plan v0.4, design 4 theme system (v0.13; Q53-Q76 answered), design 7 security (v0.1; Codex review pending), guest UI, owner UI, guest motion, editable wording (canvas pages 4-14, version 95).
-- Open decisions: Q16 NFC tag model, Q37 sending domain, Q66 album limits, Q70 Layers reference. Answered 2026-10-28: Q91 (the 24 approved Codex sign renders ship as the built-in Zodiac art). Deferred by the owner: co-editor role (Q35) and multi-tenant workspace requests (Q84, low priority).
+- **Phase 0 is done: the owner approved the PRD, the plan and all designs on 2026-10-28.** Next: Phase 1, starting with T1.1 (CI walking skeleton). No application code or CI workflow exists yet; harness-os is not enabled (enable only with the owner's OK, it commits).
+- Approved by the owner: PRD v0.7, plan v0.4, designs 1-7, guest UI, owner UI, guest motion and editable wording (2026-10-28); earlier: designs 1, 2, 3, 5, 6 (2026-10-23), logo (Q60), Home and Zodiac (2026-10-24).
+- Open decisions: none blocking Phase 1. Q16 (NFC tag model) and Q37 (sending domain) are parked by the owner until the final phase. Answered 2026-10-28: Q66 (album limits approved as proposed), Q70 (shortlist 01, 02, 04; owner leans to 04; final choice in Phase 4 on the running app), Q92 (Together phone pins may overlap; zoom or the chip list), Q91 (the 24 approved Codex sign renders ship as the built-in Zodiac art). Deferred by the owner: co-editor role (Q35) and multi-tenant workspace requests (Q84, low priority).
 - Answered 2026-10-27: Q78 (per-IP wish limit 20 per rolling 24 h), Q79 (two tiers: Owner and Member), Q80 (withdrawn the same day: no Member request to co-manage; see Q84), Q81 (defaults kept).
-- Not built: canvas boards for G20-G26 and O16; Together phone pins overlap (decision needed).
-- Wording boards, locally prepared versus live canvas (reported by the 2026-10-27 review; the original handoff entry, including Q83, was overwritten when this file was rewritten and its text is not in the repository): 63 boards completed locally, with 169 source and state checks and 432 browser cases passing. The live canvas (version 95) does not yet contain them; synchronising them is pending. Until then the wording work is "prepared locally", not "published", and the open list in editable wording §6 describes the live canvas. Q83 was re-entered in the PRD on 2026-10-27 from the review's quotation; the originating session should confirm the wording.
+- Canvas (Theme Preview, version 99): page 15 "Account and invites" holds G20-G26 (12 boards) and O16 (3 boards), approved by the owner 2026-10-28. Page 16 "Section navigation (decide)" holds the Q70 comparison boards; the choice is made in Phase 4 (PRD Q70). Sources and generators: `.design/g20-o16/`, `.design/q70/`. Checked in a browser: no overflow, 44 px targets, keyboard focus and Esc, every screen and state.
+- Wording boards, locally prepared versus live canvas (reported by the 2026-10-27 review; the original handoff entry, including Q83, was overwritten when this file was rewritten and its text is not in the repository): 63 boards completed locally, with 169 source and state checks and 432 browser cases passing. They are not yet on the live canvas; sync them when the wording review resumes (housekeeping, does not block Phase 1). Editable wording §6 describes the live canvas. Q83 was re-entered in the PRD on 2026-10-27 from the review's quotation; the originating session should confirm the wording.
 - Documentation consistency review of 2026-10-27 is closed (section 6).
-- Security review follow-up: five source-level design gaps have proposed documentation fixes (Auth cleanup, invite deadlines, digest dispatch, mailbox-holder consent, UTF-8 byte caps). These contracts and their tests are specified, not implemented or runtime-validated. G24 confirmation consent needs the complete phone/tablet/laptop, four-theme, state and accessibility preview before design approval.
-- Security (2026-10-28): design 7 `docs/design/vegenus_security.md` adds the security concept, tool selection and a per-phase audit gate (Q85, answered). The Cloudflare `security-audit` skill is installed at project level in `.claude/skills/` (git-ignored, pinned; Q86 answered); GitHub secret scanning and push protection were turned on at the owner's request on 2026-10-28 (read back from the API); Dependabot alerts are to be enabled at the start of Phase 1 and CodeQL once code exists (Q87 answered). Phase 0 version of the gate = Codex review of this document.
+- Security review follow-up: five source-level design gaps have proposed documentation fixes (Auth cleanup, invite deadlines, digest dispatch, mailbox-holder consent, UTF-8 byte caps). These contracts and their tests are specified, not implemented or runtime-validated. The G24 confirmation consent preview is complete (canvas page 15, approved 2026-10-28).
+- Security (2026-10-28): design 7 `docs/design/vegenus_security.md` adds the security concept, tool selection and a per-phase audit gate (Q85, answered). The Cloudflare `security-audit` skill is installed at project level in `.claude/skills/` (git-ignored, pinned; Q86 answered); GitHub secret scanning and push protection were turned on at the owner's request on 2026-10-28 (read back from the API); Dependabot alerts are to be enabled at the start of Phase 1 and CodeQL once code exists (Q87 answered). The Phase 0 gate (adversarial review of design 7) has passed.
 
 ## 2. How to read the tracker
 
@@ -36,21 +35,21 @@ Exit criterion (PRD §10): the owner approves each deliverable. Gate: owner revi
 | Deliverable | Status |
 |---|---|
 | PRD v0.6 | Done (owner approved) |
-| PRD v0.7 (v0.6 plus the §12 entries Q42-Q90) | Consolidated text awaiting owner review; each decision keeps its §12 status |
+| PRD v0.7 (v0.6 plus the §12 entries Q42-Q92) | Done (owner approved 2026-10-28) |
 | Codex challenge of PRD and plan (7 findings, all addressed) | Done |
 | Plan v0.3 | Done (owner approved 2026-10-23) |
-| Plan v0.4 (guest-access and wording changes) | Draft, awaiting owner review |
-| Design 1 token flow, 2 screens, 3 data model | Done (approved 2026-10-23; later revisions under review: Q77-Q82) |
-| Design 4 theme system | Draft, awaiting owner review |
-| Design 5 3D approach | Done (approved 2026-10-23); motion supplement is a draft |
+| Plan v0.4 (guest-access and wording changes) | Done (owner approved 2026-10-28) |
+| Design 1 token flow, 2 screens, 3 data model | Done (approved 2026-10-23; later revisions Q77-Q82 approved 2026-10-28) |
+| Design 4 theme system | Done (owner approved 2026-10-28) |
+| Design 5 3D approach | Done (approved 2026-10-23); motion supplement approved 2026-10-28 |
 | Design 6 CI spec | Done (approved 2026-10-23) |
-| Design 7 security concept and audit gate (Phase 0 gate = Codex review of it) | Draft v0.1, Codex review and owner review pending |
-| Guest UI, owner UI, guest motion, editable wording | Draft, canvas review per page |
-| Canvas boards for every screen, size, theme and state (CLAUDE.md complete-designs rule) | In progress: G20-G26, O16 missing |
+| Design 7 security concept and audit gate (Phase 0 gate = adversarial review of it) | Done (v0.2; Phase 0 gate passed; owner approved 2026-10-28) |
+| Guest UI, owner UI, guest motion, editable wording | Done (owner approved 2026-10-28) |
+| Canvas boards for every screen, size, theme and state (CLAUDE.md complete-designs rule) | Done: G20-G26 and O16 approved 2026-10-28; Q70 shortlist on the canvas, decided in Phase 4 |
 
 Edge-case tasks in this phase: every row E1-E58 has a designed behaviour and a test row in a design document (section 3 "Spec" columns). A row without a test row is a Phase 0 defect. Current count without a test row: 0.
 
-Open before leaving Phase 0: owner review of the drafts above; Q16, Q37, Q66, Q70.
+**Phase 0 signed off by the owner 2026-10-28.** Carried forward: Q16 and Q37 parked until the final phase; Q70 decided in Phase 4; sync of the 63 local wording boards to the canvas.
 
 ### Phase 1: Foundations (weeks 3-4)
 
@@ -175,7 +174,7 @@ Acceptance rows due: EN and VI complete with no hard-coded strings; verified on 
 
 ### Phase 4: Themes and 3D, Page mode (weeks 10-13)
 
-Content: four token sets, scene presets, per-section scenes, fallbacks, menu, signature entrances, connected backgrounds. Exit criterion: performance and accessibility checks pass. Gate: owner review per theme. Status: Not started.
+Content: four token sets, scene presets, per-section scenes, fallbacks, menu, signature entrances, connected backgrounds, section transitions (Q70: build 01, 02 and 04 switchable; the owner chooses on real devices; remove the other two). Exit criterion: performance and accessibility checks pass. Gate: owner review per theme. Status: Not started.
 
 Security gate (design 7 §6, Q85): Not started. Pass criteria: no open critical or high finding, mediums fixed or accepted, every `needs_validation` resolved or explicitly accepted in PRD §12, Codex security review clean, audit run complete (`run_status` not incomplete, validators pass), all on one recorded `master` SHA.
 
