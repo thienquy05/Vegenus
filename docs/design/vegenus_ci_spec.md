@@ -17,7 +17,7 @@
 
 | Fact | Finding | Source | Effect here |
 |---|---|---|---|
-| Repo visibility | **Private** on 2026-10-23; the owner is making it public (Q59) | `gh repo view` (read-only) | Free minutes and branch protection once public (§8). Rule 3 unchanged |
+| Repo visibility | **Public** on 2026-10-25 | `gh repo view` (read-only) | Free minutes and branch protection once public (§8). Rule 3 unchanged |
 | Actions minutes, private repo, Free plan | 2,000 min/month, 500 MB artifacts, 10 GB cache per repo. Without a payment method "usage is blocked once you use up your quota"; with one, the overage is billed. Public repos are free on standard runners | docs.github.com, "GitHub Actions billing" | §6 budget |
 | Branch protection, private repo, Free plan | Not available: "Protected branches" is listed under **Pro** for private repos. Rulesets are for Team/Enterprise. On Free, repository rules are listed only for public repos. Pro's price is not on github.com/pricing (**unverified**) | docs.github.com "GitHub's plans", "About rulesets"; github.com/pricing | Q59 (§8) |
 | Supabase CLI on GitHub runners | Supabase's own docs run `supabase/setup-cli` + `supabase start` + `supabase test db` (pgTAP) on `ubuntu-latest`. `supabase start -x <services>` skips containers | supabase.com/docs: testing overview, managing environments, CLI reference | `db`, `e2e` jobs |
