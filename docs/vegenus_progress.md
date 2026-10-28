@@ -60,7 +60,7 @@ Security gate (design 7 §6, Q85): Not started. Pass criteria: no open critical 
 | Task | Test first | Status |
 |---|---|---|
 | T1.1 CI skeleton with the `gate` check (D6) | one failing test shown red on GitHub, then green | GREEN (CI `gate` green on PR #21, 2026-10-28); owner merges (see T1.1 evidence below) |
-| T1.2 Route table and deny-by-default checks | crawler test, build fails on an unclassified route | Not started |
+| T1.2 Route table and deny-by-default checks | crawler test, build fails on an unclassified route | Reviewed (Codex approve, round 4); CI `gate` pending on the PR (see T1.2 evidence below) |
 | T1.3 Supabase project, RLS on every table, `guest_*` and `public_*` read functions with the `page_is_live` guard (`pages.copy_published_at` exists from Phase 1; test fixtures set it directly, seeding and acceptance come with T2.7), `vegenus_server` role. `account_*` functions come with their tables in T3.6 (D3 §3.6) | schema lint and anon-role tests (D3 §9) | Not started |
 | T1.4 Owner auth (closed registration, Google for pre-created accounts) | E22, E25, E29, E33-E35 | Not started |
 | T1.5 Pages, sections, guest token (hash, fragment, cookie, rotation), visibility, publication status | E3-E6, E21, E27, E28, E30 | Not started |
@@ -78,8 +78,21 @@ T1.1 evidence:
 - First GREEN push, run 40732095546: every job passed except `a11y-perf`; Lighthouse could not start Chrome for Testing from `node_modules` (`No usable sandbox`, Ubuntu 24.04 AppArmor). Fix: Lighthouse uses the runner's system Chrome in CI; Playwright keeps its own browsers.
 - GREEN on GitHub, run 40733024497: all jobs and `gate` passed, tested merge `16d84ef` = PR head `44084f9` into `master` `ad15639` (design 6 §3 merge requirement holds). Job times: changes 9 s, privacy-scan 3 s, lint-types 28 s, unit 24 s, db 125 s, e2e 91 s (chromium) and 82 s (webkit), a11y-perf 80 s, gate 5 s; about 7.5 runner-minutes per app run, against the 36 estimated in design 6 §6.
 - Review: `code-reviewer` and `security-review` skipped for T1.1 by the owner (2026-10-28: nothing critical in this unit). The Phase 1 security gate still covers this code. Required check on `master`: `CI passed` (the `gate` job's check name), with branches up to date (design 6 §1, §8).
-- Placeholders in CI until their units: `privacy-scan` (T1.6), route-table check (T1.2), Supabase in `e2e` (first unit that reads from it), `red-proof` (advisory, later).
+- Placeholders in CI until their units: `privacy-scan` (T1.6), Supabase in `e2e` (first unit that reads from it), `red-proof` (advisory, later).
 - Open: Dependabot alerts (Q87) are not on yet (the agent's settings call was blocked; the owner turns them on); required `gate` check on `master` after the first green run.
+
+T1.2 evidence:
+
+- Route table `src/lib/routes.ts` (classes `public`, `guest`, `owner`, `machine`; design 1 §9 layer 1). `scripts/check-routes.ts` runs as `postbuild`, reads the `.next` build manifests and fails the build on an unclassified route, a Pages Router route, a proxy, a route handler, a dynamic route, a config rewrite or any server action (each of the last six is refused until its first use brings its classification and crawler cases). Running in `postbuild` instead of `lint-types` checks the routes the build actually contains; design 6 §2 updated.
+- Unit, RED: `src/lib/routes.test.ts` against a stub returning `[]`: 3 of 4 failed (`expected [] to deeply equal [ '/admin' ]`, prototype names, `ROUTES["/"]` undefined). GREEN: 4 of 4.
+- Build, RED: with an empty table `npm run build` exits 1 with `Route / is not in the route table`. GREEN after classifying `/` as `public`.
+- Check bites: a temporary `/tmpx` page with a server action fails the build (`Route /tmpx is not in the route table`, `2 server action(s) found`); files removed afterwards.
+- Crawler `e2e/routes.spec.ts` (E31, E37, E56): every table route without credentials gives its class's result (`public` 200, others 404 until T1.4 adds the login redirect); `/home`, `/admin`, `/dashboard`, `/app` give the same 404 body as an unknown path. It passed on its first run (the behaviour already held), so its RED is the mutation `"/": "owner"`, which failed with `Expected: 404, Received: 200`.
+- Codex adversarial review, round 1: needs-attention, 3 findings, all fixed. (High) Pages Router routes (`server/pages-manifest.json`) and a proxy (`server/functions-config-manifest.json`, `server/middleware-manifest.json`) were not inventoried: now checked. (Medium) the crawler would request a dynamic pattern literally, and (medium) it sends GET only: the build now refuses dynamic routes and route handlers until the crawler gets concrete URLs and per-method cases. Fix RED: 7 of 8 new unit cases failed (`buildProblems is not a function`); GREEN 9 of 9. A real build with a temporary `proxy.ts`, a Pages Router API route and an App Router route handler failed with all three messages; files removed afterwards.
+- Codex round 2: 1 finding (medium, pre-existing): config rewrites (`routes-manifest.json`) were not inventoried. Fixed: rewrites are refused until classified. RED: the new unit case failed (`expected [] to deeply equal [ Array(1) ]`); GREEN 10 of 10; a real build with a temporary rewrite in `next.config.ts` failed with the rewrite message, file removed afterwards.
+- Codex round 3: 1 finding (medium, introduced by the round 1 fix): any `functions-config-manifest.json` entry was taken for a proxy, but pages that export `maxDuration` or `runtime` are listed there too. Fixed: only the `/_middleware` entry counts. Real builds: `/` with `maxDuration` passes (manifest lists `/`); a temporary `proxy.ts` still fails; both reverted.
+- Codex round 4: approve, no material findings.
+- Local: lint, typecheck, unit 10 of 10, gate rule 14 cases, build, Playwright 7 of 7 (chromium, webkit, a11y).
 
 Edge cases required in this phase:
 
@@ -96,13 +109,13 @@ Edge cases required in this phase:
 | E28 | Drafts or pending entries inside an enabled section | Never returned, including media URLs | DB | D1, D3 | Specified |
 | E29 | Attacker registers the owner account's email first | Registration closed | API | D3 | Specified |
 | E30 | In-app browser drops fragment or cookies | Works in memory or shows "open in your browser" | E2E | D1 | Specified |
-| E31 | Unauthenticated request to owner route or token route | Allowed result only | API (crawler) | D1 | Specified |
-| E32 | New route without an access rule | Build and CI fail | CI | D1 | Specified |
+| E31 | Unauthenticated request to owner route or token route | Allowed result only | API (crawler) | D1 | GREEN for `public` and not-found (T1.2); owner login redirect with T1.4 |
+| E32 | New route without an access rule | Build and CI fail | CI | D1 | GREEN locally (T1.2) |
 | E33 | Member or other-page user attempts an owner action | Refused by RLS and handler (the Member case is added with the account tables in T3.6) | API + DB | D1, D3 | Specified |
 | E34 | Back button or cache after log out | No private content; `no-store` | E2E | D1 | Specified |
 | E35 | Login `next` to another site | Relative paths only | API | D1 | Specified |
 | E36 | Anonymous call to the database API | Nothing without a valid credential | DB | D1, D3 | Specified |
-| E37 | Guessed paths (`/home`, `/admin`) | Not found or login; nothing revealed | E2E | D1 | Specified |
+| E37 | Guessed paths (`/home`, `/admin`) | Not found or login; nothing revealed | E2E | D1 | GREEN for not-found (T1.2); `/app` login redirect with T1.4 |
 | E56 | Id or route that does not exist or belongs to another page | Same not-found, status and timing as E5, E6, E37 | API | D3, D2 flow 11 | Specified |
 
 Acceptance rows (PRD §9.3) due at this phase: visibility, token and isolation tests pass; no secrets, names, dates, photos or tag IDs in Git; progress file and plan current.

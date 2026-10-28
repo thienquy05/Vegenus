@@ -12,7 +12,8 @@
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
     "test:gate": "scripts/gate_test.sh",
-    "test:e2e": "playwright test"
+    "test:e2e": "playwright test",
+    "postbuild": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON scripts/check-routes.ts"
   },
   "dependencies": {
     "next": "16.4.3",
