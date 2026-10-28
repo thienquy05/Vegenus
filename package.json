@@ -1,0 +1,36 @@
+{
+  "name": "vegenus",
+  "private": true,
+  "engines": {
+    "node": ">=24"
+  },
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start",
+    "lint": "eslint . && scripts/no-focused-tests.sh && scripts/no-docs-refs.sh",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run",
+    "test:gate": "scripts/gate_test.sh",
+    "test:e2e": "playwright test"
+  },
+  "dependencies": {
+    "next": "16.4.3",
+    "react": "19.3.1",
+    "react-dom": "19.3.1"
+  },
+  "devDependencies": {
+    "@axe-core/playwright": "4.14.0",
+    "@lhci/cli": "0.15.1",
+    "@playwright/test": "1.64.1",
+    "@types/node": "24.19.2",
+    "@types/react": "19.3.0",
+    "@types/react-dom": "19.3.0",
+    "@vitest/coverage-v8": "5.0.5",
+    "eslint": "10.13.0",
+    "eslint-config-next": "16.4.3",
+    "supabase": "2.122.0",
+    "typescript": "6.0.3",
+    "vitest": "5.0.5"
+  }
+}
