@@ -8,7 +8,7 @@ Built-in default art for the Zodiac section (design 3 §3.3). It ships with the 
 |---|---|---|
 | Western, approved source sheet | `western/approved-atlas.png` (4 × 3 sheet) | Approved by the owner 2026-10-22; details in [source-sheets.md](source-sheets.md), checksums in `source-sheets.json` |
 | Vietnamese 12 con giáp, approved source sheet | `vietnamese/approved-atlas.png` (Tý Chuột, Sửu Trâu, Dần Hổ, Mão Mèo, Thìn Rồng, Tỵ Rắn, Ngọ Ngựa, Mùi Dê, Thân Khỉ, Dậu Gà, Tuất Chó, Hợi Lợn) | Approved by the owner 2026-10-22 |
-| Per-sign SVGs (24) | `western/<sign>.svg`, `vietnamese/<branch>.svg`, one `manifest.json` per folder | **Generated; technical checks pass, owner visual approval pending.** 24 per-sign SVGs and two manifests are present; runtime integration is still pending |
+| Per-sign SVGs (24) | `western/<sign>.svg`, `vietnamese/<branch>.svg`, one `manifest.json` per folder | **Generated; technical checks pass, owner visual approval pending.** 24 per-sign SVGs and two manifests are present; runtime integration is still pending. **Not the shipped art:** the owner chose the 24 approved Codex WebP renders instead (PRD Q91, 2026-10-28); at integration (T3.9) they are listed in `renders.json`, which reaches `master` before the files (CI design §8) |
 
 The first Western set (12 simple constellation SVGs from PR #2) was removed on 2026-10-22 at the owner's request; it is in Git history (commit `ed249cd`).
 

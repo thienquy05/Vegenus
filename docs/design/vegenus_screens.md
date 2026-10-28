@@ -1,6 +1,6 @@
 # Design 2: Screen inventory (low fidelity, no visuals)
 
-**Status:** v0.4, **approved by the owner 2026-10-23** (v0.2, 2026-10-22: tour, guest account, Zodiac, email settings added; v0.3, 2026-10-23, owner on the preview canvas: G1 lower area on branch `docs/theme-nav-icons`; v0.4, same day: G1 lower area replaced by section shortcuts). Purpose: fix *what each screen shows and lets you do*, so the data model (design 3) can be drawn from it. Colours, type, layout and 3D come later (theme system, 3D approach).
+**Status:** v0.4, **approved by the owner 2026-10-23** (v0.2, 2026-10-22: tour, guest account, Zodiac, email settings added; v0.3, 2026-10-23, owner on the preview canvas: G1 lower area on branch `docs/theme-nav-icons`; v0.4, same day: G1 lower area replaced by section shortcuts). Rows added after that approval are under owner review: G20-G26, O15, O16, O18, the Z1 wording changes and flows 8-11 (Q77-Q83, 2026-10-26/27). Purpose: fix *what each screen shows and lets you do*, so the data model (design 3) can be drawn from it. Colours, type, layout and 3D come later (theme system, 3D approach).
 **Date:** 2026-10-21
 **Inputs:** PRD §3.1, §4.1, §6; design 1 (`vegenus_token_flow.md`).
 **Privacy:** placeholders only.
@@ -98,7 +98,7 @@ One Playwright flow per row, phone viewport, EN and VI:
 5. O9 set Private → open guest tab shows G-E1 on next action.
 6. O5 opened in two sessions → second save shows the conflict prompt.
 7. G1 first visit shows G9 once; Skip closes it; second visit does not show it; replay from G8 works.
-8. Visitor with no token opens a Published page → G20 → G21 with a valid `[CODE]` → G22 (email, no password) → G23 → verification link opens G24 → choose a password → Confirm → signed in; a wrong, used, revoked or expired code gives one identical message; a retry from the same address reuses the reservation; on a Token-only page with no token none of G20–G26 is reachable (E47).
+8. Visitor with no token opens a Published page → G20 → G21 with a valid `[CODE]` → G22 (email, no password) → G23 → verification link opens G24 → choose a password → Confirm → signed in; a wrong, used, revoked or expired code gives one identical message; a retry from the same address reuses the reservation; on a Token-only page with no token the G-E1 notice links to none of G20–G26 (E47); the standalone public routes (`/signin`, `/join/verify`, design 1 §9) stay reachable and reveal nothing about the page, and a signed-in Member sees the page as in design 1 §10.1.
 8c. Typo in the email at G22: the link never arrives; G23 offers a different address only after the original expiry time; then the same code works again with the corrected address (E45); a resend before that shows the original expiry.
 8a. Visitor with no token on a Published page sends a wish through G6 → G7 and it appears in O7; on a Token-only page with no token there is no form (G-E1, E47); the 4th wish from one device inside 24 hours shows the come-back time.
 8b. Owner opens O18 → fills the default language → Publish wording → guest sees the wording; a language with an unfilled field is shown disabled in G8; clearing a field and publishing drops that language; two sessions saving the same field show the comparison.

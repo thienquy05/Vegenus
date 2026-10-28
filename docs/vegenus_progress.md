@@ -4,18 +4,18 @@ Live status and the implementation tracker. Decisions and open questions: [PRD](
 
 Update this file after every step. Rule: a task is Done only when its test was seen failing (RED), then passing (GREEN), CI `gate` is green, and the evidence line is filled.
 
-## 1. Status (2026-10-27)
+## 1. Status (2026-10-28)
 
 - Phase 0 (planning and design) is in progress. No application code exists, no CI workflow exists, harness-os is not enabled. Code starts only after the owner approves the PRD, the plan and all design previews (CLAUDE.md).
 - Approved by the owner: PRD ("looks good", 2026-10-21), plan (2026-10-23, Phase 1 not to start yet), designs 1, 2, 3, 5, 6 (2026-10-23), logo (Q60), Home (2026-10-24), Zodiac (2026-10-24).
-- Draft, awaiting owner review: design 4 theme system (v0.13; Q53-Q76 answered), guest UI, owner UI, guest motion, editable wording (canvas pages 4-14, version 95).
-- Open decisions: Q16 NFC tag model, Q37 sending domain, Q66 album limits, Q70 Layers reference. Deferred by the owner: co-editor role (Q35) and multi-tenant workspace requests (Q84, low priority).
+- Draft, awaiting owner review: PRD v0.7 consolidated text (each decision keeps its PRD §12 status), plan v0.4, design 4 theme system (v0.13; Q53-Q76 answered), design 7 security (v0.1; Codex review pending), guest UI, owner UI, guest motion, editable wording (canvas pages 4-14, version 95).
+- Open decisions: Q16 NFC tag model, Q37 sending domain, Q66 album limits, Q70 Layers reference. Answered 2026-10-28: Q91 (the 24 approved Codex sign renders ship as the built-in Zodiac art). Deferred by the owner: co-editor role (Q35) and multi-tenant workspace requests (Q84, low priority).
 - Answered 2026-10-27: Q78 (per-IP wish limit 20 per rolling 24 h), Q79 (two tiers: Owner and Member), Q80 (withdrawn the same day: no Member request to co-manage; see Q84), Q81 (defaults kept).
 - Not built: canvas boards for G20-G26 and O16; Together phone pins overlap (decision needed).
 - Wording boards, locally prepared versus live canvas (reported by the 2026-10-27 review; the original handoff entry, including Q83, was overwritten when this file was rewritten and its text is not in the repository): 63 boards completed locally, with 169 source and state checks and 432 browser cases passing. The live canvas (version 95) does not yet contain them; synchronising them is pending. Until then the wording work is "prepared locally", not "published", and the open list in editable wording §6 describes the live canvas. Q83 was re-entered in the PRD on 2026-10-27 from the review's quotation; the originating session should confirm the wording.
 - Documentation consistency review of 2026-10-27 is closed (section 6).
 - Security review follow-up: five source-level design gaps have proposed documentation fixes (Auth cleanup, invite deadlines, digest dispatch, mailbox-holder consent, UTF-8 byte caps). These contracts and their tests are specified, not implemented or runtime-validated. G24 confirmation consent needs the complete phone/tablet/laptop, four-theme, state and accessibility preview before design approval.
-- Security (2026-10-28): design 7 `docs/design/vegenus_security.md` adds the security concept, tool selection and a per-phase audit gate (Q85, answered). The Cloudflare `security-audit` skill is installed at project level in `.claude/skills/` (git-ignored, pinned; Q86 answered); GitHub secret scanning, push protection and Dependabot alerts are to be enabled at the start of Phase 1 and CodeQL once code exists (Q87 answered). Phase 0 version of the gate = Codex review of this document.
+- Security (2026-10-28): design 7 `docs/design/vegenus_security.md` adds the security concept, tool selection and a per-phase audit gate (Q85, answered). The Cloudflare `security-audit` skill is installed at project level in `.claude/skills/` (git-ignored, pinned; Q86 answered); GitHub secret scanning and push protection were turned on at the owner's request on 2026-10-28 (read back from the API); Dependabot alerts are to be enabled at the start of Phase 1 and CodeQL once code exists (Q87 answered). Phase 0 version of the gate = Codex review of this document.
 
 ## 2. How to read the tracker
 
@@ -23,7 +23,7 @@ Status values: **Not started** · **Specified** (test row exists in a design doc
 
 Test levels: Unit, DB (SQL against a local database), API, E2E (Playwright, phone viewport), Manual (real devices), CI.
 
-Spec column: D1 token flow §8, D2 screens (flows), D3 data model §9, D4 theme system, D5 3D approach §11, D6 CI spec, Motion = guest motion §9.
+Spec column: D1 token flow §8, D2 screens (flows), D3 data model §9, D4 theme system, D5 3D approach §11, D6 CI spec, D7 security, Motion = guest motion §9.
 
 "Missing information" rows (E51-E58) are edge cases where the data, record or language does not exist; they are required tasks like every other row.
 
@@ -36,6 +36,7 @@ Exit criterion (PRD §10): the owner approves each deliverable. Gate: owner revi
 | Deliverable | Status |
 |---|---|
 | PRD v0.6 | Done (owner approved) |
+| PRD v0.7 (v0.6 plus the §12 entries Q42-Q90) | Consolidated text awaiting owner review; each decision keeps its §12 status |
 | Codex challenge of PRD and plan (7 findings, all addressed) | Done |
 | Plan v0.3 | Done (owner approved 2026-10-23) |
 | Plan v0.4 (guest-access and wording changes) | Draft, awaiting owner review |
@@ -43,6 +44,7 @@ Exit criterion (PRD §10): the owner approves each deliverable. Gate: owner revi
 | Design 4 theme system | Draft, awaiting owner review |
 | Design 5 3D approach | Done (approved 2026-10-23); motion supplement is a draft |
 | Design 6 CI spec | Done (approved 2026-10-23) |
+| Design 7 security concept and audit gate (Phase 0 gate = Codex review of it) | Draft v0.1, Codex review and owner review pending |
 | Guest UI, owner UI, guest motion, editable wording | Draft, canvas review per page |
 | Canvas boards for every screen, size, theme and state (CLAUDE.md complete-designs rule) | In progress: G20-G26, O16 missing |
 
@@ -60,7 +62,7 @@ Security gate (design 7 §6, Q85): Not started. Pass criteria: no open critical 
 |---|---|---|
 | T1.1 CI skeleton with the `gate` check (D6) | one failing test shown red on GitHub, then green | Not started |
 | T1.2 Route table and deny-by-default checks | crawler test, build fails on an unclassified route | Not started |
-| T1.3 Supabase project, RLS on every table, `guest_*`, `public_*`, `account_*` functions, `vegenus_server` role | schema lint and anon-role tests (D3 §9) | Not started |
+| T1.3 Supabase project, RLS on every table, `guest_*` and `public_*` read functions with the `page_is_live` guard (`pages.copy_published_at` exists from Phase 1; test fixtures set it directly, seeding and acceptance come with T2.7), `vegenus_server` role. `account_*` functions come with their tables in T3.6 (D3 §3.6) | schema lint and anon-role tests (D3 §9) | Not started |
 | T1.4 Owner auth (closed registration, Google for pre-created accounts) | E22, E25, E29, E33-E35 | Not started |
 | T1.5 Pages, sections, guest token (hash, fragment, cookie, rotation), visibility, publication status | E3-E6, E21, E27, E28, E30 | Not started |
 | T1.6 Privacy scan job | seed and repo contain only placeholders | Not started |
@@ -78,11 +80,11 @@ Edge cases required in this phase:
 | E25 | Invite or reset mail to a non-team address | Owner provisions accounts; no such mail | API | D3 | Specified |
 | E27 | Token in history, logs, screenshot | Fragment only; never in logs or referrers; rotation is one action | API + E2E | D1 | Specified |
 | E28 | Drafts or pending entries inside an enabled section | Never returned, including media URLs | DB | D1, D3 | Specified |
-| E29 | Attacker registers the co-editor's email first | Registration closed | API | D3 | Specified |
+| E29 | Attacker registers the owner account's email first | Registration closed | API | D3 | Specified |
 | E30 | In-app browser drops fragment or cookies | Works in memory or shows "open in your browser" | E2E | D1 | Specified |
 | E31 | Unauthenticated request to owner route or token route | Allowed result only | API (crawler) | D1 | Specified |
 | E32 | New route without an access rule | Build and CI fail | CI | D1 | Specified |
-| E33 | Member or other-page user attempts an owner action | Refused by RLS and handler | API + DB | D1, D3 | Specified |
+| E33 | Member or other-page user attempts an owner action | Refused by RLS and handler (the Member case is added with the account tables in T3.6) | API + DB | D1, D3 | Specified |
 | E34 | Back button or cache after log out | No private content; `no-store` | E2E | D1 | Specified |
 | E35 | Login `next` to another site | Relative paths only | API | D1 | Specified |
 | E36 | Anonymous call to the database API | Nothing without a valid credential | DB | D1, D3 | Specified |
@@ -239,11 +241,35 @@ Definition of Done (PRD §1.6): a phase is done when its exit criteria pass, its
 | Canvas boards: G20-G26, O16; rendered check of wording boards; Together phone pin overlap | Claude and Codex |
 | Co-editor role (Q35) and multi-tenant workspace request (Q84) | Deferred by the owner, low priority |
 | Supabase CLI version to pin; `vegenus_server` connection method; storage CORS for photo textures | Before Phase 1 and 2 |
-| Private-email push block and `noreply` commit email (D6 §8) | Owner, before the repository is switched public |
+| Repository public since 2026-10-25 (Q59). Checked 2026-10-28 (read-only API): this checkout commits with the GitHub `noreply` address; `master` has an active ruleset (pull request required, no deletion, no force-push) but no required `gate` check yet; secret scanning and push protection were **off** and were turned **on** on 2026-10-28 (owner request, read back from the API) | Owner: confirm the GitHub email setting "block command line pushes that expose my email" (not readable by the API); add `gate` as a required check in T1.1 |
+| Git (2026-10-28): the 11 merged local branches were deleted at the owner's request | Done |
+| Q91 answered: the 24 approved sign renders ship. Integration (T3.9) follows design 6 §8: first a PR with `assets/zodiac-sign/renders.json`, the allowlist and `privacy-scan` extension (plan §12.2) and exact-file `.gitignore` exceptions reaches `master`; then the files are added | Claude, T3.9 (each push needs the owner's OK, rule 2) |
+| Design workspace (done 2026-10-28): the git-ignored `.design/` holds `art/` (the 42 approved WebPs from the canvas and the Home run, named, with `SHA256SUMS`) and `archive/` (a full copy of the earlier session scratchpads: generators, board drafts including the 63 locally prepared wording boards, Codex logs). New generators and Codex design output go to `.design/` (CLAUDE.md, AGENTS.md); the canvas stays the owner's review surface | Claude: sync the 63 wording boards to the canvas when the wording review resumes |
 | Q88 answered: owner turns on the Vercel promotion hold and Deployment Protection at Phase 6; Q89 answered: the owner applies production migrations manually; confirm the Supabase command in Phase 1 | Owner, Claude (Phase 1) |
 | Q90 backups: deferred by the owner (no backup for now); design 7 §6.7 applies if one is added | Owner, later |
-| Enable GitHub secret scanning, push protection and Dependabot alerts (Q87); CodeQL once code exists; read `SKILL.md` and the chosen attack-class files before the first audit run | Claude, at the start of Phase 1 |
-| Git: all branches uncommitted or unmerged; commits, pushes and PRs only when the owner asks | Owner |
+| Enable Dependabot alerts (Q87; secret scanning and push protection are already on); CodeQL once code exists; read `SKILL.md` and the chosen attack-class files before the first audit run | Claude, at the start of Phase 1 |
+| Git: every earlier branch is merged into `master` (PRs up to #18) and deleted locally and on GitHub. Commits, pushes and PRs only when the owner asks | Owner: consider "Automatically delete head branches" in GitHub |
+
+### 5.1 Facts to verify before building (from the designs)
+
+One list of the **unverified** facts that block a build step, so Phase 1 does not start by hunting through ten documents. Each source document stays the owner of its fact; tick a row here and record the answer in the source.
+
+| Needed by | Fact to verify | Source |
+|---|---|---|
+| T1.1 (CI, first app) | Framework and i18n library choice (Next.js ≥ 16.4.1, next-intl) through context7, because T1.1 already builds an app | plan §2; D6 §2, §5.1 |
+| T1.1 (CI) | Supabase CLI exact version; the `supabase start -x` exclude list; inputs of the new `checkout`/`setup-node` majors; hosts the runner contacts; `npm` cache and `PLAYWRIGHT_BROWSERS_PATH=0` stay inside the project | D6 §4, §5.1, §7, §7.1 |
+| T1.3 (database) | How the server connects as `vegenus_server` (pooler login or signed token); if neither works, guest writes wait for an owner decision, never the service role (D3 §3.9); pgTAP through the Supabase CLI; the Supabase security-advisor command | D3 §3.9, §9; D7 §8 |
+| T1.3, Q89 | Command and connection for applying migrations to production by hand | D7 §6.5 rule 4, §8 |
+| T1.4 (auth) | `auth.admin.createUser` with a confirmed email, a chosen user id and a password, else the SMTP fallback; breached-password check availability | D1 §10.3 |
+| T1.5 (headers) | HSTS on `*.vercel.app` | D7 §3 |
+| T1.5 (E30) | URL fragment and cookies in Zalo, Facebook and Messenger browsers: E2E behaviour in T1.5, confirmed on real devices in T3.5 | plan §1; D1 §4 |
+| Phase 1 audit | Whether the Cloudflare skill selects attack classes by option or by prompt | D7 §5 |
+| T2.3 (uploads) | Bucket-level size limits; whether a storage policy sees object size at insert; maximum duration of an accepted upload (the write-fence `drain`); reading object sizes from the storage schema; reading egress usage on the free plan | D3 §3.4 |
+| T3.5 (NFC), Q16 | Tag model and capacity; NDEF URI prefix code; iPhone background tag reading | D1 §3; plan §5, §R |
+| T3.9 (Zodiac) | Install approval for the vetted astronomy library (rule 1); the birthplace list's source and licence; historical UTC offsets per place (IANA); Tết 1968-1983 in UTC+7 cross-check (Q52); a readable source for lục hợp and lục hại before they become seed data; the library's ascendant / sidereal-time API | D3 §3.10-§3.11; `assets/zodiac-sign/research.md` §2, §3, §7; plan §R |
+| T3.10 (email), Q37 | Resend sending without a domain; `List-Unsubscribe` header support | plan §R; D1 §10.5 |
+| Phase 6, Q88 | Turning off Auto-assign Custom Production Domains on Hobby; GitHub private security-advisory fork for embargoed fixes | D7 §6.5, §6.6 |
+| If media moves to R2 | Whether R2 needs a payment method | plan §3 |
 
 ## 6. History (summary)
 
@@ -256,4 +282,5 @@ Definition of Done (PRD §1.6): a phase is done when its exit criteria pass, its
 - 2026-10-27: owner withdrew the Member request to co-manage the page (Q80; O17, G27, E49 and `access_requests` removed); a multi-tenant "request a workspace" flow is recorded as Q84, deferred and low priority.
 - 2026-10-27: per-theme Together falls built; daily-limit notice and wording boards built and reviewed (canvas version 95); Codex consistency review of all 24 documents: nine findings fixed (wish permissions, 24-hour windows, registration retry, wording contract, motion and art rules, Zodiac text, coverage, status summaries); Q78-Q81 answered; this tracker written; edge cases E51-E58 (missing information) added.
 - 2026-10-28: owner asked for a security section and a security audit after each phase with direct fixes; Cloudflare `security-audit-skill` README read (read-only); design 7 written; PRD §4.3, §9.3, §10, Q85-Q87, plan §9 and §12.1, design 6 §4.2 updated.
-- Canvas: private design canvas "Theme Preview" on the owner's account (not in Git); generators live in the session scratchpad and are not committed.
+- 2026-10-28: production-readiness review of every document: statuses synced (PRD v0.7, plan, designs 1, 2, 3, 7), stale references fixed (repo visibility, development machine, withdrawn O17 and owner-access request, tour step count, Zodiac SVG status, cron fact), the route class for the owner account renamed `owner` so it no longer collides with "Member", Q91 raised, the build-blocking unverified facts gathered in §5.1, live GitHub settings checked (read-only). Codex adversarial review: round 1 six findings, all fixed (service-role fallback removed from design 3 §3.9, Phase 1 schema scope, Member access on Token-only pages, video media variant, register order, PRD status wording); round 2 approved with no findings. Owner answers the same day: Q91 (the 24 sign renders ship); the design working set moved from temporary scratchpads into the git-ignored `.design/` (approved art fetched from the canvas by asset id, mapped to signs from the canvas boards); merged local branches deleted. Codex round 3 found two conflicts introduced by those changes (the no-code rule versus generators in `.design/`; the WebP renders versus the binary gates), fixed with one narrow exception in CLAUDE.md and AGENTS.md and the `renders.json` manifest rule in design 6 §8; round 4 approved with no findings.
+- Canvas: private design canvas "Theme Preview" on the owner's account (not in Git); generators, board drafts and approved art live in the git-ignored `.design/` folder and are not committed.
