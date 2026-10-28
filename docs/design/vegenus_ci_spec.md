@@ -63,6 +63,10 @@ WebKit on Linux is Playwright's WebKit build, not iOS Safari. Real-iPhone checks
 
 Anything else fails `gate`: failure, cancellation, a skip on an app change, a missing job, or a missing output. The check is one `jq` expression over `toJSON(needs)` (§9). It was tested against 14 cases (RED with a stub, then GREEN, see §10).
 
+### 4.2 Security checks (design 7, Q85)
+
+No new job and no new download. The security checks that run in CI are the ones already listed: `npm audit` (`lint-types`), pgTAP (`db`), the route-table check (`lint-types`) and one added Playwright header test inside `e2e` (design 7 §7). GitHub's secret scanning, Dependabot alerts and CodeQL default setup are repository settings, not workflow files (Q87). The agent-led audit is a phase-end process step, not a CI job (design 7 §6).
+
 ## 5. Rules inside the jobs
 
 ### 5.1 Versions
