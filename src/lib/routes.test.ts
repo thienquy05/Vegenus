@@ -1,11 +1,11 @@
 import { expect, test } from "vitest";
-import { buildProblems, ROUTES, type BuildEntryPoints } from "./routes";
+import { config as proxyConfig } from "../proxy";
+import { buildProblems, HANDLER_METHODS, ROUTES, safeNext, type BuildEntryPoints } from "./routes";
 
 const clean: BuildEntryPoints = {
   appRoutes: { "/page": "/", "/_not-found/page": "/_not-found", "/_global-error/page": "/_global-error" },
   pagesRoutes: ["/404", "/500"],
   serverActions: 0,
-  proxy: false,
   rewrites: 0,
 };
 
@@ -23,11 +23,37 @@ test("object prototype names are not classified routes", () => {
   expect(buildProblems(built, {})).toHaveLength(1);
 });
 
-test("a route handler is refused until the crawler covers its methods", () => {
+test("a route handler is refused until its methods are listed for the crawler", () => {
   const built = { ...clean, appRoutes: { ...clean.appRoutes, "/api/x/route": "/api/x" } };
-  expect(buildProblems(built, { "/": "public", "/api/x": "public" })).toEqual([
-    "Route handler /api/x is not supported yet: add crawler cases for every method first.",
+  expect(buildProblems(built, { "/": "public", "/api/x": "public" }, {})).toEqual([
+    "Route handler /api/x has no methods in HANDLER_METHODS (src/lib/routes.ts).",
   ]);
+  expect(buildProblems(built, { "/": "public", "/api/x": "public" }, { "/api/x": ["POST"] })).toEqual([]);
+});
+
+test("every listed handler is a route in the table", () => {
+  expect(Object.keys(HANDLER_METHODS).filter((path) => !Object.hasOwn(ROUTES, path))).toEqual([]);
+});
+
+// E35: after login only an owner route of our own table is followed; anything else goes to /app.
+test.each([
+  [undefined, "/app"],
+  ["/app", "/app"],
+  ["https://other.site", "/app"],
+  ["//other.site", "/app"],
+  ["/\\other.site", "/app"],
+  ["javascript:alert(1)", "/app"],
+  ["/login", "/app"],
+  ["/", "/app"],
+  ["constructor", "/app"],
+])("safeNext(%s) is %s", (next, expected) => {
+  expect(safeNext(next)).toBe(expected);
+});
+
+test("the proxy only runs on owner routes", () => {
+  for (const pattern of proxyConfig.matcher) {
+    expect(ROUTES[pattern.replace(/\/:path\*$/, "")], pattern).toBe("owner");
+  }
 });
 
 test("a dynamic route is refused until the crawler has a concrete URL for it", () => {
@@ -42,10 +68,9 @@ test("Pages Router routes beyond the built-in error pages are reported", () => {
   expect(buildProblems(built, { "/": "public" })).toEqual(["Pages Router route /api/legacy is not allowed; use the App Router."]);
 });
 
-test("server actions and a proxy are reported", () => {
-  expect(buildProblems({ ...clean, serverActions: 2, proxy: true }, { "/": "public" })).toEqual([
+test("server actions are reported", () => {
+  expect(buildProblems({ ...clean, serverActions: 2 }, { "/": "public" })).toEqual([
     "2 server action(s) found; server actions are not classified in the route table yet.",
-    "A proxy (middleware) is not classified in the route table yet.",
   ]);
 });
 

@@ -1,9 +1,9 @@
 -- Schema lint (T1.3; design 3 §1, §5, §9; E6, E36): deny by default for every table and function in `public`.
 begin;
-select plan(10);
+select plan(11);
 
-select tables_are('public', array['pages', 'page_sections', 'memberships', 'guest_tokens', 'items', 'guestbook_entries'],
-  'the T1.3 tables exist');
+select tables_are('public', array['pages', 'page_sections', 'memberships', 'guest_tokens', 'items', 'guestbook_entries', 'rate_limit_hits'],
+  'the T1.3 and T1.4 tables exist');
 
 select ok(exists (
   select 1 from pg_roles where rolname = 'vegenus_server'
@@ -16,12 +16,12 @@ select is((
 ), null, 'every table in public has RLS enabled');
 
 -- Tables without page_id must be on design 3 §1's exception list; later units add theirs here.
--- `pages` is the tenant itself: its `id` is the page id.
+-- `pages` is the tenant itself: its `id` is the page id. `rate_limit_hits` is operational (design 3 §1).
 select is((
   select array_agg(c.relname::text order by c.relname) from pg_class c
   where c.relnamespace = 'public'::regnamespace and c.relkind in ('r', 'p')
     and not exists (select 1 from pg_attribute a where a.attrelid = c.oid and a.attname = 'page_id' and not a.attisdropped)
-    and c.relname <> all (array['pages']::name[])
+    and c.relname <> all (array['pages', 'rate_limit_hits']::name[])
 ), null, 'every table has page_id or is a listed exception');
 
 select is((
@@ -46,9 +46,13 @@ select is((
 
 select is((
   select array_agg(p.proname::text order by p.proname) from pg_proc p
-  where p.pronamespace = 'public'::regnamespace
-    and (has_function_privilege('authenticated', p.oid, 'execute') or has_function_privilege('vegenus_server', p.oid, 'execute'))
-), null, 'authenticated and vegenus_server execute nothing yet (account_* come in T3.6, guest writes later)');
+  where p.pronamespace = 'public'::regnamespace and has_function_privilege('authenticated', p.oid, 'execute')
+), null, 'authenticated executes nothing yet (account_* come in T3.6)');
+
+select is((
+  select array_agg(p.proname::text order by p.proname) from pg_proc p
+  where p.pronamespace = 'public'::regnamespace and has_function_privilege('vegenus_server', p.oid, 'execute')
+), array['login_attempt'], 'vegenus_server executes only the login limiter (guest writes come later)');
 
 select is((
   select array_agg(p.oid::regprocedure::text) from pg_proc p
