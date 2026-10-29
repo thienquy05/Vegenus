@@ -62,7 +62,7 @@ Security gate (design 7 §6, Q85): Not started. Pass criteria: no open critical 
 | T1.1 CI skeleton with the `gate` check (D6) | one failing test shown red on GitHub, then green | Done (CI `gate` green, merged as PR #21; see T1.1 evidence below) |
 | T1.2 Route table and deny-by-default checks | crawler test, build fails on an unclassified route | Done (Codex approve, round 4; CI `gate` green, merged as PR #22; see T1.2 evidence below) |
 | T1.3 Supabase project, RLS on every table, `guest_*` and `public_*` read functions with the `page_is_live` guard (`pages.copy_published_at` exists from Phase 1; test fixtures set it directly, seeding and acceptance come with T2.7), `vegenus_server` role. `account_*` functions come with their tables in T3.6 (D3 §3.6) | schema lint and anon-role tests (D3 §9) | Reviewed (Codex approve, round 2); CI `gate` pending on the PR (see T1.3 evidence below) |
-| T1.4 Owner auth (closed registration, Google for pre-created accounts) | E22, E25, E29, E33-E35 | Not started |
+| T1.4 Owner auth (closed registration; Google deferred to its own unit, Q95) | E22, E25, E29, E33-E35 | GREEN locally on `feature/owner-auth`; review and CI `gate` pending (see T1.4 evidence below) |
 | T1.5 Pages, sections, guest token (hash, fragment, cookie, rotation), visibility, publication status | E3-E6, E21, E27, E28, E30 | Not started |
 | T1.6 Privacy scan job | seed and repo contain only placeholders | Not started |
 
@@ -107,6 +107,22 @@ T1.3 evidence:
 - Codex round 2: approve, no material findings (both fixes confirmed; the six anon read functions keep their explicit grants; future functions or extensions created by the migration role need deliberate execute grants).
 - Local: lint, typecheck, unit 10 of 10, `supabase test db` 52 of 52.
 
+T1.4 evidence:
+
+- Scope and decisions (owner, 2026-10-29; PRD Q94-Q97): email and password login at `/login` (O1), owner area `/app` gated by `requireOwner()` (validated session; "not a Member" with T3.6), logout; Google deferred (Q95); own login limits (Q96); no developer website (Q97). Packages (rule 1, approved): `@supabase/supabase-js` 2.118.0, `@supabase/ssr` 0.12.7, `postgres` 3.4.9, each published by its project (OIDC from the Supabase repos; porsager), at least two weeks old; `npm audit --omit=dev` 0. Playwright browsers re-downloaded from `cdn.playwright.dev` (approved; the install had removed them).
+- Facts verified (context7, Supabase docs): `auth.admin.createUser` takes `id`, `email`, `password`, `email_confirm`, so the D1 §10.3 primary path holds. The leaked-password check is Pro plan only (not available on Free); minimum length set to 10. With sign-up off only existing users sign in. CLI finding: `[auth.email] enable_signup = false` turns off email login itself, so only `[auth] enable_signup = false` is set. Unverified: Vercel overwrites `x-forwarded-for` (context7 unreachable); check on the first deploy.
+- Pieces: migration `20261029120000_login_limit.sql` (`rate_limit_hits`, `login_attempt` for `vegenus_server` only, 32-byte HMAC keys); `src/lib/server-db.ts` (the only `vegenus_server` connection; a unit test allows only the login route to import it, since the ECC config-protection hook blocks editing `eslint.config.mjs`); `src/lib/auth.ts` (HttpOnly, SameSite=Lax session cookie, Secure on HTTPS; Origin check); `src/proxy.ts` refreshes the session on `/app` only and gates nothing; route handlers are allowed when `HANDLER_METHODS` lists their methods; `safeNext` follows only exact owner routes of the table.
+- DB, RED: `login_limit.test.sql` failed with `function public.login_attempt(bytea, bytea) does not exist`; schema lint failed on the missing table and grant. GREEN: 63 of 63. Security advisor: no issues.
+- Unit, RED: `Cannot find module '../proxy'`. GREEN: 22 of 22. Mutation: `safeNext` returning any `next` fails 7 cases; a probe file importing `server-db` fails the import test.
+- E2E, RED (chromium): E29 sign-up through the Auth API **succeeded** (config still open); `/login` 404, `/app` 404 instead of 307, handlers 404 instead of 403; form tests timed out. GREEN: 27 of 27 (chromium, webkit, a11y). Mutation: raising the address limit to 100 fails the "sixth attempt" test.
+- CI: the `e2e` job now starts the local Supabase stack (same service list as `db`). Playwright reads `supabase status`, sets a per-run `vegenus_server` password and returns the role to `NOLOGIN` afterwards (roles outlive `db reset`; the schema lint checks it).
+- Checked in a browser at 390 px: O1 layout, generic alert, 44 px targets; console has only the existing `favicon.ico` 404.
+- Codex adversarial review, round 1: needs-attention, 1 finding (high), fixed. Logout ignored `signOut` errors; when a refresh fails the SDK writes no cookies, so a kept cookie could be refreshed later without a new login (E34). RED: an unusable session cookie made logout return 500. Fix: `signOut` errors are caught and every `sb-` cookie is deleted through the same `next/headers` jar (a second writer on the response left empty session cookies). GREEN 29 of 29.
+- Codex round 2: needs-attention, 1 finding (medium), fixed. A blocked IP still created address buckets, and nothing purged old rows (storage growth). Fix: `login_attempt` returns before the address bucket once the IP is over 20, and deletes expired login buckets on each call (the T2.5 daily job takes over). RED: tests 11 and 12 failed (`have: 1, want: 0`); GREEN 67 of 67.
+- Codex round 3: approve, no material findings. Open: Vercel's `x-forwarded-for` on the first deploy.
+- Session cookie (owner, 2026-10-29, Q99): the library forces a 400-day lifetime, so `supabaseAuth` drops it from every write except removals. RED: the cookie expired in 2027; GREEN 29 of 29. Codex round 4: approve, no material findings (removals keep `maxAge: 0`; the proxy refresh keeps the cookie session-only). Privacy section planned after T1.4 (Q98).
+- Not covered by T1.4: E33 owner actions (none exist yet; owner policies with T1.5, Member case with T3.6); E25 has no reset or invite path to test (none exists while only the built-in email works, Q41).
+
 Edge cases required in this phase:
 
 | ID | Case | Expected | Level | Spec | Status |
@@ -116,19 +132,19 @@ Edge cases required in this phase:
 | E5 | Disabled section requested by URL | Not found, no data | DB + E2E | D1 | GREEN at DB level (T1.3); API and E2E levels with T1.5 |
 | E6 | Another account or another page's token | Denied on every route | DB + API | D1, D3 | GREEN at DB level (T1.3); API and E2E levels with T1.5 |
 | E21 | Token-only or Private page crawled | `noindex`, not in sitemap | API | D1 | Specified |
-| E22 | Account takeover, reset abuse | Rate limit, verification, one generic answer | API | D3 | Specified |
+| E22 | Account takeover, reset abuse | Rate limit, verification, one generic answer | API | D3 | GREEN locally for login (T1.4); no reset path exists yet |
 | E25 | Invite or reset mail to a non-team address | Owner provisions accounts; no such mail | API | D3 | Specified |
 | E27 | Token in history, logs, screenshot | Fragment only; never in logs or referrers; rotation is one action | API + E2E | D1 | Specified |
 | E28 | Drafts or pending entries inside an enabled section | Never returned, including media URLs | DB | D1, D3 | GREEN at DB level (T1.3); API and E2E levels with T1.5 |
-| E29 | Attacker registers the owner account's email first | Registration closed | API | D3 | Specified |
+| E29 | Attacker registers the owner account's email first | Registration closed | API | D3 | GREEN locally (T1.4) |
 | E30 | In-app browser drops fragment or cookies | Works in memory or shows "open in your browser" | E2E | D1 | Specified |
-| E31 | Unauthenticated request to owner route or token route | Allowed result only | API (crawler) | D1 | GREEN for `public` and not-found (T1.2); owner login redirect with T1.4 |
+| E31 | Unauthenticated request to owner route or token route | Allowed result only | API (crawler) | D1 | GREEN for `public` and not-found (T1.2); owner login redirect and handler methods GREEN locally (T1.4) |
 | E32 | New route without an access rule | Build and CI fail | CI | D1 | GREEN locally (T1.2) |
 | E33 | Member or other-page user attempts an owner action | Refused by RLS and handler (the Member case is added with the account tables in T3.6) | API + DB | D1, D3 | Specified |
-| E34 | Back button or cache after log out | No private content; `no-store` | E2E | D1 | Specified |
-| E35 | Login `next` to another site | Relative paths only | API | D1 | Specified |
+| E34 | Back button or cache after log out | No private content; `no-store` | E2E | D1 | GREEN locally (T1.4) |
+| E35 | Login `next` to another site | Relative paths only | API | D1 | GREEN locally (T1.4): only exact owner routes of the table |
 | E36 | Anonymous call to the database API | Nothing without a valid credential | DB | D1, D3 | GREEN at DB level (T1.3); API and E2E levels with T1.5 |
-| E37 | Guessed paths (`/home`, `/admin`) | Not found or login; nothing revealed | E2E | D1 | GREEN for not-found (T1.2); `/app` login redirect with T1.4 |
+| E37 | Guessed paths (`/home`, `/admin`) | Not found or login; nothing revealed | E2E | D1 | GREEN for not-found (T1.2); `/app` login redirect GREEN locally (T1.4) |
 | E56 | Id or route that does not exist or belongs to another page | Same not-found, status and timing as E5, E6, E37 | API | D3, D2 flow 11 | Specified |
 
 Acceptance rows (PRD §9.3) due at this phase: visibility, token and isolation tests pass; no secrets, names, dates, photos or tag IDs in Git; progress file and plan current.
@@ -300,7 +316,7 @@ One list of the **unverified** facts that block a build step, so Phase 1 does no
 | T1.1 (CI) | Done locally 2026-10-28: Supabase CLI 2.122.0 (npm package ships the binary, no extra host); the §4 exclude list is valid and the db tests pass with it (the CLI still pulls `realtime` while it sets up the schema); action SHAs unchanged from §7, inputs read from each `action.yml`; local hosts: `registry.npmjs.org`, `cdn.playwright.dev`, `public.ecr.aws`; npm cache in `.npm-cache/`, browsers in `node_modules/`. Still open: the hosts the runner contacts and minutes per job, from the first GitHub run | D6 §4, §5.1, §7, §7.1 |
 | T1.3 (database) | Answered from the Supabase docs 2026-10-28: `vegenus_server` logs in through the shared pooler as `vegenus_server.<project-ref>` (live check when the hosted project exists); pgTAP runs through `supabase test db`; the advisor command is `supabase db advisors --local --type security --fail-on warn` (CLI 2.122.0) | D3 §3.9, §9; D7 §8 |
 | T1.3, Q89 | Command and connection for applying migrations to production by hand | D7 §6.5 rule 4, §8 |
-| T1.4 (auth) | `auth.admin.createUser` with a confirmed email, a chosen user id and a password, else the SMTP fallback; breached-password check availability | D1 §10.3 |
+| ~~T1.4 (auth)~~ | Done 2026-10-29: `auth.admin.createUser` takes `id`, `email`, `password`, `email_confirm` (no SMTP fallback needed); breached-password check is Pro plan only. Still open: Vercel overwrites `x-forwarded-for` (first deploy) | D1 §10.3 |
 | T1.5 (headers) | HSTS on `*.vercel.app` | D7 §3 |
 | T1.5 (E30) | URL fragment and cookies in Zalo, Facebook and Messenger browsers: E2E behaviour in T1.5, confirmed on real devices in T3.5 | plan §1; D1 §4 |
 | Phase 1 audit | Whether the Cloudflare skill selects attack classes by option or by prompt | D7 §5 |

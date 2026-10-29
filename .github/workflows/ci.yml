@@ -126,7 +126,9 @@ jobs:
           path: node_modules/playwright-core/.local-browsers
           key: playwright-${{ runner.os }}-${{ steps.pw.outputs.version }}-${{ matrix.browser }}
       - run: npx playwright install --with-deps "$BROWSER"
-      # ponytail: no Supabase here until the app reads from it (design 6 §4 keeps storage, auth, gateway)
+      # Owner login needs Auth and the database (T1.4); playwright.config.ts reads `supabase status`.
+      # Same service list as the db job (design 6 §4 keeps storage, auth, gateway).
+      - run: npx supabase start -x studio,imgproxy,mailpit,logflare,vector,edge-runtime,supavisor,realtime
       - run: npm run build
       - run: npx playwright test --project="$BROWSER"
       - if: failure()
