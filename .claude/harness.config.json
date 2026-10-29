@@ -1,0 +1,34 @@
+{
+  "specPrefix": "VEG",
+  "gatedGlobs": [
+    "src/**/*.ts",
+    "src/**/*.tsx",
+    "supabase/migrations/*.sql"
+  ],
+  "exemptGlobs": [
+    "**/*.md",
+    "**/*.lock",
+    "**/package-lock.json",
+    "**/*.json"
+  ],
+  "testGlobs": [
+    "**/*.test.ts",
+    "**/*.spec.ts",
+    "supabase/tests/**/*.sql"
+  ],
+  "testCommands": [
+    {
+      "globs": [
+        "**/*.ts",
+        "**/*.tsx"
+      ],
+      "command": "npm test"
+    },
+    {
+      "globs": [
+        "supabase/**/*.sql"
+      ],
+      "command": "npx supabase test db"
+    }
+  ]
+}
