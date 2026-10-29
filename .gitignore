@@ -90,6 +90,7 @@ Thumbs.db
 
 # Third-party agent skills installed at project level (reviewed, pinned in docs/design/vegenus_security.md; not vendored into Git)
 .claude/skills/
+.agents/skills/
 
 # Database tests and migrations are code, not dumps
 !/supabase/tests/**/*.sql

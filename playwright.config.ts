@@ -33,8 +33,9 @@ export default defineConfig({
   reporter: process.env.CI ? "github" : "list",
   globalSetup: "./e2e/global-setup.ts",
   use: { baseURL: "http://localhost:3000", trace: "retain-on-failure" },
-  // Tests run against the production build (npm run build first).
-  webServer: { command: "npm run start", url: "http://localhost:3000", reuseExistingServer: !process.env.CI },
+  // Tests run against the production build (npm run build first). The server's output goes to a file
+  // that e2e/guest-token.spec.ts searches for the token (E27).
+  webServer: { command: "npm run start > .next/server.log 2>&1", url: "http://localhost:3000", reuseExistingServer: !process.env.CI },
   projects: [
     { name: "chromium", use: { ...devices["Pixel 7"] }, testIgnore: /\.a11y\.ts$/ },
     { name: "webkit", use: { ...devices["iPhone 15"] }, testIgnore: /\.a11y\.ts$/ },

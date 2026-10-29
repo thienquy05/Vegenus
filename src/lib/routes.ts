@@ -8,9 +8,13 @@ export const ROUTES: Record<string, RouteClass> = {
   "/": "public",
   "/login": "public",
   "/app": "owner",
-  // Login and logout check Origin themselves; logout without a session only clears cookies.
+  // The guest shell shows G-E1 or exchanges the fragment; the guest pages need the token cookie.
+  "/g": "public",
+  "/g/home": "guest",
+  // Login, logout and the token exchange check Origin themselves; logout without a session only clears cookies.
   "/api/owner/login": "public",
   "/api/owner/logout": "public",
+  "/api/guest/session": "public",
 };
 
 // The methods each route handler exports. The crawler (e2e/routes.spec.ts) checks each one without
@@ -18,6 +22,7 @@ export const ROUTES: Record<string, RouteClass> = {
 export const HANDLER_METHODS: Record<string, string[]> = {
   "/api/owner/login": ["POST"],
   "/api/owner/logout": ["POST"],
+  "/api/guest/session": ["POST"],
 };
 
 // E35: where login may send the owner afterwards. Only an exact owner route from this table, so no

@@ -9,6 +9,11 @@ const sql = postgres(process.env.VEGENUS_SERVER_DB_URL!, { max: 1, prepare: fals
 // Keys for rate_limit_hits: no raw IP or address reaches the database. A missing secret throws.
 const hmac = (value: string) => createHmac("sha256", process.env.VEGENUS_HMAC_SECRET!).update(value).digest();
 
+export async function exchangeAllowed(ip: string): Promise<boolean> {
+  const [row] = await sql`select public.guest_exchange_attempt(${hmac(`ip:${ip}`)}) as ok`;
+  return row.ok;
+}
+
 export async function loginAllowed(ip: string, email: string): Promise<boolean> {
   const [row] = await sql`select public.login_attempt(${hmac(`ip:${ip}`)}, ${hmac(`email:${email}`)}) as ok`;
   return row.ok;
