@@ -14,7 +14,9 @@ export default async function globalSetup() {
   if (!SUPABASE_DB_URL) return; // no local stack (a11y job): the owner-auth spec is not run there
 
   const sql = postgres(SUPABASE_DB_URL, { max: 1 });
-  await sql.unsafe(`alter role vegenus_server login password '${VEGENUS_SERVER_DB_PASSWORD}'`);
+  // ALTER ROLE takes no bind parameters, so Postgres quotes the value itself (%L).
+  const [{ stmt }] = await sql`select format('alter role vegenus_server login password %L', ${VEGENUS_SERVER_DB_PASSWORD!}::text) as stmt`;
+  await sql.unsafe(stmt);
   await sql`truncate public.rate_limit_hits`;
 
   // T1.5a: two live Token-only pages, each with a random guest token for this run (only hashes are stored).
