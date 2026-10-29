@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
-# Cases for the CI gate rule (design 6 §4.1, §10). Usage: scripts/gate_test.sh [rule.jq]
+# Cases for the CI gate rule (design 6 §4.1, §10). Usage: scripts/tests/gate_test.sh [rule.jq]
 set -uo pipefail
-J=${1:-$(dirname "$0")/gate.jq}; fail=0
+J=${1:-$(dirname "$0")/../gate.jq}; fail=0
 
 # mk APP [job=result | job=absent | +job=result]...  builds a toJSON(needs) value
 mk(){

@@ -11,7 +11,7 @@
     "lint": "eslint . && scripts/no-focused-tests.sh && scripts/no-docs-refs.sh",
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
-    "test:gate": "scripts/gate_test.sh",
+    "test:gate": "scripts/tests/gate_test.sh",
     "test:e2e": "playwright test",
     "postbuild": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON scripts/check-routes.ts"
   },
