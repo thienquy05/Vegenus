@@ -24,7 +24,7 @@ export function LoginForm({ next, failed }: { next: string; failed: boolean }) {
       )}
       {offline && (
         <p role="alert" className={styles.alert}>
-          You’re offline. Your details are kept; try again when you’re connected. / Bạn đang ngoại tuyến. Thông tin vẫn được giữ; hãy thử lại khi có mạng.
+          You’re offline. Please try again when you’re connected. / Bạn đang ngoại tuyến. Vui lòng hãy thử lại khi có mạng.
         </p>
       )}
       <input type="hidden" name="next" value={next} />
