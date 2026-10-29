@@ -1,0 +1,26 @@
+{
+  "specPrefix": "VEG",
+  "gatedGlobs": [
+    "src/**/*.ts",
+    "src/**/*.tsx"
+  ],
+  "exemptGlobs": [
+    "**/*.md",
+    "**/*.lock",
+    "**/package-lock.json",
+    "**/*.json"
+  ],
+  "testGlobs": [
+    "**/*.test.ts",
+    "**/*.spec.ts"
+  ],
+  "testCommands": [
+    {
+      "globs": [
+        "**/*.ts",
+        "**/*.tsx"
+      ],
+      "command": "npm test"
+    }
+  ]
+}
