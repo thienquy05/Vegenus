@@ -22,6 +22,7 @@ Rules for every screen: phone-first, one-hand use, touch targets ≥ 44 px, all 
 | 3D scenes, Zodiac sky, performance modes | [3D approach](vegenus_3d_approach.md) |
 | Logo and brand assets | [assets/logo/README.md](../../assets/logo/README.md), PRD Q60 |
 | Generated art prompts | [Codex image brief](vegenus_codex_image_brief.md) |
+| Privacy notice (P1), consent lines, "Keep me signed in", storage table (draft, Q98) | [privacy](vegenus_privacy.md) |
 | Access contracts, data, CI | [token flow](vegenus_token_flow.md), [data model](vegenus_data_model.md), [CI spec](vegenus_ci_spec.md) |
 
 ## Guest screens (`/g/...`)
@@ -48,6 +49,7 @@ Rules for every screen: phone-first, one-hand use, touch targets ≥ 44 px, all 
 | G25 | Sign in / forgot password | Email, password, forgot password | Sign in | auth | Replaces G11. The owner signs in at `/login` (O1) |
 | G26 | Updates card and subscribe | Email, unchecked consent box | Send confirmation; Not now | `subscribe_request` | Shown in G7 and after other interactions; confirm and unsubscribe landings use a button (E48); needs Q37 |
 | Z2 | Zodiac (guest view, read-only) | Galaxy-style animated scene (stars, glow, constellation lines) with the couple's signs as the owner's character art (built-in default art from `assets/zodiac-sign/` until uploaded), each partner's label and signs, and the relationship reading (EN/VI, "for fun"). If the owner opted in to details: the sky at birth as a 3D scene (Moon at its phase, planets on the ecliptic; design 5) with its line, or a 2D Moon picture plus the line in the simple version. Never a birth date | Switch Western / Vietnamese (opens on the owner's default) | stored signs, sign art, reference texts | Guests do not enter a birthday. Shown when enabled, like every section (Q49). Systems: Q47; reading: Q48 (design 3 §3.10-3.11). Reduced motion shows the still image (E41, S21) |
+| P1 | Privacy notice (draft, Q98) | Who runs the page (no names), what is collected, why, storage table, who sees it, how long, choices (ask the couple directly, no address, Q105), children, changes | Contents links; Back/Close | — (fixed text) | Sheet in the page theme from G8, G6, G24, G26; neutral at `/privacy` and from G-E1-3 and O1. [Privacy](vegenus_privacy.md) §3; the same design changes G6 (consent line), G8 (privacy row, clear settings), G24 (account consent), G25 and O1 (Keep me signed in), O7 (consent time, Delete) |
 | G-E1 | No token | "Tap the tag or scan the QR code" | — | — | Same screen for wrong, rotated or private (no hints) |
 | G-E2 | Opened in an app that dropped the link | Steps to open in Safari/Chrome | — | — | E30 |
 | G-E3 | Not available / offline / database paused | Calm message, retry | Retry | — | E17, E23 |
