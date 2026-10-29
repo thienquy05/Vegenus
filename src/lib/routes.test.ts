@@ -46,6 +46,7 @@ test.each([
   ["/login", "/app"],
   ["/", "/app"],
   ["constructor", "/app"],
+  ["/api/owner/token", "/app"],
 ])("safeNext(%s) is %s", (next, expected) => {
   expect(safeNext(next)).toBe(expected);
 });
