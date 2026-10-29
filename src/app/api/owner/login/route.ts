@@ -21,7 +21,13 @@ export async function POST(request: NextRequest) {
   };
   const failed = go(`/login?error=1&next=${encodeURIComponent(next)}`);
 
-  if (!email || !password || !(await loginAllowed(ip, email))) return failed;
-  const { error } = await (await requestAuth(request.nextUrl.protocol === "https:")).auth.signInWithPassword({ email, password });
-  return error ? failed : go(next);
+  if (!email || !password) return failed;
+  try {
+    if (!(await loginAllowed(ip, email))) return failed;
+    const { error } = await (await requestAuth(request.nextUrl.protocol === "https:")).auth.signInWithPassword({ email, password });
+    return error ? failed : go(next);
+  } catch {
+    // A limiter or Auth failure looks like any failed login (E22), not a framework 500.
+    return failed;
+  }
 }
