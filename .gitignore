@@ -48,6 +48,8 @@ exports/
 .swarm/
 agentdb.rvf*
 .claude/settings.local.json
+.claude/proven-config.json
+.claude/.proven-config-version
 .codex/
 .vercel/
 .supabase/
