@@ -4,6 +4,8 @@ import postgres from "postgres";
 
 const E2E_PAGE = "00000000-0000-0000-0000-0000000000e2";
 const E2E_PAGE_B = "00000000-0000-0000-0000-0000000000e3";
+const ROTATION_PAGE_CHROMIUM = "00000000-0000-0000-0000-0000000000e4";
+const ROTATION_PAGE_WEBKIT = "00000000-0000-0000-0000-0000000000e5";
 
 // Local Supabase only (playwright.config.ts): synthetic owner accounts, a clean login limiter, and a
 // per-run password for vegenus_server, which the migration creates without login (design 3 §3.9).
@@ -30,7 +32,6 @@ export default async function globalSetup() {
     await sql`insert into public.guest_tokens (page_id, version, token_hash, request_id)
       values (${id}, 1, sha256(convert_to(${token}, 'UTF8')), gen_random_uuid())`;
   }
-  await sql.end();
 
   // Closed registration: accounts exist only because the owner (here: this setup) creates them.
   const admin = createClient(SUPABASE_URL!, SUPABASE_SECRET_KEY!).auth.admin;
@@ -42,6 +43,21 @@ export default async function globalSetup() {
     });
     if (error && error.code !== "email_exists") throw error;
   }
+
+  // T1.5b: one live Token-only page per browser project, owned by that project's owner, with no token
+  // yet; e2e/token-rotation.spec.ts creates and rotates its tokens.
+  for (const [id, name] of [
+    [ROTATION_PAGE_CHROMIUM, "chromium"],
+    [ROTATION_PAGE_WEBKIT, "webkit"],
+  ]) {
+    await sql`delete from public.pages where id = ${id}`;
+    await sql`insert into public.pages (id, theme, default_lang, visibility, timezone, copy_published_at)
+      values (${id}, 'a_dreamy', 'en', 'token_only', 'UTC', now())`;
+    await sql`update public.page_sections set enabled = true where page_id = ${id} and section = 'home'`;
+    await sql`insert into public.memberships (page_id, user_id, role)
+      select ${id}, u.id, 'owner' from auth.users u where u.email = ${`owner-${name}@example.test`}`;
+  }
+  await sql.end();
 
   // Teardown: back to the migration's state (roles outlive `supabase db reset`; the schema lint checks it).
   return async () => {

@@ -15,6 +15,8 @@ export const ROUTES: Record<string, RouteClass> = {
   "/api/owner/login": "public",
   "/api/owner/logout": "public",
   "/api/guest/session": "public",
+  // Checks Origin, then the owner session; the database checks the page owner.
+  "/api/owner/token": "owner",
 };
 
 // The methods each route handler exports. The crawler (e2e/routes.spec.ts) checks each one without
@@ -23,13 +25,14 @@ export const HANDLER_METHODS: Record<string, string[]> = {
   "/api/owner/login": ["POST"],
   "/api/owner/logout": ["POST"],
   "/api/guest/session": ["POST"],
+  "/api/owner/token": ["POST"],
 };
 
-// E35: where login may send the owner afterwards. Only an exact owner route from this table, so no
-// absolute, protocol-relative or backslash URL can get through.
+// E35: where login may send the owner afterwards. Only an exact owner page from this table (never a
+// route handler), so no absolute, protocol-relative or backslash URL can get through.
 // ponytail: exact match only; owner routes with ids or a query need a pattern check when they exist
 export function safeNext(next: string | undefined): string {
-  return next && Object.hasOwn(ROUTES, next) && ROUTES[next] === "owner" ? next : "/app";
+  return next && Object.hasOwn(ROUTES, next) && ROUTES[next] === "owner" && !Object.hasOwn(HANDLER_METHODS, next) ? next : "/app";
 }
 
 // Every request entry point the build emits, read from the .next manifests. The proxy is not listed:
