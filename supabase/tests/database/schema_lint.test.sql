@@ -52,7 +52,7 @@ select is((
 select is((
   select array_agg(p.proname::text order by p.proname) from pg_proc p
   where p.pronamespace = 'public'::regnamespace and has_function_privilege('vegenus_server', p.oid, 'execute')
-), array['login_attempt'], 'vegenus_server executes only the login limiter (guest writes come later)');
+), array['guest_exchange_attempt', 'login_attempt'], 'vegenus_server executes only the login and exchange limiters (guest writes come later)');
 
 select is((
   select array_agg(p.oid::regprocedure::text) from pg_proc p

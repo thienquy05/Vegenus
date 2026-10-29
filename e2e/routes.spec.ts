@@ -4,7 +4,6 @@ import { HANDLER_METHODS, ROUTES } from "../src/lib/routes";
 // E31: with no session and no token, every route in the table gives only its allowed result.
 // Pages are fetched with GET; route handlers with each listed method and one unlisted method.
 // The build refuses dynamic routes until this file gets concrete URLs for them (src/lib/routes.ts).
-// ponytail: guest routes expect not-found until T1.5 brings the first one
 for (const [path, routeClass] of Object.entries(ROUTES)) {
   const methods = HANDLER_METHODS[path];
   if (methods) {
@@ -23,6 +22,10 @@ for (const [path, routeClass] of Object.entries(ROUTES)) {
     if (routeClass === "owner") {
       expect(res.status()).toBe(307);
       expect(res.headers().location).toBe(`/login?next=${encodeURIComponent(path)}`);
+    } else if (routeClass === "guest") {
+      // No token cookie: back to the tap notice, which reveals nothing (G-E1).
+      expect(res.status()).toBe(307);
+      expect(res.headers().location).toBe("/g");
     } else {
       expect(res.status()).toBe(routeClass === "public" ? 200 : 404);
     }
