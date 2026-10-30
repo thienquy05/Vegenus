@@ -34,12 +34,16 @@ for (const [path, routeClass] of Object.entries(ROUTES)) {
 
 // E37, E56: guessed paths get the same not-found as any unknown path, revealing nothing.
 // `/app` is an owner route now: login redirect, covered above.
+// Pages render per request for the CSP nonce (src/proxy.ts): bodies are compared without the nonce
+// and without the requested path, which the RSC payload echoes back ("c":["","home"]).
 test("guessed paths are the generic not-found", async ({ request }) => {
+  const body = async (res: { text(): Promise<string> }) =>
+    (await res.text()).replace(/(nonce=|nonce\\":\\)"[^"\\]*/g, '$1"').replace(/\\"c\\":\[[^\]]*\]/g, '\\"c\\":[]');
   const unknown = await request.get("/no-such-page");
   expect(unknown.status()).toBe(404);
   for (const path of ["/home", "/admin", "/dashboard"]) {
     const res = await request.get(path, { maxRedirects: 0 });
     expect(res.status(), path).toBe(404);
-    expect(await res.text(), path).toBe(await unknown.text());
+    expect(await body(res), path).toBe(await body(unknown));
   }
 });

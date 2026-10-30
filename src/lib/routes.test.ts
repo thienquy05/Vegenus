@@ -51,9 +51,11 @@ test.each([
   expect(safeNext(next)).toBe(expected);
 });
 
-test("the proxy only runs on owner routes", () => {
-  for (const pattern of proxyConfig.matcher) {
-    expect(ROUTES[pattern.replace(/\/:path\*$/, "")], pattern).toBe("owner");
+// The proxy sets the page CSP (design 7 §3), so it runs on every page and never on route handlers.
+test("the proxy runs on every page and no route handler", () => {
+  const sources = proxyConfig.matcher.map((m) => new RegExp(`^${m.source}$`));
+  for (const route of Object.keys(ROUTES)) {
+    expect(sources.some((s) => s.test(route)), route).toBe(!Object.hasOwn(HANDLER_METHODS, route));
   }
 });
 
