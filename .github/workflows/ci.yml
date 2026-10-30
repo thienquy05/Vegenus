@@ -46,8 +46,16 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 5
     steps:
-      # ponytail: placeholder until T1.6 adds scripts/privacy-scan.sh and the commit check (design 6 §8).
-      - run: echo "privacy-scan placeholder (T1.6)"
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+      # The checker's own cases first, then the tree and every commit of the PR (design 6 §4, §8).
+      - run: scripts/tests/check_commits_test.sh && scripts/tests/privacy_scan_test.sh
+      - env:
+          BASE: ${{ github.base_ref || 'master' }}
+          HEAD_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
+        run: MANIFEST_REF="origin/$BASE" scripts/privacy-scan.sh "origin/$BASE..$HEAD_SHA"
 
   lint-types:
     needs: changes
