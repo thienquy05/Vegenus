@@ -1,4 +1,4 @@
-import { AuthRetryableFetchError } from "@supabase/supabase-js";
+import { AuthApiError, AuthRetryableFetchError } from "@supabase/supabase-js";
 import { NextRequest } from "next/server";
 import { beforeEach, expect, test, vi } from "vitest";
 
@@ -70,10 +70,15 @@ test("no session is refused without calling the database", async () => {
 
 // Codex, T1.5c: an Auth outage answers user null with a retryable error; that is not "signed out".
 test("an Auth outage is a retryable 503, not 401, and changes nothing", async () => {
-  for (const status of [0, 503]) {
-    getUser.mockResolvedValue({ data: { user: null }, error: new AuthRetryableFetchError("Auth unreachable", status) });
+  // 429 (Codex, audit-fix round 2): Auth's rate limit comes back as an AuthApiError.
+  for (const error of [
+    new AuthRetryableFetchError("Auth unreachable", 0),
+    new AuthRetryableFetchError("Auth unreachable", 503),
+    new AuthApiError("Request rate limit reached", 429, "over_request_rate_limit"),
+  ]) {
+    getUser.mockResolvedValue({ data: { user: null }, error });
     const res = await set({ visibility: "private", confirm: true });
-    expect(res.status, String(status)).toBe(503);
+    expect(res.status, String(error.status)).toBe(503);
     expect(res.headers.get("cache-control")).toBe("no-store");
   }
   expect(rpc).not.toHaveBeenCalled();

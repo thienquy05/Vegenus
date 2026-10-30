@@ -1,6 +1,7 @@
 "use client";
 import { useCallback, useEffect, useRef, useState } from "react";
 import type { GuestSummary } from "@/lib/guest";
+import { MIN_TARGET_PX } from "@/lib/ui";
 import { GuestHome } from "./guest-home";
 
 // G-E1: the same screen for no token, a wrong, rotated or private one (design 1 §4, E47).
@@ -99,7 +100,7 @@ export function GuestEntry() {
         <p role="alert">Couldn’t open the page. Check your connection.</p>
         <button
           type="button"
-          style={{ minHeight: 44, minWidth: 44 }}
+          style={{ minHeight: MIN_TARGET_PX, minWidth: MIN_TARGET_PX }}
           onClick={() => {
             setState("loading");
             exchange();
