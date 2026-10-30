@@ -1,6 +1,6 @@
 # Plan: Vegenus
 
-**Status:** v0.4, **Approved by the owner 2026-10-28 (Phase 0 sign-off).** Phase 1 may start. v0.3 was approved 2026-10-23. v0.2 was revised after the Codex adversarial challenge (harness step 5); v0.3 added §12 (test-first rule and parallel CI on GitHub) and the cookie change from design 1; v0.4 records the guest-access changes of Q77-Q82 (below) and refreshes the phase table; 2026-10-28 adds the security audit gate (Q85) to §9 and §12.1 and a status sync. Derived from PRD v0.7. No code is written.
+**Status:** v0.4, **Approved by the owner 2026-10-28 (Phase 0 sign-off).** Phase 1 may start. v0.3 was approved 2026-10-23. v0.2 was revised after the Codex adversarial challenge (harness step 5); v0.3 added §12 (test-first rule and parallel CI on GitHub) and the cookie change from design 1; v0.4 records the guest-access changes of Q77-Q82 (below) and refreshes the phase table; 2026-10-28 adds the security audit gate (Q85) to §9 and §12.1 and a status sync. Derived from PRD v0.7. Phase 1 is done (owner approved 2026-10-30); Phase 2 is next.
 **Date:** 2026-10-21
 **Privacy:** placeholders only.
 **Single-source rule:** decisions and open questions live only in PRD §12; this plan links to them and never restates them. Research facts live only in §R of this plan.

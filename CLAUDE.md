@@ -6,7 +6,7 @@ Partner agent: Codex (plugin installed, signed in). Codex reads `AGENTS.md`; kee
 
 ## Current phase
 
-**Phase 1: Foundations.** The owner approved the PRD, the plan and all design previews on 2026-10-28 (Phase 0 done). Application code may now be written, test-first, one unit per branch, following the plan and `docs/vegenus_progress.md` (first unit: T1.1 CI walking skeleton). Designs are still drawn in the preview canvas. **Design helpers (owner, 2026-10-28):** local design helper scripts, generators and board drafts may exist only under the git-ignored `.design/` folder; they are never committed, and no application code is written anywhere (session scratchpads are cleared by macOS, so `.design/` replaces them). The canvas stays where the owner reviews designs; `.design/` is the local copy that Codex can read.
+**Phase 2: Owner tools.** The owner approved Phase 1 on 2026-10-30 (security gate passed on `master` `a82c5aa`; Phase 0 approved 2026-10-28). Application code is written test-first, one unit per branch, following the plan and `docs/vegenus_progress.md` (first unit: T2.1 setup wizard). Designs are still drawn in the preview canvas. **Design helpers (owner, 2026-10-28):** local design helper scripts, generators and board drafts may exist only under the git-ignored `.design/` folder; they are never committed, and no application code is written anywhere (session scratchpads are cleared by macOS, so `.design/` replaces them). The canvas stays where the owner reviews designs; `.design/` is the local copy that Codex can read.
 
 **Installs only into the project `.venv`** (owner, 2026-10-24): any package Claude or Codex needs goes into `./.venv` (git-ignored), never system-wide or into another folder, and still needs rule 1 approval.
 

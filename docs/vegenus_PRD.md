@@ -1,6 +1,6 @@
 # PRD: Vegenus, a memory-keeping site opened by NFC tap
 
-**Status:** v0.7, **Approved by the owner 2026-10-28 (Phase 0 sign-off).** v0.7 is v0.6 (approved 2026-10-21) plus the entries recorded in §12 (Q42-Q92). Each decision keeps the status recorded in its own §12 row. Parked until the final phase: Q16 (NFC tag model), Q37 (sending domain). Decided in Phase 4: Q70 (section transitions). Deferred: co-editor role (Q35) and a multi-tenant workspace request (Q84, low priority). Nothing is implemented. Change history: Git and [progress](vegenus_progress.md) §6.
+**Status:** v0.7, **Approved by the owner 2026-10-28 (Phase 0 sign-off).** v0.7 is v0.6 (approved 2026-10-21) plus the entries recorded in §12 (Q42-Q92). Each decision keeps the status recorded in its own §12 row. Parked until the final phase: Q16 (NFC tag model), Q37 (sending domain). Decided in Phase 4: Q70 (section transitions). Deferred: co-editor role (Q35) and a multi-tenant workspace request (Q84, low priority). Phase 1 (Foundations) is implemented and was approved by the owner on 2026-10-30. Change history: Git and [progress](vegenus_progress.md) §6.
 **Date:** 2026-10-21 (v0.1 written 2026-10-20)
 **Author:** Claude Code, from the owner interview (HARNESS_PROCESS.md §6)
 **Owner / decider:** the project owner (referred to as [OWNER])
