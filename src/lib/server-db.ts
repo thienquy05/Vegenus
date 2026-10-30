@@ -18,7 +18,10 @@ export async function exchangeAllowed(request: Request): Promise<boolean> {
   return row.ok;
 }
 
+// The address budget is kept per IP, so failed attempts from another client cannot lock the owner out
+// (Codex, Phase 1 security review; owner, 2026-10-30). Guessing from many IPs stays bounded by the per-IP budget.
 export async function loginAllowed(request: Request, email: string): Promise<boolean> {
-  const [row] = await sql`select public.login_attempt(${hmac(`ip:${clientIp(request)}`)}, ${hmac(`email:${email}`)}) as ok`;
+  const ip = clientIp(request);
+  const [row] = await sql`select public.login_attempt(${hmac(`ip:${ip}`)}, ${hmac(`email:${ip}:${email}`)}) as ok`;
   return row.ok;
 }
