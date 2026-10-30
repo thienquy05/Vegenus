@@ -47,7 +47,8 @@ select is((
 select is((
   select array_agg(p.proname::text order by p.proname) from pg_proc p
   where p.pronamespace = 'public'::regnamespace and has_function_privilege('authenticated', p.oid, 'execute')
-), array['owner_rotate_token'], 'authenticated executes only owner_rotate_token (account_* come in T3.6)');
+), array['owner_rotate_token', 'owner_set_visibility'],
+  'authenticated executes only the owner functions (account_* come in T3.6)');
 
 select is((
   select array_agg(p.proname::text order by p.proname) from pg_proc p

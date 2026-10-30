@@ -1,3 +1,4 @@
+import { AuthRetryableFetchError } from "@supabase/supabase-js";
 import { NextRequest } from "next/server";
 import { beforeEach, expect, test, vi } from "vitest";
 
@@ -53,6 +54,17 @@ test("no session is refused without calling the database", async () => {
   const res = await rotate();
   expect(res.status).toBe(401);
   expect(res.headers.get("cache-control")).toBe("no-store");
+  expect(rpc).not.toHaveBeenCalled();
+});
+
+// Codex, T1.5c review: an Auth outage answers user null with a retryable error; that is not "signed out".
+test("an Auth outage is a retryable 503, not 401, and rotates nothing", async () => {
+  for (const status of [0, 503]) {
+    getUser.mockResolvedValue({ data: { user: null }, error: new AuthRetryableFetchError("Auth unreachable", status) });
+    const res = await rotate();
+    expect(res.status, String(status)).toBe(503);
+    expect(res.headers.get("cache-control")).toBe("no-store");
+  }
   expect(rpc).not.toHaveBeenCalled();
 });
 

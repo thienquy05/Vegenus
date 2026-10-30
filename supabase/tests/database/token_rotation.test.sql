@@ -37,14 +37,14 @@ select throws_ok($$ select public.owner_rotate_token(gen_random_uuid()) $$,
 select pg_temp.act_as('00000000-0000-0000-0000-0000000000f2');
 select throws_ok($$ select public.owner_rotate_token(gen_random_uuid()) $$,
   '42501', null, 'a co-editor cannot rotate (design 3 §5, E33)');
-select is((select count(*) from public.guest_tokens), 0::bigint, 'refused calls create no token');
+select is((select count(*) from public.guest_tokens where page_id = '00000000-0000-0000-0000-00000000000a'), 0::bigint, 'refused calls create no token');
 
 -- Create: the first token of the page.
 select pg_temp.act_as('00000000-0000-0000-0000-0000000000f1');
 create temp table t1 as select public.owner_rotate_token('00000000-0000-0000-0000-000000000001') as token;
 select matches((select token from t1), '^[A-Za-z0-9_-]{43}$', 'the token is 32 random bytes in base64url (design 1 §3)');
 select is(public.token_page((select token from t1)), '00000000-0000-0000-0000-00000000000a'::uuid, 'the new token opens the page');
-select results_eq($$ select version, active, created_by, shown_at, token_hash from public.guest_tokens $$,
+select results_eq($$ select version, active, created_by, shown_at, token_hash from public.guest_tokens where page_id = '00000000-0000-0000-0000-00000000000a' $$,
   $$ values (1, true, '00000000-0000-0000-0000-0000000000f1'::uuid, null::timestamptz, sha256(convert_to((select token from t1), 'UTF8'))) $$,
   'version 1 is active, stores only the hash, and is not marked shown yet');
 
@@ -58,20 +58,20 @@ select isnt((select token from t2), (select token from t1), 'rotation returns a 
 select is(public.token_page((select token from t1)), null, 'the old token no longer opens the page');
 select is(public.guest_open((select token from t1)), null, 'guest_open with the old token returns nothing');
 select isnt(public.guest_open((select token from t2)), null, 'guest_open with the new token opens the page');
-select results_eq($$ select version, active, deactivated_at is not null from public.guest_tokens order by version $$,
+select results_eq($$ select version, active, deactivated_at is not null from public.guest_tokens where page_id = '00000000-0000-0000-0000-00000000000a' order by version $$,
   $$ values (1, false, true), (2, true, false) $$,
   'version 1 is inactive with deactivated_at, version 2 is the one active token');
-select results_eq($$ select status::text, token_version from public.guestbook_entries $$,
+select results_eq($$ select status::text, token_version from public.guestbook_entries where page_id = '00000000-0000-0000-0000-00000000000a' $$,
   $$ values ('pending', 1) $$, 'the pending wish stays in the queue with the old version label');
 
 -- Retry with the same request id: "already rotated", never a second token or the link again (Q34a).
 select is(public.owner_rotate_token('00000000-0000-0000-0000-000000000002'), null, 'a repeated request id returns nothing');
-select is((select count(*) from public.guest_tokens), 2::bigint, 'a repeated request id creates no token');
+select is((select count(*) from public.guest_tokens where page_id = '00000000-0000-0000-0000-00000000000a'), 2::bigint, 'a repeated request id creates no token');
 select is(public.token_page((select token from t2)), '00000000-0000-0000-0000-00000000000a'::uuid, 'the current token still works after a retry');
 
 -- One more rotation: still exactly one active token, versions keep counting.
 select isnt(public.owner_rotate_token('00000000-0000-0000-0000-000000000003'), null, 'a new request id rotates again');
-select results_eq($$ select array_agg(version order by version), count(*) filter (where active) from public.guest_tokens $$,
+select results_eq($$ select array_agg(version order by version), count(*) filter (where active) from public.guest_tokens where page_id = '00000000-0000-0000-0000-00000000000a' $$,
   $$ values (array[1, 2, 3], 1::bigint) $$, 'three versions, one active');
 
 -- The function rejects a request id it cannot use.
