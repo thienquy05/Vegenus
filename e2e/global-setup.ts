@@ -6,6 +6,8 @@ const E2E_PAGE = "00000000-0000-0000-0000-0000000000e2";
 const E2E_PAGE_B = "00000000-0000-0000-0000-0000000000e3";
 const ROTATION_PAGE_CHROMIUM = "00000000-0000-0000-0000-0000000000e4";
 const ROTATION_PAGE_WEBKIT = "00000000-0000-0000-0000-0000000000e5";
+const VISIBILITY_PAGE_CHROMIUM = "00000000-0000-0000-0000-0000000000e6";
+const VISIBILITY_PAGE_WEBKIT = "00000000-0000-0000-0000-0000000000e7";
 
 // Local Supabase only (playwright.config.ts): synthetic owner accounts, a clean login limiter, and a
 // per-run password for vegenus_server, which the migration creates without login (design 3 §3.9).
@@ -37,7 +39,7 @@ export default async function globalSetup() {
 
   // Closed registration: accounts exist only because the owner (here: this setup) creates them.
   const admin = createClient(SUPABASE_URL!, SUPABASE_SECRET_KEY!).auth.admin;
-  for (const name of ["chromium", "webkit", "chromium-limited", "webkit-limited"]) {
+  for (const name of ["chromium", "webkit", "chromium-limited", "webkit-limited", "visibility-chromium", "visibility-webkit"]) {
     const { error } = await admin.createUser({
       email: `owner-${name}@example.test`,
       password: "placeholder-password-1",
@@ -47,10 +49,13 @@ export default async function globalSetup() {
   }
 
   // T1.5b: one live Token-only page per browser project, owned by that project's owner, with no token
-  // yet; e2e/token-rotation.spec.ts creates and rotates its tokens.
+  // yet; e2e/token-rotation.spec.ts creates and rotates its tokens. T1.5c: a second set for
+  // e2e/page-visibility.spec.ts, with its own owners, so making a page Private never breaks a rotation test.
   for (const [id, name] of [
     [ROTATION_PAGE_CHROMIUM, "chromium"],
     [ROTATION_PAGE_WEBKIT, "webkit"],
+    [VISIBILITY_PAGE_CHROMIUM, "visibility-chromium"],
+    [VISIBILITY_PAGE_WEBKIT, "visibility-webkit"],
   ]) {
     await sql`delete from public.pages where id = ${id}`;
     await sql`insert into public.pages (id, theme, default_lang, visibility, timezone, copy_published_at)

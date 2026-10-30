@@ -1,3 +1,4 @@
+import { isAuthRetryableFetchError } from "@supabase/supabase-js";
 import { NextResponse, type NextRequest } from "next/server";
 import { requestAuth, sameOrigin } from "@/lib/auth";
 
@@ -17,7 +18,9 @@ export async function POST(request: NextRequest) {
   if (!sameOrigin(request)) return answer(null, 403);
   const auth = await requestAuth(request.nextUrl.protocol === "https:");
   // getUser() asks the Auth server, so a signed-out or revoked session fails here (as requireOwner does).
-  const { data } = await auth.auth.getUser();
+  // An Auth outage also answers no user, with a retryable error: 503, not "signed out" (Codex, T1.5c).
+  const { data, error: authError } = await auth.auth.getUser();
+  if (isAuthRetryableFetchError(authError)) return answer(null, 503);
   if (!data.user) return answer(null, 401);
   const requestId = (await request.json().catch(() => null))?.request_id;
   if (typeof requestId !== "string" || !UUID.test(requestId)) return answer(null, 400);
