@@ -70,7 +70,7 @@ Security gate (design 7 §6, Q85): Passed (owner approved Phase 1, 2026-10-30). 
 | T1.5b Rotation (`feature/guest-token-rotation`): old link and every old cookie fail on the next request; new link shown once (Q34a); pending wishes keep the old version label; guest accounts unaffected | E3, E28 | Merged as PR #28 on 2026-10-29 (see T1.5b evidence below) |
 | T1.5c Visibility and publication status (`feature/page-visibility`): Private, Token-only, Published per D1 §10 and E47; `page_is_live` and publication status wired in; O9 confirm for Private or Published (server side only) | E4-E6, E21 | Merged as PR #32 on 2026-10-29 (see T1.5c evidence below) |
 | T1.6 Privacy scan job (`feature/privacy-scan`): tree scan and the per-commit check of design 6 §8, run by the `privacy-scan` CI job | seed and repo contain only placeholders | PR #33 opened by the owner 2026-10-30 (commit `249e100`), waits for the owner's review and merge; Codex rounds 1-9 fixed, round 10 left open (see T1.6 evidence below) |
-| Security headers (`chore/security-headers`, planned in T1.5a): the design 7 §3 baseline on every response and the §7 header test | header test (design 7 §7) | Local GREEN, not committed (see the security headers evidence below) |
+| Security headers (`chore/security-headers`, planned in T1.5a): the design 7 §3 baseline on every response and the §7 header test | header test (design 7 §7) | Done: merged as PR #35 (`1787a42`), covered by the Phase 1 security gate (see the security headers evidence below) |
 
 T1.1 evidence:
 
