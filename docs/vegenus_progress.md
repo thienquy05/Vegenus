@@ -255,9 +255,9 @@ Security gate (design 7 §6, Q85): Not started. Pass criteria: no open critical 
 
 | Task | Test first | Status |
 |---|---|---|
-| T2.1a Page setup, database and API (`feature/page-setup-db`): `owner_save_page` (the first save creates the Private page and the owner membership, later saves name the version they read), `owner_page()`, one page per owner, the `pages` version trigger, `POST /api/owner/setup` (Q111, Q114, Q116-Q118) | E55 (database half), E15, E6, E33 | GREEN locally, Codex approve (round 5); awaiting the owner's go for commit and PR (see T2.1a evidence below) |
+| T2.1a Page setup, database and API (`feature/page-setup-db`): `owner_save_page` (the first save creates the Private page and the owner membership, later saves name the version they read), `owner_page()`, one page per owner, the `pages` version trigger, `POST /api/owner/setup` (Q111, Q114, Q116-Q118) | E55 (database half), E15, E6, E33 | Done: merged as PR #38 (`6125f53`) (see T2.1a evidence below) |
 | T2.7 Wording core: `copy_keys` with the shipped examples (Q112), `page_copy`, `copy_validate`, draft seeding at page creation, `owner_copy_accept_defaults(visibility)` refused once published (Q114) | Q82 seed, validation, accept and guard tests (D3 §9) | Not started |
-| T2.1b Dashboard O2 and setup wizard O3 (six steps, partner names, wording acceptance, Finish and publish, Token-only, Q114), empty and resumed states, the theme token files (Q113); after the design sign-off (Q119) | E55 | Not started |
+| T2.1b Dashboard O2 and setup wizard O3 (six steps, partner names, wording acceptance, Finish and publish, Token-only, Q114), empty and resumed states, the theme token files (Q113); after the design sign-off (Q119) | E55 | Design stage: revised O2/O3 boards on the canvas, awaiting the owner's sign-off (Q119); see T2.1b design evidence below |
 | T2.2 Items CRUD with draft and publish, overwrite check | E15 | Not started |
 | T2.3 Media pipeline: browser re-encode, EXIF strip, reservations, budget, deletion worker | E7-E10, E16 | Not started |
 | T2.4 Home item, counter rules | E14 | Not started |
@@ -295,6 +295,14 @@ T2.1a evidence:
 - Codex round 4: needs-attention, 1 finding (medium, test only), fixed: the race test now asserts that the save waited behind Finish's lock before Finish commits, so a runner where the save never blocks fails instead of passing. DB 170 of 170.
 - Codex round 5: approve, no material findings.
 - Final local run: DB 170, unit 104, typecheck, lint (tracked code), build, e2e 85 of 85, live PostgREST check 10 of 10; no raw bidirectional characters in `src`, `supabase` or `docs`.
+
+T2.1b design evidence (`docs/owner-setup-design`, 2026-11-01):
+
+- Owner decisions: revise the approved Phase 0 boards; Codex draws in `.design/`, Claude reviews; 320 px at 200 % text is an automated check (Q119); menu button hidden in Phase 2 (Q120); resume at the first unfinished step (Q121). Design record: [owner UI](design/vegenus_owner_ui.md) §1 "O2 and O3 revision for T2.1b".
+- Requirements: a seven-agent workflow (owner spec, decisions and API states, copy and tokens, Hallmark rules, board inventory, synthesis, critic) gave a 63-state matrix and 11 critic corrections; a copy table of 177 unique EN/VI keys lives in the git-ignored `.design/o2-o3/DESIGN_NOTES.md` (owner to review the drafted strings).
+- Boards: OwnerSetup and OwnerDash at 390×844, 820×1180, 1440×900 (55 and 8 review states). Review loop: four rounds of a six-lens Claude review with a refute-by-default verifier per finding (43, 18, 10, 6 open findings) and four Codex adversarial reviews (8, 3, 3, 1 findings), all fixed (rulings R1-R22 recorded in `.design/o2-o3`). Codex hit its usage limit during the last fix round; Claude finished it with the owner's go-ahead after a seven-agent verification.
+- Checks on the published version: every state rendered with Playwright at all three sizes and at 320 px with a 32 px root (real 200 % text zoom): no page scroll, no clipped container, no product target under 44 px (one known exception: long-name inputs scroll natively, with a wrapped echo showing the full name); Hallmark static lint: only the recorded theme A gradient (Floor 2a) fails, 24b waived on record; privacy scan: placeholders only. Behaviour probe: "already set up" → "Go to overview" reads, then shows Done, at all three sizes.
+- Canvas: the six boards published to "Theme Preview" (version 105). Still open: Codex's closing review of the last fix round (its quota resets 2026-11-02 02:58); the owner's sign-off.
 
 Acceptance rows due: free-tier usage within limits with alerts configured; the owner publishes an empty-to-live page in one sitting (metric 1), which includes accepting the suggested wording.
 
