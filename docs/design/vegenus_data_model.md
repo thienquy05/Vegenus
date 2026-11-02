@@ -67,7 +67,7 @@ All five rows are created with the page, so "enabled" is never inferred from a m
 |---|---|---|
 | `page_id` | uuid FK `pages` on delete cascade | |
 | `user_id` | uuid FK `auth.users` on delete cascade | |
-| `role` | enum `owner_role` (`owner`, `co_editor`) | partial unique index: one `owner`; `co_editor` is reserved and unused (Q35): both partners use the one owner account |
+| `role` | enum `owner_role` (`owner`, `co_editor`) | partial unique indexes: one `owner` per page, and one owner page per user (Q117), so the owner functions find exactly one page; `co_editor` is reserved and unused (Q35): both partners use the one owner account |
 
 A trigger refuses a user who already has a `guest_accounts` row, and the `guest_accounts` trigger refuses an owner account: one auth user is either an owner account or a Member (registered guest), never both (E33).
 
@@ -456,7 +456,7 @@ All 54 rows (27 keys × 2 languages) are created with the page, with `draft_text
 - `owner_copy_save(key, lang, text, expected_version)` validates, writes `draft_text` (null clears) and bumps `copy_draft_rev`. A stale `expected_version` changes zero rows and returns the current row so the screen can show the comparison (never overwrite).
 - `owner_copy_publish(expected_draft_rev)` runs in **one transaction** under the `pages` row lock: refuse if `copy_draft_rev <> expected_draft_rev` (another session saved; nothing published); re-validate every draft text; compute which languages the new snapshot would complete; refuse with `default_language_incomplete` if `pages.default_lang` would not be complete; otherwise copy `draft_text` into `published_text` for all 54 rows, set `copy_published_rev = copy_draft_rev` and `copy_published_at = now()`. Any failure rolls back everything, so guests see either the old snapshot or the new one, never a mixture.
 - **Guest reads:** **every** `public_*`, `guest_*` and `account_*` read function (open, list, guestbook list, media URL minting, profile and Zodiac reads) **refuses (the generic not-available result) while `copy_published_at` is null**, whatever the visibility. They share one predicate, `page_is_live(page)`: visibility is not `private`, section enabled where relevant, and `copy_published_at` is not null. The open functions otherwise return `copy` (the published text of every key for each offered language) and `languages_ready`; they never return a `draft_text`. `{count}` values come from the same call's published and approved counts. A language is **offered** exactly when all 27 of its `published_text` values are set, so it is derived from the snapshot and cannot be stale. If the guest's wanted language is not offered, the function returns the default language, which is always offered once the page is visible.
-- **Page rules:** `owner_set_visibility` refuses `token_only` and `published` while `copy_published_at` is null (a page cannot be shown to guests before its first wording publication; accepting the suggested wording is that publication); `owner_update_page` refuses a `default_lang` that is not complete in the published snapshot, once `copy_published_at` is set. A publish that leaves a non-default language incomplete is allowed: that language drops out of the offered set at once and remembered guest choices fall back to the default.
+- **Page rules:** `owner_set_visibility` refuses `token_only` and `published` while `copy_published_at` is null (a page cannot be shown to guests before its first wording publication; accepting the suggested wording is that publication); `owner_save_page` refuses a `default_lang` that is not complete in the published snapshot, once `copy_published_at` is set (with T2.7's invariant trigger). A publish that leaves a non-default language incomplete is allowed: that language drops out of the offered set at once and remembered guest choices fall back to the default.
 
 Wording is public once published. It holds no token, no email address and no personal data of guests; the partner names in `{partner_a}` / `{partner_b}` come from `pages.label_a` and `pages.label_b` (core, 1–40 characters, NFC, entered in the second O3 step), not from Zodiac data, so wording works on a page with no Zodiac section; Z1 labels may default to them.
 
@@ -491,8 +491,8 @@ Deleting a page cascades to its page rows only after enqueuing storage keys and 
 
 | Table | `anon` (visitor, token guest) | Member (guest account) | Owner | Co-editor (reserved, unused) | Service role |
 |---|---|---|---|---|---|
-| `pages` | fn (`public_open`, `guest_open`) | fn (`account_open`) | read; update through `owner_update_page` / `owner_set_visibility` only (a trigger also enforces the wording invariants on any direct update) | read | admin jobs |
-| `page_sections` | fn | fn | read, update | read | |
+| `pages` | fn (`public_open`, `guest_open`) | fn (`account_open`) | read through `owner_page()`; create and update through `owner_save_page` (the first save creates the page with the caller's owner membership; later saves name the `version` they read, Q116) / `owner_set_visibility` only (a trigger also enforces the wording invariants on any direct update) | read | admin jobs |
+| `page_sections` | fn | fn | read through `owner_page()`; update through `owner_save_page` (Home always on, Q118) | read | |
 | `memberships`, `owner_settings` | — | — | read own; settings update own | read own; settings update own | provisioning (Q30) |
 | `guest_tokens` | fn (hash lookup inside) | — | create, rotate through `owner_rotate_token`; never read `token_hash` | — | |
 | `items` | fn (published, enabled) | fn | full CRUD | full CRUD (Q15) | |
