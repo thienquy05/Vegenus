@@ -68,7 +68,7 @@ Each key exists once per language (`en`, `vi`), so a language is complete at 27 
 ### 2.2 Validation rules (one function, used on save and again on publish)
 
 1. Trim leading and trailing space; normalise to NFC. A value that is empty after trimming means "not set" (clearing a field), never an empty string.
-2. Reject every control character, including line breaks and tabs (U+0000 to U+001F, U+007F). All fields are single-line.
+2. Reject every control character, including line breaks and tabs (U+0000 to U+001F, U+007F), and the C1 and bidirectional controls the partner-name check refuses (U+0080 to U+009F, U+061C, U+200E, U+200F, U+202A to U+202E, U+2066 to U+2069; T2.7), and the Unicode line and paragraph separators U+2028 and U+2029 (also refused in partner names, which fill wording through tokens). All fields are single-line.
 3. Reject `<` and `>`, and any `http://`, `https://`, `www.`, `mailto:` or `javascript:` (case-insensitive).
 4. Tokens are written `{name}` with `name` made of lowercase letters and underscore. Each token must be on the key's allowed list, a required token must appear at least once, a token may repeat. Any other `{` or `}` is rejected, so a typo such as `{day}` or `{{days}` fails with a plain message.
 5. Length cap per the table, in user-perceived characters (an emoji or an accented Vietnamese letter counts once); the server and the form use the same counting rule.
@@ -130,7 +130,8 @@ Menu items, page headings and Home shortcuts keep their product names in both la
 | Name field **placeholder** | **B** | "How should we call you?" / "Tụi mình gọi bạn là gì nhỉ?" |
 | Message field **placeholder** | **B** | "Say something kind, funny or both." / "Viết điều gì đó dễ thương hoặc vui vui nhé." |
 | Field labels, counters `[N]/40`, `[N]/500` | D / C | Labels stay for accessibility and screen readers |
-| Sent heading and thank-you | **B** with `{owner}` | "Thank you! {owner} will read it soon." / "Cảm ơn bạn! {owner} sẽ đọc sớm thôi." |
+| Sent heading (`wishes.sent`) | **B** | "Wish sent!" / "Đã gửi lời chúc" (owner, 2026-11-01) |
+| Thank-you (`wishes.sentBody`) | **B** with `{owner}` | "Thank you! {owner} will read it soon." / "Cảm ơn bạn! {owner} sẽ đọc sớm thôi." |
 | Back button after sending | **B** | "Back to the wishes" / "Quay lại lời chúc" |
 | Privacy note about the network address | D | Fixed: it states what is checked and stored |
 | Validation, rate-limit, offline, error messages | D | Fixed; the daily-limit notice keeps its kind tone (Q75) |
@@ -154,7 +155,7 @@ Menu items, page headings and Home shortcuts keep their product names in both la
 
 | Text | Kind | Example EN / VI |
 |---|---|---|
-| Tour step titles and bodies (3 steps, §2.1) | **B** | Step 1: "Hi, we're {partner_a} and {partner_b}." / "Chào bạn, tụi mình là {partner_a} và {partner_b}." Step 2: "Look around: memories, places and more." / "Cứ thong thả xem kỷ niệm, địa điểm và nhiều thứ khác." |
+| Tour step titles and bodies (3 steps, §2.1) | **B** | Step 1: "Hi, we're {partner_a} and {partner_b}." / "Chào bạn, tụi mình là {partner_a} và {partner_b}." Step 1 body: "This is our little corner for the memories we want to keep." / "Đây là góc nhỏ tụi mình lưu giữ những kỷ niệm muốn nhớ mãi." Step 2: "Look around: memories, places and more." / "Cứ thong thả xem kỷ niệm, địa điểm và nhiều thứ khác." Step 2 body: "Use the round menu in the corner to move between the parts of our page." / "Dùng nút menu tròn ở góc màn hình để đi qua các phần của trang." Step 3: "Leave us a few words" / "Gửi tụi mình đôi lời"; body: "If you like, write us a wish. We read every one before it shows here." / "Nếu muốn, bạn hãy viết cho tụi mình một lời chúc. Tụi mình đọc từng lời trước khi hiện lên đây." (step 1 body, step 2 body and step 3 approved by the owner 2026-11-01) |
 | Tour buttons Next, Back, Skip, Done | D | |
 | Updates card question | **B** | "Want a note when we add something new?" / "Muốn nhận tin khi tụi mình thêm điều mới không?" |
 | Consent text and unsubscribe note | D | Legal wording stays fixed |
@@ -171,7 +172,7 @@ Menu items, page headings and Home shortcuts keep their product names in both la
 
 | Text | Kind | Example EN / VI |
 |---|---|---|
-| Browser tab title | **B** (≤ 60) | "{partner_a} & {partner_b}, our story" |
+| Browser tab title | **B** (≤ 60) | "{partner_a} & {partner_b}, our story" / "{partner_a} & {partner_b}, câu chuyện của tụi mình" (VI approved by the owner 2026-11-01) |
 | Link preview description (when shared) | **B** (≤ 120) | "A small place for our memories." / "Một góc nhỏ lưu giữ kỷ niệm của mình." |
 | Email greeting line in the daily digest and reminders | **B** | "Hi from {partner_a} and {partner_b}," / "Chào bạn, {partner_a} và {partner_b} gửi tin nhé," |
 | Email body: counts, link, unsubscribe | C / D | No memory text, no token (S18, E50) |
@@ -195,7 +196,7 @@ States of O18: default (examples as placeholders), empty field, language incompl
 
 ## 5. Data model: specified in design 3 §3.12
 
-The sketch that stood here is superseded by [data model §3.12](vegenus_data_model.md): the `copy_keys` reference table (the 27 keys of §2.1 with caps and tokens), `page_copy` (draft and published text per page, key and language), the `pages` revision columns, the `owner_copy_get` / `owner_copy_save` / `owner_copy_publish` functions, atomic publication, language completeness derived from the published snapshot, the access rules and the tests. Examples stay in code, beside the D texts, and are tested against §2.2. Guests read only the published snapshot through `public_open`, `guest_open` and `account_open`.
+The sketch that stood here is superseded by [data model §3.12](vegenus_data_model.md): the `copy_keys` reference table (the 27 keys of §2.1 with caps and tokens), `page_copy` (draft and published text per page, key and language), the `pages` revision columns, the `owner_copy_get` / `owner_copy_save` / `owner_copy_publish` functions, atomic publication, language completeness derived from the published snapshot, the access rules and the tests. The examples live in the `copy_keys` seed of the T2.7 migration (Q112), so a new page can be seeded with them, and a database test checks each against §2.2. Guests read only the published snapshot through `public_open`, `guest_open` and `account_open`.
 
 ## 6. Canvas status (2026-10-27)
 
