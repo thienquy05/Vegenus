@@ -2,8 +2,8 @@
 begin;
 select plan(11);
 
-select tables_are('public', array['pages', 'page_sections', 'memberships', 'guest_tokens', 'items', 'guestbook_entries', 'rate_limit_hits'],
-  'the T1.3 and T1.4 tables exist');
+select tables_are('public', array['pages', 'page_sections', 'memberships', 'guest_tokens', 'items', 'guestbook_entries', 'rate_limit_hits',
+  'copy_keys', 'page_copy'], 'the T1.3, T1.4 and T2.7 tables exist');
 
 select ok(exists (
   select 1 from pg_roles where rolname = 'vegenus_server'
@@ -17,11 +17,12 @@ select is((
 
 -- Tables without page_id must be on design 3 §1's exception list; later units add theirs here.
 -- `pages` is the tenant itself: its `id` is the page id. `rate_limit_hits` is operational (design 3 §1).
+-- `copy_keys` is reference data shared by every page (design 3 §3.12).
 select is((
   select array_agg(c.relname::text order by c.relname) from pg_class c
   where c.relnamespace = 'public'::regnamespace and c.relkind in ('r', 'p')
     and not exists (select 1 from pg_attribute a where a.attrelid = c.oid and a.attname = 'page_id' and not a.attisdropped)
-    and c.relname <> all (array['pages', 'rate_limit_hits']::name[])
+    and c.relname <> all (array['pages', 'rate_limit_hits', 'copy_keys']::name[])
 ), null, 'every table has page_id or is a listed exception');
 
 select is((
@@ -47,7 +48,7 @@ select is((
 select is((
   select array_agg(p.proname::text order by p.proname) from pg_proc p
   where p.pronamespace = 'public'::regnamespace and has_function_privilege('authenticated', p.oid, 'execute')
-), array['owner_page', 'owner_rotate_token', 'owner_save_page', 'owner_set_visibility'],
+), array['owner_copy_accept_defaults', 'owner_page', 'owner_rotate_token', 'owner_save_page', 'owner_set_visibility'],
   'authenticated executes only the owner functions (account_* come in T3.6)');
 
 select is((
