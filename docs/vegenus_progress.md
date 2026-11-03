@@ -70,7 +70,7 @@ Security gate (design 7 §6, Q85): Passed (owner approved Phase 1, 2026-10-30). 
 | T1.5b Rotation (`feature/guest-token-rotation`): old link and every old cookie fail on the next request; new link shown once (Q34a); pending wishes keep the old version label; guest accounts unaffected | E3, E28 | Merged as PR #28 on 2026-10-29 (see T1.5b evidence below) |
 | T1.5c Visibility and publication status (`feature/page-visibility`): Private, Token-only, Published per D1 §10 and E47; `page_is_live` and publication status wired in; O9 confirm for Private or Published (server side only) | E4-E6, E21 | Merged as PR #32 on 2026-10-29 (see T1.5c evidence below) |
 | T1.6 Privacy scan job (`feature/privacy-scan`): tree scan and the per-commit check of design 6 §8, run by the `privacy-scan` CI job | seed and repo contain only placeholders | PR #33 opened by the owner 2026-10-30 (commit `249e100`), waits for the owner's review and merge; Codex rounds 1-9 fixed, round 10 left open (see T1.6 evidence below) |
-| Security headers (`chore/security-headers`, planned in T1.5a): the design 7 §3 baseline on every response and the §7 header test | header test (design 7 §7) | Local GREEN, not committed (see the security headers evidence below) |
+| Security headers (`chore/security-headers`, planned in T1.5a): the design 7 §3 baseline on every response and the §7 header test | header test (design 7 §7) | Done: merged as PR #35 (`1787a42`), covered by the Phase 1 security gate (see the security headers evidence below) |
 
 T1.1 evidence:
 
@@ -255,9 +255,9 @@ Security gate (design 7 §6, Q85): Not started. Pass criteria: no open critical 
 
 | Task | Test first | Status |
 |---|---|---|
-| T2.1a Page setup, database and API (`feature/page-setup-db`): `owner_save_page` (the first save creates the Private page and the owner membership, later saves name the version they read), `owner_page()`, one page per owner, the `pages` version trigger, `POST /api/owner/setup` (Q111, Q114, Q116-Q118) | E55 (database half), E15, E6, E33 | GREEN locally, Codex approve (round 5); awaiting the owner's go for commit and PR (see T2.1a evidence below) |
+| T2.1a Page setup, database and API (`feature/page-setup-db`): `owner_save_page` (the first save creates the Private page and the owner membership, later saves name the version they read), `owner_page()`, one page per owner, the `pages` version trigger, `POST /api/owner/setup` (Q111, Q114, Q116-Q118) | E55 (database half), E15, E6, E33 | Done: merged as PR #38 (`6125f53`) (see T2.1a evidence below) |
 | T2.7 Wording core: `copy_keys` with the shipped examples (Q112), `page_copy`, `copy_validate`, draft seeding at page creation, `owner_copy_accept_defaults(visibility)` refused once published (Q114) | Q82 seed, validation, accept and guard tests (D3 §9) | Not started |
-| T2.1b Dashboard O2 and setup wizard O3 (six steps, partner names, wording acceptance, Finish and publish, Token-only, Q114), empty and resumed states, the theme token files (Q113); after the design sign-off (Q119) | E55 | Not started |
+| T2.1b Dashboard O2 and setup wizard O3 (six steps, partner names, wording acceptance, Finish and publish, Token-only, Q114), empty and resumed states, the theme token files (Q113); after the design sign-off (Q119) | E55 | Design stage: revised O2/O3 boards and drafted EN/VI copy approved by the owner 2026-11-02 (Q119); screen code next; see T2.1b design evidence below |
 | T2.2 Items CRUD with draft and publish, overwrite check | E15 | Not started |
 | T2.3 Media pipeline: browser re-encode, EXIF strip, reservations, budget, deletion worker | E7-E10, E16 | Not started |
 | T2.4 Home item, counter rules | E14 | Not started |
@@ -295,6 +295,16 @@ T2.1a evidence:
 - Codex round 4: needs-attention, 1 finding (medium, test only), fixed: the race test now asserts that the save waited behind Finish's lock before Finish commits, so a runner where the save never blocks fails instead of passing. DB 170 of 170.
 - Codex round 5: approve, no material findings.
 - Final local run: DB 170, unit 104, typecheck, lint (tracked code), build, e2e 85 of 85, live PostgREST check 10 of 10; no raw bidirectional characters in `src`, `supabase` or `docs`.
+
+T2.1b design evidence (`docs/owner-setup-design`, 2026-11-01):
+
+- Owner decisions: revise the approved Phase 0 boards; Codex draws in `.design/`, Claude reviews; 320 px at 200 % text is an automated check (Q119); menu button hidden in Phase 2 (Q120); resume at the first unfinished step (Q121). Design record: [owner UI](design/vegenus_owner_ui.md) §1 "O2 and O3 revision for T2.1b".
+- Requirements: a seven-agent workflow (owner spec, decisions and API states, copy and tokens, Hallmark rules, board inventory, synthesis, critic) gave a 63-state matrix and 11 critic corrections; a copy table of 177 unique EN/VI keys lives in the git-ignored `.design/o2-o3/DESIGN_NOTES.md` (owner to review the drafted strings).
+- Boards: OwnerSetup and OwnerDash at 390×844, 820×1180, 1440×900 (55 and 8 review states). Review loop: four rounds of a six-lens Claude review with a refute-by-default verifier per finding (43, 18, 10, 6 open findings) and six Codex adversarial reviews (8, 3, 3, 1, 2, 0 findings; round 6 approve), all fixed (rulings R1-R22 recorded in `.design/o2-o3`). Codex hit its usage limit during the last fix round; Claude finished it with the owner's go-ahead after a seven-agent verification.
+- Checks on the published version: every state rendered with Playwright at all three sizes and at 320 px with a 32 px root (real 200 % text zoom): no page scroll, no clipped container, no product target under 44 px (one known exception: long-name inputs scroll natively, with a wrapped echo showing the full name); Hallmark static lint: only the recorded theme A gradient (Floor 2a) fails, 24b waived on record; privacy scan: placeholders only. Behaviour probe: "already set up" → "Go to overview" reads, then shows Done, at all three sizes.
+- Codex round 5 (closing, 2026-11-02): needs-attention, 2 findings (medium), both valid, fixed on the three setup boards. (1) A 409 `setup_finished` marked the previous, possibly incomplete, modelled server record finished, so "Go to overview" read a Done page with empty names; it now swaps in a complete finished record, the one the "already set up" review rows use. RED: step 2 → type names → 409 → Go to overview showed Done without names; GREEN at all three sizes: Loading, then Done with the read placeholder names, typed names never shown. (2) At 320 px with 200 % text the guest-preview names still split (R20), and the preview heading floors differed by size; one rule on every board now, `clamp(var(--fs-sm),12cqi,…)`: names stay whole in all four themes, native sizes unchanged. Re-render of all 55 states at four sizes: no page scroll, no new clipped container or small target.
+- Codex round 6 (confirmation, 2026-11-02): approve, no material findings (both round-5 fixes resolved on the three setup boards; no regression in the finished-record review states, other headings, native layouts or 320 px reflow).
+- Canvas: the six boards on "Theme Preview" (setup boards republished, version 107). Owner sign-off (2026-11-02): the boards and the drafted EN/VI copy approved.
 
 Acceptance rows due: free-tier usage within limits with alerts configured; the owner publishes an empty-to-live page in one sitting (metric 1), which includes accepting the suggested wording.
 
