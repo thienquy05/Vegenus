@@ -3,8 +3,7 @@
   max-width: 400px;
   margin: 0 auto;
   padding: 48px 16px;
-  font-family: system-ui, sans-serif;
-  color: #1c1b22;
+  color: var(--text);
 }
 
 .form {
@@ -20,9 +19,9 @@
 .input {
   min-height: 44px;
   padding: 0 12px;
-  font-size: 16px;
-  border: 1px solid #6b6878;
-  border-radius: 8px;
+  font-size: var(--fs-md);
+  border: 1px solid var(--text-muted);
+  border-radius: var(--radius-sm);
 }
 
 .check {
@@ -39,23 +38,23 @@
 
 .button {
   min-height: 44px;
-  font-size: 16px;
-  color: #fff;
-  background: #3b2f6b;
+  font-size: var(--fs-md);
+  color: var(--text-on-accent);
+  background: var(--accent);
   border: 0;
-  border-radius: 8px;
+  border-radius: var(--radius-sm);
 }
 
 .input:focus-visible,
 .check input:focus-visible,
 .button:focus-visible {
-  outline: 3px solid #3b2f6b;
+  outline: 3px solid var(--focus);
   outline-offset: 2px;
 }
 
 .alert {
   margin: 0;
   padding: 12px;
-  border-left: 4px solid #a3262a;
-  background: #fbeeee;
+  border-left: 4px solid var(--danger);
+  background: var(--surface);
 }

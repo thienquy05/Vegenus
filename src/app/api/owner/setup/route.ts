@@ -27,7 +27,8 @@ export async function POST(request: NextRequest) {
   const label_b = name(body?.label_b);
   if (
     !(expected_version === null || (Number.isInteger(expected_version) && expected_version >= 1 && expected_version <= MAX_VERSION)) ||
-    !THEMES.includes(theme) ||
+    // No theme: guests choose it; the owner may only suggest one (Q128).
+    !(theme === null || THEMES.includes(theme)) ||
     !LANGS.includes(default_lang) ||
     typeof timezone !== "string" ||
     !Array.isArray(sections) ||

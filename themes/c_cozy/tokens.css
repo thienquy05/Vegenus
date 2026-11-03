@@ -1,0 +1,62 @@
+/* Theme C Cozy (design 4 §4). Fallback fonts until the Phase 4 downloads (design 4 §8.2, Q113). */
+[data-theme="c_cozy"] {
+  --color-scheme: light;
+  color-scheme: light;
+  --bg: #fff1de;
+  --bg-image: none;
+  --surface: #ffffff;
+  --surface-border: #e9cfae;
+  --scrim: rgb(255 241 222 / 75%);
+  --text: #4a2c1d;
+  --text-muted: #6b4430;
+  --text-on-accent: #ffffff;
+  --accent: #b9553a;
+  --accent-text: #a3472e;
+  --line: #e9cfae;
+  --focus: #4a2c1d;
+  --danger: #a3262e;
+  --success: #2e6b3a;
+  --menu-button-bg: #4a2c1d;
+  --menu-button-fg: #ffd36b;
+  --menu-item-bg: #fff1de;
+  --menu-item-border: #4a2c1d;
+  --menu-item-fg: #4a2c1d;
+  --menu-item-active-bg: #ffd36b;
+  --menu-item-active-fg: #4a2c1d;
+  --menu-card-shadow: 0 0 0 2.5px #4a2c1d, 0 10px 0 #e9cfae;
+  --menu-ring: #b9553a;
+  --font-display: system-ui, sans-serif;
+  --font-body: system-ui, sans-serif;
+  --font-hand: system-ui, sans-serif;
+  --display-style: normal;
+  --display-weight: 600;
+  --fs-xs: 0.75rem;
+  --fs-sm: 0.875rem;
+  --fs-md: 1rem;
+  --fs-lg: 1.25rem;
+  --fs-xl: 1.75rem;
+  --fs-display: 2.75rem;
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-5: 24px;
+  --space-6: 32px;
+  --space-7: 48px;
+  --space-8: 64px;
+  --radius-sm: 6px;
+  --radius-md: 24px;
+  --radius-pill: 999px;
+  --dur-fast: 150ms;
+  --dur-slow: 350ms;
+  --ease: ease-in-out;
+  --ease-enter: cubic-bezier(0.34, 1.56, 0.64, 1);
+  --shadow: 0 6px 0 #e9cfae;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  [data-theme="c_cozy"] {
+    --dur-fast: 0ms;
+    --dur-slow: 0ms;
+  }
+}

@@ -40,7 +40,7 @@ Types are PostgreSQL. `tstz` = `timestamptz` (stored in UTC). Every table also h
 | Column | Type | Rule |
 |---|---|---|
 | `id` | uuid PK | random |
-| `theme` | enum `theme_id` (`a_dreamy`, `b_cosmic`, `c_cozy`, `d_elegant`) | PRD §6.2; new themes add enum values |
+| `theme` | enum `theme_id` (`a_dreamy`, `b_cosmic`, `c_cozy`, `d_elegant`), nullable, no default | The owner's optional suggested theme (null: none); each guest chooses their own on the first visit (Q128). PRD §6.2; new themes add enum values |
 | `default_lang` | enum `lang` (`en`, `vi`) | |
 | `visibility` | enum `visibility` (`private`, `token_only`, `published`) | the row is created **`private`**; the setup wizard's final step sets the owner's choice (the wizard offers `token_only` as its default, S3) in the same transaction as the wording acceptance (§3.12). A page that has not finished setup is therefore never visible to guests |
 | `label_a`, `label_b` | text | 1–40 chars, NFC; how the page names the two partners; fill `{partner_a}` / `{partner_b}` (§3.12). Required before setup can finish |
@@ -492,7 +492,7 @@ Deleting a page cascades to its page rows only after enqueuing storage keys and 
 
 | Table | `anon` (visitor, token guest) | Member (guest account) | Owner | Co-editor (reserved, unused) | Service role |
 |---|---|---|---|---|---|
-| `pages` | fn (`public_open`, `guest_open`) | fn (`account_open`) | read through `owner_page()`; create and update through `owner_save_page` (the first save creates the page with the caller's owner membership; later saves name the `version` they read, Q116) / `owner_set_visibility` only (a trigger also enforces the wording invariants on any direct update) | read | admin jobs |
+| `pages` | fn (`public_open`, `guest_open`) | fn (`account_open`) | read through `owner_page()` (and its drafted wording through `owner_copy_drafts()`, Q124); create and update through `owner_save_page` (the first save creates the page with the caller's owner membership; later saves name the `version` they read, Q116) / `owner_set_visibility` only (a trigger also enforces the wording invariants on any direct update) | read | admin jobs |
 | `page_sections` | fn | fn | read through `owner_page()`; update through `owner_save_page` (Home always on, Q118) | read | |
 | `memberships`, `owner_settings` | — | — | read own; settings update own | read own; settings update own | provisioning (Q30) |
 | `guest_tokens` | fn (hash lookup inside) | — | create, rotate through `owner_rotate_token`; never read `token_hash` | — | |

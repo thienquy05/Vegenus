@@ -63,6 +63,11 @@ test("a page whose setup is finished is not changed through setup (Q114, Q115)",
   expect(await res.json()).toEqual({ error: "setup_finished" });
 });
 
+test("no theme is a valid save: guests choose it (Q128)", async () => {
+  expect((await save({ ...FIRST, theme: null })).status).toBe(200);
+  expect(rpc).toHaveBeenCalledWith("owner_save_page", { ...FIRST, theme: null });
+});
+
 test("a malformed body is refused before the database", async () => {
   for (const body of [
     null,

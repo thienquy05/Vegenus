@@ -105,8 +105,8 @@ select throws_ok($$ select public.owner_save_page(2, 'a_dreamy', 'en', E'Partner
   '22023', null, 'a left-to-right mark in a name is refused');
 select throws_ok($$ select public.owner_save_page(2, 'a_dreamy', 'en', ' Partner A', 'Partner B', 'UTC', '{}') $$,
   '22023', null, 'a name with a space at either end is refused');
-select throws_ok($$ select public.owner_save_page(2, null, 'en', 'Partner A', 'Partner B', 'UTC', '{}') $$,
-  '22023', null, 'a missing theme is refused');
+select throws_ok($$ select public.owner_save_page(2, 'a_dreamy', null, 'Partner A', 'Partner B', 'UTC', '{}') $$,
+  '22023', null, 'a missing language is refused (a missing theme is allowed, Q128: theme_optional.test.sql)');
 select is((public.owner_page() ->> 'version')::int, 2, 'the refused saves changed nothing');
 
 -- Only an owner saves, and only their own page (design 3 §5; E6, E33).

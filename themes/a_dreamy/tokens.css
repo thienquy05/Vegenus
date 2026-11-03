@@ -1,0 +1,62 @@
+/* Theme A Dreamy (design 4 §4). Fallback fonts until the Phase 4 downloads (design 4 §8.2, Q113). */
+[data-theme="a_dreamy"] {
+  --color-scheme: dark;
+  color-scheme: dark;
+  --bg: #24123a;
+  --bg-image: linear-gradient(180deg, #24123a, #4a2459, #934060);
+  --surface: rgb(36 18 58 / 75%);
+  --surface-border: rgb(255 255 255 / 28%);
+  --scrim: rgb(36 18 58 / 70%);
+  --text: #fff6f0;
+  --text-muted: #ffd9e6;
+  --text-on-accent: #24123a;
+  --accent: #ff9cbf;
+  --accent-text: #ffd9e6;
+  --line: rgb(255 255 255 / 28%);
+  --focus: #fff6f0;
+  --danger: #ffb3b3;
+  --success: #b8f0c8;
+  --menu-button-bg: radial-gradient(circle at 35% 30%, #ffe3ee, #ff9cbf 45%, #8e2f6b);
+  --menu-button-fg: #24123a;
+  --menu-item-bg: rgb(36 18 58 / 88%);
+  --menu-item-border: rgb(255 255 255 / 35%);
+  --menu-item-fg: #ffd9e6;
+  --menu-item-active-bg: #ff9cbf;
+  --menu-item-active-fg: #24123a;
+  --menu-card-shadow: 0 0 0 1px #ffffff, 0 0 24px rgb(255 156 191 / 35%);
+  --menu-ring: rgb(255 217 230 / 30%);
+  --font-display: Georgia, serif;
+  --font-body: system-ui, sans-serif;
+  --font-hand: system-ui, sans-serif;
+  --display-style: italic;
+  --display-weight: 500;
+  --fs-xs: 0.75rem;
+  --fs-sm: 0.875rem;
+  --fs-md: 1rem;
+  --fs-lg: 1.25rem;
+  --fs-xl: 1.75rem;
+  --fs-display: 3.25rem;
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-5: 24px;
+  --space-6: 32px;
+  --space-7: 48px;
+  --space-8: 64px;
+  --radius-sm: 12px;
+  --radius-md: 24px;
+  --radius-pill: 999px;
+  --dur-fast: 300ms;
+  --dur-slow: 900ms;
+  --ease: ease-in-out;
+  --ease-enter: ease-out;
+  --shadow: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  [data-theme="a_dreamy"] {
+    --dur-fast: 0ms;
+    --dur-slow: 0ms;
+  }
+}
