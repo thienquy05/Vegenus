@@ -428,7 +428,10 @@ test("a double tap on Next at the wording step opens the review and publishes no
   await expect(heading(page, /Partner A.*Partner B/)).toBeVisible();
 });
 
-test("a refused first save offers Use UTC; the flag survives Leave and resume until a zone is chosen (R1, R2, Codex)", async ({ page }, info) => {
+// Use UTC is offered only when the browser zone is not UTC, so the zone is pinned, not the machine's.
+test.describe(() => {
+  test.use({ timezoneId: "Asia/Ho_Chi_Minh" });
+  test("a refused first save offers Use UTC; the flag survives Leave and resume until a zone is chosen (R1, R2, Codex)", async ({ page }, info) => {
   await signIn(page, info.project.name);
   await page.getByRole("button", { name: /Set up your page/ }).click();
   await page.getByLabel(/Partner A's name/).fill("Partner A");
@@ -454,8 +457,12 @@ test("a refused first save offers Use UTC; the flag survives Leave and resume un
   await expect(page.getByRole("main")).toContainText("Home only");
   expect((await ownerPage(info.project.name)).timezone).toBe("Asia/Tokyo");
 });
+});
 
-test("Reload clears the UTC flag when another session saved a real zone", async ({ page }, info) => {
+// Use UTC is offered only when the browser zone is not UTC, so the zone is pinned, not the machine's.
+test.describe(() => {
+  test.use({ timezoneId: "Asia/Ho_Chi_Minh" });
+  test("Reload clears the UTC flag when another session saved a real zone", async ({ page }, info) => {
   await signIn(page, info.project.name);
   await page.getByRole("button", { name: /Set up your page/ }).click();
   await page.getByLabel(/Partner A's name/).fill("Partner A");
@@ -474,6 +481,7 @@ test("Reload clears the UTC flag when another session saved a real zone", async 
   await next(page);
   await expect(heading(page, /time zone/)).toBeFocused();
   await expect(page.getByRole("main")).not.toContainText("UTC is selected for now.");
+});
 });
 
 test("Reload flags a UTC zone saved by another session, so the review asks to check it (Codex)", async ({ page }, info) => {
