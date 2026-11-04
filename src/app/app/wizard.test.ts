@@ -71,7 +71,8 @@ test("step 4: the drafted wording, the only path checked and disabled, a collaps
 
 test("step 4: four preview themes (never saved) and two preview languages; the preview starts on the suggested theme", () => {
   const html = render(4);
-  expect(html).toMatch(/role="group" aria-label="Preview theme \/ Chủ đề xem trước"/);
+  expect(html).toMatch(/id="preview-theme-label"[^>]*>.*Preview theme.*Chủ đề xem trước/);
+  expect(html).toMatch(/role="group" aria-labelledby="preview-theme-label"/);
   expect(html.match(/aria-pressed=/g)).toHaveLength(6);
   expect(html).toMatch(/data-theme="b_cosmic"[^>]*inert=""/);
   const none = renderToStaticMarkup(createElement(Wizard, { page: { ...PAGE, theme: null }, drafts: DRAFTS, initialStep: 4, onExit: vi.fn() }));
@@ -107,4 +108,24 @@ test("step 5: Token-only as a fact, every saved value with Change, a missing nam
   expect(html).toContain('<span lang="en">Not added yet</span> / Chưa thêm');
   expect(html).toContain("<bdi>Asia/Ho_Chi_Minh</bdi>");
   expect(html).toContain('<span lang="en"> time zone</span>');
+});
+
+const NAMED = { ...PAGE, label_b: "Partner B" };
+const on = (page: object, step: number) =>
+  renderToStaticMarkup(createElement(Wizard, { page: page as typeof PAGE, drafts: DRAFTS, initialStep: step, onExit: vi.fn() }));
+
+test("a resumed page on UTC keeps the fallback flag on the zone and review steps; another zone has none (R1, Codex)", () => {
+  expect(on({ ...NAMED, timezone: "UTC" }, 5)).toContain("Set from a fallback: please check.");
+  expect(on({ ...NAMED, timezone: "UTC" }, 2)).toContain("UTC is selected for now.");
+  expect(on(NAMED, 5)).not.toContain("Set from a fallback");
+});
+
+test("the review says Home only when no other section is on (approved copy)", () => {
+  expect(on({ ...NAMED, sections: ["home"] }, 5)).toContain("Home only");
+  expect(on(NAMED, 5)).not.toContain("Home only");
+});
+
+test("no unnamed group wraps the steps: only step 1 has a fieldset, with its legend", () => {
+  expect(render(1).match(/<fieldset/g)).toHaveLength(1);
+  for (const step of [2, 3, 4, 5]) expect(render(step), `step ${step}`).not.toContain("<fieldset");
 });

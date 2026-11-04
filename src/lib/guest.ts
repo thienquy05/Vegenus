@@ -13,7 +13,7 @@ export const guestCookieOptions = (secure: boolean) =>
 // 32 random bytes, base64url without padding.
 export const isToken = (value: unknown): value is string => typeof value === "string" && /^[A-Za-z0-9_-]{43}$/.test(value);
 
-export type GuestSummary = { theme: string; default_lang: string; sections: string[] };
+export type GuestSummary = { theme: string | null; default_lang: string; sections: string[] };
 
 // guest_open runs as anon (design 3 §3.9); rpc() sends the token in a POST body, never in a URL.
 // Null for a wrong, rotated or inactive token and for a page that is not live: one answer for all.

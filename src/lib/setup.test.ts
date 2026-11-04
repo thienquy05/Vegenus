@@ -1,5 +1,5 @@
 import { expect, test } from "vitest";
-import { browserLang, checkName, dashState, finishOutcome, nameErrors, proposeZone, resumeStep, saveBody, saveOutcome, stepDirty, type Draft } from "./setup";
+import { browserLang, checkName, dashState, finishOutcome, nameErrors, proposeZone, resumeStep, saveBody, saveOutcome, stepDirty, zoneFlagged, type Draft } from "./setup";
 
 // The O2/O3 rules that do not need a browser (owner UI "O2 and O3 revision for T2.1b"; Q114, Q121, Q125).
 const PAGE = {
@@ -87,7 +87,7 @@ test("after an uncertain Finish, a later failure cannot prove the first one roll
 
 const DRAFT: Draft = { theme: "a_dreamy", default_lang: "en", label_a: "Partner A", label_b: "", timezone: "UTC", sections: [] };
 
-test("names that would be refused are caught before any save; blank names wait for step 2 (R3)", () => {
+test("names that would be refused are caught before any save; blank names wait for step 1 (R3)", () => {
   expect(nameErrors(DRAFT)).toEqual({ a: null, b: null });
   expect(nameErrors({ ...DRAFT, label_b: "x".repeat(41) })).toEqual({ a: null, b: "length" });
   expect(nameErrors({ ...DRAFT, label_a: `A${String.fromCodePoint(0x202e)}` })).toEqual({ a: "characters", b: null });
@@ -105,4 +105,11 @@ test("Leave asks only when the current step has unsaved input (spec wording kept
   expect(stepDirty(3, { ...base, sections: [] }, base)).toBe(true);
   expect(stepDirty(3, { ...base, sections: ["memories"] }, base)).toBe(false);
   for (const step of [4, 5]) expect(stepDirty(step, { ...base, sections: [] }, base)).toBe(false);
+});
+
+test("a saved UTC zone is flagged whatever this session knew; another zone never; no page uses the browser's proposal (R1, Codex)", () => {
+  expect(zoneFlagged({ timezone: "UTC" }, false)).toBe(true);
+  expect(zoneFlagged({ timezone: "Asia/Tokyo" }, true)).toBe(false);
+  expect(zoneFlagged(null, true)).toBe(true);
+  expect(zoneFlagged(null, false)).toBe(false);
 });

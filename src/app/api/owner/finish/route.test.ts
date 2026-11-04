@@ -2,8 +2,8 @@ import { AuthApiError, AuthRetryableFetchError } from "@supabase/supabase-js";
 import { NextRequest } from "next/server";
 import { beforeEach, expect, test, vi } from "vitest";
 
-// T2.1b: Finish in the setup wizard (owner UI O3 step 6; Q114). One call accepts the drafted wording and
-// opens the page as Token-only; the database refuses a second Finish and a page with a name missing.
+// T2.1b: Finish in the setup wizard (owner UI O3 step 5; Q114). One call accepts the drafted wording and
+// opens the page as Token-only; the database refuses a second Finish, a page with a name missing and a stale version.
 const getUser = vi.fn();
 const rpc = vi.fn();
 vi.mock("@/lib/auth", async (original) => ({
@@ -12,7 +12,7 @@ vi.mock("@/lib/auth", async (original) => ({
 }));
 const { POST } = await import("./route");
 
-const finish = (body: unknown = {}, origin = "http://localhost:3000") =>
+const finish = (body: unknown = { expected_version: 7 }, origin = "http://localhost:3000") =>
   POST(
     new NextRequest("http://localhost:3000/api/owner/finish", {
       method: "POST",
@@ -31,19 +31,26 @@ test("Finish opens the page as Token-only, with no-store", async () => {
   expect(res.status).toBe(200);
   expect(await res.json()).toEqual({ visibility: "token_only" });
   expect(res.headers.get("cache-control")).toBe("no-store");
-  expect(rpc).toHaveBeenCalledExactlyOnceWith("owner_copy_accept_defaults", { visibility: "token_only" });
+  expect(rpc).toHaveBeenCalledExactlyOnceWith("owner_copy_accept_defaults", { visibility: "token_only", expected_version: 7 });
 });
 
 test("setup always finishes as Token-only, whatever the body asks (Q114)", async () => {
-  await finish({ visibility: "published" });
-  expect(rpc).toHaveBeenCalledExactlyOnceWith("owner_copy_accept_defaults", { visibility: "token_only" });
+  await finish({ visibility: "published", expected_version: 7 });
+  expect(rpc).toHaveBeenCalledExactlyOnceWith("owner_copy_accept_defaults", { visibility: "token_only", expected_version: 7 });
+});
+
+test("Finish without a usable version is a 400 and reaches no database (E15)", async () => {
+  for (const body of [{}, { expected_version: null }, { expected_version: "7" }, { expected_version: 0 }, { expected_version: 1.5 }, { expected_version: 2 ** 31 }]) {
+    expect((await finish(body)).status, JSON.stringify(body)).toBe(400);
+  }
+  expect(rpc).not.toHaveBeenCalled();
 });
 
 test("database answers map to the owner contract", async () => {
   for (const [code, status, body] of [
     ["42501", 403, null], // not an owner, or no page yet
     ["55000", 409, { error: "setup_finished" }], // Finish already ran
-    ["22023", 409, { error: "changed_elsewhere" }], // another session cleared a name or a wording field (Q125)
+    ["22023", 409, { error: "changed_elsewhere" }], // another session saved after the review, or cleared a field (Q125)
     ["PGRST202", 503, { error: "not_published" }], // refused before it ran: nothing was published
     ["57014", 503, { error: "not_published" }], // cancelled: the transaction rolled back
     ["", 502, { error: "outcome_unknown" }], // PostgREST never answered (status 0): the commit is unknown (Q126)
@@ -60,7 +67,7 @@ test("database answers map to the owner contract", async () => {
 });
 
 test("a foreign origin is refused before anything else", async () => {
-  expect((await finish({}, "https://other.site")).status).toBe(403);
+  expect((await finish(undefined, "https://other.site")).status).toBe(403);
   expect(getUser).not.toHaveBeenCalled();
   expect(rpc).not.toHaveBeenCalled();
 });

@@ -1,4 +1,4 @@
--- owner_copy_drafts (T2.1b; O3 step 5, Q124): the owner reads the page's drafted wording, so the wizard's sample
+-- owner_copy_drafts (T2.1b; O3 step 4, Q124): the owner reads the page's drafted wording, so the wizard's sample
 -- shows exactly what Finish publishes. Owner only, like owner_page. Placeholder data only.
 begin;
 select plan(10);

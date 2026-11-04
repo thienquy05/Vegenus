@@ -2,7 +2,7 @@
 -- copy_keys holds the 27 keys and their shipped examples; every new page gets 54 draft rows; copy_validate runs on
 -- every write; owner_copy_accept_defaults is the only first publication. Placeholder data only.
 begin;
-select plan(81);
+select plan(84);
 
 insert into auth.users (id, email) values
   ('00000000-0000-0000-0000-0000000000f1', 'owner@example.test'),
@@ -71,9 +71,9 @@ select ok(not has_table_privilege('anon', 'public.copy_keys', 'select') and not 
 select ok(not has_function_privilege('anon', 'public.copy_validate(text, text)', 'execute')
   and not has_function_privilege('authenticated', 'public.copy_validate(text, text)', 'execute'),
   'copy_validate is not callable from the API');
-select ok(has_function_privilege('authenticated', 'public.owner_copy_accept_defaults(public.visibility)', 'execute')
-  and not has_function_privilege('anon', 'public.owner_copy_accept_defaults(public.visibility)', 'execute')
-  and not has_function_privilege('vegenus_server', 'public.owner_copy_accept_defaults(public.visibility)', 'execute'),
+select ok(has_function_privilege('authenticated', 'public.owner_copy_accept_defaults(public.visibility, int)', 'execute')
+  and not has_function_privilege('anon', 'public.owner_copy_accept_defaults(public.visibility, int)', 'execute')
+  and not has_function_privilege('vegenus_server', 'public.owner_copy_accept_defaults(public.visibility, int)', 'execute'),
   'only authenticated can call owner_copy_accept_defaults');
 
 -- Seeding: a new page gets all 54 rows as drafts only (Q112, E55).
@@ -205,26 +205,26 @@ select lives_ok($$ update public.pages set visibility = 'private'
 
 -- Accepting the suggested wording (O3 Finish; Q114).
 select set_config('request.jwt.claims', '', true);
-select throws_ok($$ select public.owner_copy_accept_defaults('token_only') $$, '42501', null, 'no signed-in user is refused');
+select throws_ok($$ select public.owner_copy_accept_defaults('token_only', (public.owner_page() ->> 'version')::int) $$, '42501', null, 'no signed-in user is refused');
 select pg_temp.act_as('00000000-0000-0000-0000-0000000000f3');
-select throws_ok($$ select public.owner_copy_accept_defaults('token_only') $$, '42501', null, 'an account without a page is refused');
+select throws_ok($$ select public.owner_copy_accept_defaults('token_only', (public.owner_page() ->> 'version')::int) $$, '42501', null, 'an account without a page is refused');
 reset role;
 insert into public.memberships (page_id, user_id, role)
   values (pg_temp.page_of('00000000-0000-0000-0000-0000000000f1'), '00000000-0000-0000-0000-0000000000f2', 'co_editor');
 select pg_temp.act_as('00000000-0000-0000-0000-0000000000f2');
-select throws_ok($$ select public.owner_copy_accept_defaults('token_only') $$, '42501', null, 'a co-editor is refused');
+select throws_ok($$ select public.owner_copy_accept_defaults('token_only', (public.owner_page() ->> 'version')::int) $$, '42501', null, 'a co-editor is refused');
 select pg_temp.act_as('00000000-0000-0000-0000-0000000000f1');
-select throws_ok($$ select public.owner_copy_accept_defaults('token_only') $$, '22023', null,
+select throws_ok($$ select public.owner_copy_accept_defaults('token_only', (public.owner_page() ->> 'version')::int) $$, '22023', null,
   'Finish needs both partner names (the examples use them)');
 select is(public.owner_save_page(2, 'a_dreamy', 'en', 'Partner A', 'Partner B', 'UTC', '{memories}'), 3,
   'the owner sets both names (the Private update above moved the version to 2)');
-select throws_ok($$ select public.owner_copy_accept_defaults('published') $$, '22023', null,
+select throws_ok($$ select public.owner_copy_accept_defaults('published', (public.owner_page() ->> 'version')::int) $$, '22023', null,
   'Finish offers Token-only only (Q114)');
 reset role;
 update public.page_copy set draft_text = null
   where page_id = pg_temp.page_of('00000000-0000-0000-0000-0000000000f1') and key = 'tour.3.body' and lang = 'vi';
 select pg_temp.act_as('00000000-0000-0000-0000-0000000000f1');
-select throws_ok($$ select public.owner_copy_accept_defaults('token_only') $$, '22023', null, 'an empty key is refused');
+select throws_ok($$ select public.owner_copy_accept_defaults('token_only', (public.owner_page() ->> 'version')::int) $$, '22023', null, 'an empty key is refused');
 reset role;
 select ok((select p.visibility = 'private' and p.copy_published_at is null and p.setup_completed_at is null
     and not exists (select 1 from public.page_copy c where c.page_id = p.id and c.published_text is not null)
@@ -243,7 +243,17 @@ select is(public.owner_save_page(null, 'c_cozy', 'vi', 'Partner C', 'Partner D',
 reset role;
 update public.pages set copy_draft_rev = 3 where id = pg_temp.page_of('00000000-0000-0000-0000-0000000000f1');
 select pg_temp.act_as('00000000-0000-0000-0000-0000000000f1');
-select lives_ok($$ select public.owner_copy_accept_defaults('token_only') $$, 'Finish succeeds');
+-- Finish publishes what the review showed: a save from another session after it is a conflict, not a publication.
+select throws_ok($$ select public.owner_copy_accept_defaults('token_only', (public.owner_page() ->> 'version')::int - 1) $$, '22023', null,
+  'a Finish naming an older version than the saved page is refused');
+select throws_ok($$ select public.owner_copy_accept_defaults('token_only', null) $$, '22023', null,
+  'a Finish naming no version is refused');
+reset role;
+select ok((select p.copy_published_at is null and p.setup_completed_at is null and p.visibility = 'private'
+  from public.pages p where p.id = pg_temp.page_of('00000000-0000-0000-0000-0000000000f1')),
+  'a stale Finish publishes nothing');
+select pg_temp.act_as('00000000-0000-0000-0000-0000000000f1');
+select lives_ok($$ select public.owner_copy_accept_defaults('token_only', (public.owner_page() ->> 'version')::int) $$, 'Finish succeeds');
 reset role;
 select ok((select p.visibility = 'token_only' and p.copy_published_at is not null and p.setup_completed_at is not null
     and p.copy_published_rev = 3
@@ -257,7 +267,7 @@ select is((select count(*) from public.page_copy c
   0::bigint, 'the other page is untouched');
 
 select pg_temp.act_as('00000000-0000-0000-0000-0000000000f1');
-select throws_ok($$ select public.owner_copy_accept_defaults('token_only') $$, '55000', null,
+select throws_ok($$ select public.owner_copy_accept_defaults('token_only', (public.owner_page() ->> 'version')::int) $$, '55000', null,
   'a second Finish answers already set up and publishes nothing twice (Q114)');
 
 select * from finish();

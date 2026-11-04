@@ -82,3 +82,16 @@ test("offline shows the notice and disables starting setup and retrying", () => 
   expect(html).toMatch(/<button[^>]*disabled=""[^>]*aria-describedby="offline-reason"[^>]*>.*Set up your page/s);
   expect(render({ state: "error", offline: true })).toMatch(/<button[^>]*disabled=""[^>]*>.*Try again/s);
 });
+
+const region = (html: string, role: string) => html.match(new RegExp(`<p[^>]*role="${role}"[^>]*>(.*?)</p>`))?.[1] ?? "";
+
+test("a message that takes focus is read once: the alert region stays empty after a read the owner asked for", () => {
+  for (const state of ["error", "accessLost"] as const) {
+    expect(region(render({ state }), "alert"), state).not.toBe("");
+    expect(region(render({ state, focused: true }), "alert"), state).toBe("");
+  }
+});
+
+test("going offline is announced by the polite region, since nothing takes focus", () => {
+  expect(region(render({ state: "empty", offline: true }), "status")).toContain("offline");
+});

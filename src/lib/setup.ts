@@ -37,7 +37,7 @@ export function checkName(raw: string) {
   return { value, error } as const;
 }
 
-// Names the database would refuse, wherever the save starts (design ruling R3); a blank name waits for step 2.
+// Names the database would refuse, wherever the save starts (design ruling R3); a blank name waits for step 1.
 export function nameErrors(draft: Draft) {
   const refused = (value: string) => {
     const { error } = checkName(value);
@@ -59,7 +59,7 @@ export function stepDirty(step: number, draft: Draft, base: Draft) {
 
 export const browserLang = (lang: string) => (lang.toLowerCase().startsWith("vi") ? "vi" : "en");
 
-// The browser's zone when the list offers it, otherwise UTC, flagged for the owner to check at step 3.
+// The browser's zone when the list offers it, otherwise UTC, flagged for the owner to check at step 2.
 export function proposeZone(browserZone: () => string | undefined, offered: readonly string[]) {
   try {
     const zone = browserZone();
@@ -67,6 +67,11 @@ export function proposeZone(browserZone: () => string | undefined, offered: read
   } catch {}
   return { zone: "UTC", fallback: true };
 }
+
+// The zone still to check (design ruling R1): the database stores no confirmation, so a saved UTC counts as unconfirmed
+// on a page this session did not walk through (resume, Reload); with no page, the browser's proposal decides.
+export const zoneFlagged = (page: Pick<Page, "timezone"> | null, proposedFallback: boolean) =>
+  page ? page.timezone === "UTC" : proposedFallback;
 
 // Every save re-sends every field and names the version it read (owner UI O3 states); the first one, from the names
 // step, creates the page (Q128). The theme is only carried through: the owner never chooses it here.

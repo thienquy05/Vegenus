@@ -35,13 +35,15 @@ type Props = {
   status?: CopyKey | null;
   // The result's heading or message, focused after a read the owner asked for.
   headingRef?: RefObject<HTMLElement | null>;
+  // The read was the owner's: focus reads the message, so the alert region stays empty (announced once).
+  focused?: boolean;
 };
 
-export function Dashboard({ state, page, offline, onSetup, onRetry, status, headingRef }: Props) {
+export function Dashboard({ state, page, offline, onSetup, onRetry, status, headingRef, focused = false }: Props) {
   const h2 = headingRef as RefObject<HTMLHeadingElement | null> | undefined;
   const message = headingRef as RefObject<HTMLParagraphElement | null> | undefined;
   const reason = offline ? "offline-reason" : undefined;
-  const alert = state === "error" ? "common.readError" : state === "accessLost" ? "common.accessLost" : null;
+  const alert = focused ? null : state === "error" ? "common.readError" : state === "accessLost" ? "common.accessLost" : null;
   return (
     <div className={s.page}>
       <header className={s.topbar}>
@@ -50,7 +52,7 @@ export function Dashboard({ state, page, offline, onSetup, onRetry, status, head
         </h1>
       </header>
       <main className={s.main}>
-        <Announcers status={status} alert={alert} />
+        <Announcers status={offline ? "common.offline" : status} alert={alert} />
         {offline && (
           <p id="offline-reason" className={s.notice}>
             <T k="common.offline" />
@@ -164,6 +166,8 @@ export default function Owner() {
   const [uncertain, setUncertain] = useState(false);
   const heading = useRef<HTMLElement>(null);
   const focusResult = useRef(false);
+  // Only the first read is not the owner's; every later one moves focus to its result.
+  const [asked, setAsked] = useState(false);
   // A message from the wizard ("Your page is set up") waits for the read, so the dashboard's mounted live region
   // announces it and it shows with the result.
   const pending = useRef<CopyKey | null>(null);
@@ -208,6 +212,7 @@ export default function Owner() {
           setStatus(null);
           setWizard(false);
           focusResult.current = true;
+          setAsked(true);
           read();
         }}
       />
@@ -220,12 +225,14 @@ export default function Owner() {
       offline={!online}
       status={status}
       headingRef={heading}
+      focused={asked}
       onSetup={() => {
         setStatus(null);
         setWizard(true);
       }}
       onRetry={() => {
         focusResult.current = true;
+        setAsked(true);
         read();
       }}
     />

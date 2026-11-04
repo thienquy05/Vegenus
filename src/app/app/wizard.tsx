@@ -2,7 +2,7 @@
 import { useRouter } from "next/navigation";
 import { useEffect, useRef, useState, type FormEvent, type ReactNode } from "react";
 import {
-  browserLang, checkName, finishOutcome, nameErrors, proposeZone, saveBody, saveOutcome, SECTIONS, stepDirty, THEMES,
+  browserLang, checkName, finishOutcome, nameErrors, proposeZone, saveBody, saveOutcome, SECTIONS, stepDirty, THEMES, zoneFlagged,
   type Draft, type Drafts, type Page,
 } from "@/lib/setup";
 import { COPY, type CopyKey } from "./copy";
@@ -50,6 +50,8 @@ const zoneKnown = (zone: string) => {
     return false;
   }
 };
+// Long enough to swallow the second tap of a double tap on Next, which would land on Finish (the same button).
+const REVIEW_PAUSE_MS = 500;
 const fill = (text: string, a: string, b: string) => text.replaceAll("{partner_a}", a).replaceAll("{partner_b}", b);
 
 const draftOf = (page: Page | null, zone: string): Draft =>
@@ -77,8 +79,11 @@ export function Wizard({ page, drafts: initialDrafts, initialStep, onExit, uncer
   const [busy, setBusy] = useState<CopyKey | null>(null);
   const [status, setStatus] = useState<Status>(null);
   const [errors, setErrors] = useState<{ a: NameError; b: NameError; zone: boolean }>({ a: null, b: null, zone: false });
-  // The UTC fallback is flagged until the owner picks a zone or confirms step 3 in this session (design ruling R1).
-  const [fallback, setFallback] = useState(!page && proposed.fallback);
+  // The UTC fallback is flagged until the owner picks a zone or confirms step 2 in this session (design ruling R1).
+  const [fallback, setFallback] = useState(zoneFlagged(page, proposed.fallback));
+  const [settling, setSettling] = useState(false);
+  // An error on a field that already has focus: nothing moves, so the alert region reads it.
+  const [nameAlert, setNameAlert] = useState<CopyKey | null>(null);
   const [restored, setRestored] = useState(!!page);
   const [dialog, setDialog] = useState<"conflict" | "leave" | null>(null);
   const [previewOpen, setPreviewOpen] = useState(false);
@@ -108,8 +113,17 @@ export function Wizard({ page, drafts: initialDrafts, initialStep, onExit, uncer
   }, [status]);
   useEffect(() => {
     if (dialog && !dialogRef.current?.open) dialogRef.current?.showModal();
-    if (!dialog && dialogRef.current?.open) dialogRef.current.close();
+    if (!dialog && dialogRef.current?.open) {
+      dialogRef.current.close();
+      // The opener may have been disabled by the save; focus never falls to the page.
+      if (document.activeElement === document.body) headingRef.current?.focus();
+    }
   }, [dialog]);
+  useEffect(() => {
+    if (!settling) return;
+    const timer = setTimeout(() => setSettling(false), REVIEW_PAUSE_MS);
+    return () => clearTimeout(timer);
+  }, [settling]);
 
   const set = (change: Partial<Draft>) => setDraft((current) => ({ ...current, ...change }));
   const go = (next: number) => {
@@ -135,6 +149,7 @@ export function Wizard({ page, drafts: initialDrafts, initialStep, onExit, uncer
       if (mode !== "drafts") setSaved(body.page);
       if (mode === "choices") {
         setDraft(draftOf(body.page, draft.timezone));
+        setFallback(zoneFlagged(body.page, proposed.fallback));
         setRestored(true);
         if (step === 5 && body.page) setStep(body.page.label_a && body.page.label_b ? 5 : 1);
       }
@@ -151,6 +166,7 @@ export function Wizard({ page, drafts: initialDrafts, initialStep, onExit, uncer
     if (!navigator.onLine) return setStatus({ key: "common.offline", error: true });
     setBusy("save.busy");
     setStatus(null);
+    setRestored(false);
     let res: Response;
     try {
       res = await fetch("/api/owner/setup", {
@@ -194,10 +210,16 @@ export function Wizard({ page, drafts: initialDrafts, initialStep, onExit, uncer
     if (!navigator.onLine) return setStatus({ key: "common.offline", error: true });
     finishing.current = true;
     setBusy("finish.busy");
-    setStatus(null);
+    // A retry after an uncertain Finish keeps its message: clearing it would raise the same alert again.
+    if (!uncertain) setStatus(null);
+    setRestored(false);
     let outcome;
     try {
-      const res = await fetch("/api/owner/finish", { method: "POST" });
+      const res = await fetch("/api/owner/finish", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ expected_version: saved.version }),
+      });
       outcome = finishOutcome(res.status, await res.json().catch(() => null), uncertain);
     } catch {
       outcome = finishOutcome(0, null, uncertain);
@@ -214,20 +236,28 @@ export function Wizard({ page, drafts: initialDrafts, initialStep, onExit, uncer
     setStatus({ key: outcome === "failed" ? "finish.failed" : "finish.uncertain", error: true, retry: { kind: "finish" } });
   }
 
+  // The Try again that was pressed goes away on success, so focus moves to the heading.
+  async function retryDrafts() {
+    if (await reread("drafts")) headingRef.current?.focus();
+  }
+
   function retry(what: Retry) {
     if (what.kind === "save") void save(what.next);
     else if (what.kind === "finish") void finish();
-    else void reread("drafts");
+    else void retryDrafts();
   }
 
   function next(event: FormEvent) {
     event.preventDefault();
-    if (busy) return;
+    if (busy || settling) return;
     if (step === 1) {
       const a = checkName(draft.label_a).error;
       const b = checkName(draft.label_b).error;
+      const first = a ?? b;
+      const field = (a ? nameA : nameB).current;
       setErrors({ ...errors, a, b });
-      if (a || b) return (a ? nameA : nameB).current?.focus();
+      setNameAlert(first && field === document.activeElement ? `name.${first}` : null);
+      if (first) return field?.focus();
     }
     if (step === 2) {
       const bad = !zoneKnown(draft.timezone);
@@ -235,9 +265,13 @@ export function Wizard({ page, drafts: initialDrafts, initialStep, onExit, uncer
       if (bad) return zoneRef.current?.focus();
       setFallback(false);
     }
-    if (step === 4) return drafts && go(5);
+    if (step === 4) {
+      if (!drafts) return;
+      setSettling(true);
+      return go(5);
+    }
     if (step === 5) return void finish();
-    // A name kept from step 2 is sent with every save: check it first and send the owner back to it (R3).
+    // A name kept from step 1 is sent with every save: check it first and send the owner back to it (R3).
     const refused = nameErrors(draft);
     if (saved && (refused.a || refused.b)) {
       setErrors({ ...errors, ...refused });
@@ -251,7 +285,9 @@ export function Wizard({ page, drafts: initialDrafts, initialStep, onExit, uncer
 
   const nameA_ = draft.label_a.trim() ? checkName(draft.label_a).value : "[PARTNER_A]";
   const nameB_ = draft.label_b.trim() ? checkName(draft.label_b).value : "[PARTNER_B]";
-  const showRetry = !!status?.retry && (step === 5 || !(status.key === "finish.failed" || status.key === "finish.uncertain"));
+  // The wording step shows its own read error and Try again, so the footer does not repeat them.
+  const readFailed = step === 4 && !drafts;
+  const showRetry = !readFailed && !!status?.retry && (step === 5 || !(status.key === "finish.failed" || status.key === "finish.uncertain"));
   const uncertainHere = uncertain && step === 5 && !status;
   const known = zoneKnown(draft.timezone);
   const finishBlocked = step === 5 && (showRetry || uncertainHere);
@@ -321,6 +357,7 @@ export function Wizard({ page, drafts: initialDrafts, initialStep, onExit, uncer
 
   const reviewRow = (label: CopyKey, to: number, value: ReactNode) => {
     const [en, vi] = COPY[label];
+    const [changeEn, changeVi] = COPY["review.change"];
     return (
       <div className={s.reviewRow} key={label}>
         <dt>
@@ -330,7 +367,7 @@ export function Wizard({ page, drafts: initialDrafts, initialStep, onExit, uncer
           {value}
           <button type="button" className={s.change} onClick={() => go(to)}>
             <span className={s.pair}>
-              <span lang="en">Change</span> / <span lang="vi">Đổi</span>
+              <span lang="en">{changeEn}</span> / <span lang="vi">{changeVi}</span>
               <span className={s.announcer}>
                 <span lang="en">{` ${en.toLowerCase()}`}</span> / <span lang="vi">{` ${vi.toLowerCase()}`}</span>
               </span>
@@ -480,17 +517,17 @@ export function Wizard({ page, drafts: initialDrafts, initialStep, onExit, uncer
       );
     };
     body = (
-      <div className={s.wordingLayout}>
+      <div className={`${s.stack} ${s.wordingLayout}`}>
         <div className={s.stack}>
           <p>
             <T k="wording.privacy" />
           </p>
           {!drafts ? (
             <>
-              <p className={s.error}>
+              <p className={s.error} tabIndex={-1} ref={statusRef}>
                 <T k="common.readError" />
               </p>
-              <button type="button" className={s.secondary} disabled={!!busy} onClick={() => void reread("drafts")}>
+              <button type="button" className={s.secondary} disabled={!!busy} onClick={() => void retryDrafts()}>
                 <L k="common.tryAgain" />
               </button>
             </>
@@ -520,7 +557,10 @@ export function Wizard({ page, drafts: initialDrafts, initialStep, onExit, uncer
           </button>
         </div>
         <div id="wording-preview" className={`${s.stack} ${previewOpen ? "" : s.previewClosed}`}>
-          <div className={s.themes} role="group" aria-label={`${COPY["preview.theme"][0]} / ${COPY["preview.theme"][1]}`}>
+          <p id="preview-theme-label" className={s.small}>
+            <T k="preview.theme" />
+          </p>
+          <div className={s.themes} role="group" aria-labelledby="preview-theme-label">
             {THEMES.map((theme) => (
               <button
                 key={theme}
@@ -553,6 +593,7 @@ export function Wizard({ page, drafts: initialDrafts, initialStep, onExit, uncer
     );
   } else {
     const missing = !saved?.label_a || !saved.label_b;
+    const homeOnly = !saved?.sections.some((section) => section !== "home");
     const nameLine = (name: string | null | undefined) => (
       <div className={name ? undefined : s.missing}>{name ? <bdi>{name}</bdi> : <T k="review.notAdded" />}</div>
     );
@@ -580,7 +621,7 @@ export function Wizard({ page, drafts: initialDrafts, initialStep, onExit, uncer
               )}
             </>,
           )}
-          {reviewRow("review.sections", 3, <SectionList sections={saved?.sections ?? []} />)}
+          {reviewRow("review.sections", 3, homeOnly ? <T k="sections.homeOnly" /> : <SectionList sections={saved?.sections ?? []} />)}
           {reviewRow("review.wording", 4, <T k="wording.accept" />)}
         </dl>
         {missing && (
@@ -603,12 +644,13 @@ export function Wizard({ page, drafts: initialDrafts, initialStep, onExit, uncer
   // Esc and Close take the choice that loses nothing and writes nothing (owner UI O3 accessibility): the version stays
   // the one read, so the next save asks again rather than overwriting the other session (Codex review).
   const dismiss = () => setDialog(null);
-  // Keep mine: take the new version, then save the owner's choices over it (a save conflict; Finish has nothing to resend).
+  // Keep mine: take the new version, then save the owner's choices over it. After a refused Finish those are the
+  // choices the review showed, so the owner stays there and presses Finish again. Step 4 saves nothing.
   const keep = async () => {
     if (dialog !== "conflict") return setDialog(null);
     setDialog(null);
     const latest = await reread("version");
-    if (latest && step < 4) void save(step + 1, saveBody(draft, latest.version));
+    if (latest && step !== 4) void save(Math.min(step + 1, 5), saveBody(draft, latest.version));
   };
   const other = () => {
     setDialog(null);
@@ -617,7 +659,7 @@ export function Wizard({ page, drafts: initialDrafts, initialStep, onExit, uncer
   };
 
   // Errors move focus to their visible text, which is read then; the alert region carries only what nothing focuses.
-  const alert = screen === "accessLost" ? "common.accessLost" : uncertainHere ? "finish.uncertain" : null;
+  const alert = uncertainHere ? "finish.uncertain" : nameAlert;
   return (
     <div className={s.page}>
       <header className={s.topbar}>
@@ -626,7 +668,7 @@ export function Wizard({ page, drafts: initialDrafts, initialStep, onExit, uncer
         </h1>
       </header>
       <main className={s.main}>
-        <Announcers status={busy ?? (restored ? "setup.saved" : null)} alert={alert} />
+        <Announcers status={busy ?? (!online ? "common.offline" : restored ? "setup.saved" : null)} alert={alert} />
         {!online && (
           <p id="offline-reason" className={s.notice}>
             <T k="common.offline" />
@@ -677,9 +719,9 @@ export function Wizard({ page, drafts: initialDrafts, initialStep, onExit, uncer
               )}
             </div>
             <div className={s.wizardBody}>
-              <fieldset className={s.fieldset} aria-busy={!!busy}>
+              <div className={s.fieldset} aria-busy={!!busy}>
                 {body}
-              </fieldset>
+              </div>
             </div>
             <footer className={s.wizardFooter}>
               {busy && (
@@ -687,7 +729,7 @@ export function Wizard({ page, drafts: initialDrafts, initialStep, onExit, uncer
                   <T k={busy} />
                 </p>
               )}
-              {(status || uncertainHere) && (
+              {(status || uncertainHere) && !readFailed && (
                 <p className={s.error} tabIndex={-1} ref={statusRef}>
                   <T k={status?.key ?? "finish.uncertain"} />
                 </p>
@@ -725,7 +767,7 @@ export function Wizard({ page, drafts: initialDrafts, initialStep, onExit, uncer
                     type="submit"
                     className={s.primary}
                     disabled={(!online && step !== 4) || (step === 4 && !drafts)}
-                    aria-disabled={!!busy}
+                    aria-disabled={!!busy || settling}
                     aria-describedby={online ? undefined : "offline-reason"}
                   >
                     <L k={step === 5 ? "navigation.finish" : "navigation.next"} />
@@ -768,7 +810,7 @@ export function Wizard({ page, drafts: initialDrafts, initialStep, onExit, uncer
               <p id="dialog-description">
                 <T k={dialogKeys.text} />
               </p>
-              <button type="button" className={s.primary} autoFocus onClick={() => void keep()}>
+              <button type="button" className={s.primary} onClick={() => void keep()}>
                 <L k={dialogKeys.keep} />
               </button>
               <button type="button" className={s.secondary} onClick={other}>

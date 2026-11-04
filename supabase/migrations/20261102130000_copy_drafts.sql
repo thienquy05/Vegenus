@@ -1,4 +1,4 @@
--- T2.1b: the setup wizard's wording step (O3 step 5, Q124) shows the drafted wording Finish will publish.
+-- T2.1b: the setup wizard's wording step (O3 step 4, Q124) shows the drafted wording Finish will publish.
 -- The caller's drafts as {key: {en, vi}}, tokens unfilled, or null: no page, or not its owner (like owner_page).
 create function public.owner_copy_drafts() returns jsonb
 language sql stable security definer set search_path = '' as $$

@@ -155,7 +155,8 @@ test("an uncertain Finish never claims nothing was published; its retry survives
 test("a second Finish answers already set up and leads to the overview", async ({ page }, info) => {
   await signIn(page, info.project.name);
   await walkToReview(page);
-  expect((await page.request.post("/api/owner/finish", { headers: { origin: ORIGIN } })).status()).toBe(200);
+  const { version } = await ownerPage(info.project.name);
+  expect((await page.request.post("/api/owner/finish", { headers: { origin: ORIGIN }, data: { expected_version: version } })).status()).toBe(200);
   await page.getByRole("button", { name: /Finish and publish/ }).click();
   await expect(heading(page, /already set up/)).toBeFocused();
   await page.getByRole("button", { name: /Go to overview/ }).click();
@@ -192,12 +193,12 @@ test("Keep mine saves the owner's choices over a change made elsewhere", async (
 test("Leave asks only about the current step: an edit left behind by Back is not asked about (spec wording, Q129)", async ({ page }, info) => {
   await signIn(page, info.project.name);
   await createPage(page);
+  const saved = (await ownerPage(info.project.name)).timezone;
+  await page.getByLabel(/Time zone/).selectOption(saved === "Asia/Tokyo" ? "Asia/Seoul" : "Asia/Tokyo");
   await page.getByRole("button", { name: /^Back/ }).click();
-  await page.getByLabel(/Partner A's name/).fill("Partner Z");
-  await next(page);
-  await expect(heading(page, /time zone/)).toBeFocused();
   await page.getByRole("button", { name: /Leave setup/ }).click();
   await expect(heading(page, /Make room/)).toBeVisible();
+  expect((await ownerPage(info.project.name)).timezone).toBe(saved);
 });
 
 test("Finish after another session cleared a name opens the conflict dialog and resumes at step 1 (Q125)", async ({ page }, info) => {
@@ -221,9 +222,18 @@ test("a failed wording read after the first save keeps its Try again; the wordin
   await next(page);
   await expect(heading(page, /time zone/)).toBeVisible();
   await expect(page.getByRole("main")).toContainText("Not saved.");
+  await next(page);
+  await next(page);
+  await expect(heading(page, /Words for your guests/)).toBeFocused();
+  await expect(page.getByRole("button", { name: /^Next/ })).toBeDisabled();
+  const again = page.getByRole("button", { name: /^Try again/ });
+  await again.click();
+  await expect(again).toHaveCount(1); // a second failure shows one message and one retry
   await page.unroute("**/api/owner/page");
-  await page.getByRole("button", { name: /^Try again/ }).click();
-  await expect(page.getByRole("main")).not.toContainText("Not saved.");
+  await again.click();
+  await expect(heading(page, /Words for your guests/)).toBeFocused();
+  await expect(page.getByRole("button", { name: /^Next/ })).toBeEnabled();
+  await expect(page.getByRole("main")).toContainText("Together for");
 });
 
 test("offline blocks saving with the reason; Leave asks before discarding, and Esc keeps the input", async ({ page, context }, info) => {
@@ -232,6 +242,7 @@ test("offline blocks saving with the reason; Leave asks before discarding, and E
   await context.setOffline(true);
   await expect(page.getByRole("main")).toContainText("You’re offline.");
   await expect(page.getByRole("button", { name: /^Next/ })).toBeDisabled();
+  await expect(page.getByRole("main").getByRole("status")).toContainText("You’re offline.");
   await context.setOffline(false);
   await page.getByLabel(/Partner A's name/).fill("Partner A");
   await page.getByRole("button", { name: /Leave setup/ }).click();
@@ -365,8 +376,254 @@ test("the wording step's theme preview changes only the preview and saves nothin
   expect(await preview.evaluate((el) => getComputedStyle(el).backgroundColor)).toBe("rgb(244, 241, 236)");
   await page.getByRole("button", { name: /A Dreamy/ }).click();
   expect(await preview.evaluate((el) => getComputedStyle(el).backgroundColor)).toBe("rgb(36, 18, 58)");
+  await page.getByRole("button", { name: /D Elegant/ }).click();
+  await page.getByRole("button", { name: /^Back/ }).click();
+  await next(page); // a real save after picking a preview still stores no theme
+  await expect(heading(page, /Words for your guests/)).toBeFocused();
   expect((await ownerPage(info.project.name)).theme).toBeNull();
 
   await page.emulateMedia({ reducedMotion: "reduce" });
   expect(await page.getByRole("button", { name: /^Next/ }).evaluate((el) => getComputedStyle(el).transitionDuration)).toBe("0s, 0s");
+});
+
+// The five-step review (Q128): the paths the renumbering moved.
+const alertRegion = (page: Page) => page.getByRole("main").getByRole("alert");
+
+test("Finish after another session saved publishes nothing; Keep mine saves the reviewed choices and stays on the review (Codex)", async ({ page }, info) => {
+  await signIn(page, info.project.name);
+  await walkToReview(page);
+  await sql`update public.pages set label_a = 'Partner C' where id = ${(await ownerPage(info.project.name)).id}`;
+  await page.getByRole("button", { name: /Finish and publish/ }).click();
+  const dialog = page.getByRole("dialog", { name: /Page changed elsewhere/ });
+  await expect(dialog).toBeVisible();
+  expect((await ownerPage(info.project.name)).visibility).toBe("private");
+  await dialog.getByRole("button", { name: /Keep mine/ }).click();
+  await expect(dialog).toBeHidden();
+  await expect(heading(page, /Visibility and review/)).toBeVisible();
+  await expect.poll(async () => (await ownerPage(info.project.name)).label_a).toBe("Partner A");
+  await page.getByRole("button", { name: /Finish and publish/ }).click();
+  await expect(heading(page, /Partner A.*Partner B/)).toBeVisible();
+});
+
+test("a double tap on Next at the wording step opens the review and publishes nothing; Finish then works", async ({ page }, info) => {
+  await signIn(page, info.project.name);
+  await createPage(page);
+  await next(page);
+  await expect(heading(page, /What you'd like to share/)).toBeFocused();
+  await next(page);
+  await expect(heading(page, /Words for your guests/)).toBeFocused();
+  let finishes = 0;
+  page.on("request", (request) => void (request.url().endsWith("/api/owner/finish") && finishes++));
+  // Same node, two taps 100 ms apart: Finish replaces Next's label under the finger.
+  await page.getByRole("button", { name: /^Next/ }).evaluate(async (button: HTMLButtonElement) => {
+    button.click();
+    await new Promise((resolve) => setTimeout(resolve, 100));
+    button.click();
+  });
+  await expect(heading(page, /Visibility and review/)).toBeFocused();
+  await page.waitForTimeout(200);
+  expect(finishes).toBe(0);
+  expect((await ownerPage(info.project.name)).visibility).toBe("private");
+  await page.getByRole("button", { name: /Finish and publish/ }).click();
+  await expect(heading(page, /Partner A.*Partner B/)).toBeVisible();
+});
+
+test("a refused first save offers Use UTC; the flag survives Leave and resume until a zone is chosen (R1, R2, Codex)", async ({ page }, info) => {
+  await signIn(page, info.project.name);
+  await page.getByRole("button", { name: /Set up your page/ }).click();
+  await page.getByLabel(/Partner A's name/).fill("Partner A");
+  await page.getByLabel(/Partner B's name/).fill("Partner B");
+  await page.route("**/api/owner/setup", (route) => route.fulfill({ status: 400 }));
+  await next(page);
+  await page.unroute("**/api/owner/setup");
+  await page.getByRole("button", { name: /Use UTC/ }).click();
+  await expect(heading(page, /time zone/)).toBeFocused();
+  await expect(page.getByRole("main")).toContainText("UTC is selected for now.");
+  expect((await ownerPage(info.project.name)).timezone).toBe("UTC");
+  await page.getByRole("button", { name: /Leave setup/ }).click();
+  await page.getByRole("button", { name: /Continue setup/ }).click();
+  await expect(heading(page, /Visibility and review/)).toBeFocused();
+  await expect(page.getByRole("main")).toContainText("Set from a fallback: please check.");
+  await page.getByRole("button", { name: /^Change/ }).nth(2).click();
+  await page.getByLabel(/Time zone/).selectOption("Asia/Tokyo");
+  await next(page);
+  await next(page);
+  await next(page);
+  await expect(heading(page, /Visibility and review/)).toBeFocused();
+  await expect(page.getByRole("main")).not.toContainText("Set from a fallback");
+  await expect(page.getByRole("main")).toContainText("Home only");
+  expect((await ownerPage(info.project.name)).timezone).toBe("Asia/Tokyo");
+});
+
+test("Reload clears the UTC flag when another session saved a real zone", async ({ page }, info) => {
+  await signIn(page, info.project.name);
+  await page.getByRole("button", { name: /Set up your page/ }).click();
+  await page.getByLabel(/Partner A's name/).fill("Partner A");
+  await page.getByLabel(/Partner B's name/).fill("Partner B");
+  await page.route("**/api/owner/setup", (route) => route.fulfill({ status: 400 }));
+  await next(page);
+  await page.unroute("**/api/owner/setup");
+  await page.getByRole("button", { name: /Use UTC/ }).click();
+  await expect(heading(page, /time zone/)).toBeFocused();
+  await sql`update public.pages set timezone = 'Asia/Tokyo' where id = ${(await ownerPage(info.project.name)).id}`;
+  await page.getByRole("button", { name: /^Back/ }).click();
+  await next(page);
+  const dialog = page.getByRole("dialog", { name: /Page changed elsewhere/ });
+  await dialog.getByRole("button", { name: /Reload saved choices/ }).click();
+  await expect(dialog).toBeHidden();
+  await next(page);
+  await expect(heading(page, /time zone/)).toBeFocused();
+  await expect(page.getByRole("main")).not.toContainText("UTC is selected for now.");
+});
+
+test("Reload flags a UTC zone saved by another session, so the review asks to check it (Codex)", async ({ page }, info) => {
+  await signIn(page, info.project.name);
+  await createPage(page);
+  await page.getByLabel(/Time zone/).selectOption("Asia/Tokyo");
+  await next(page);
+  await expect(heading(page, /What you'd like to share/)).toBeFocused();
+  await sql`update public.pages set timezone = 'UTC' where id = ${(await ownerPage(info.project.name)).id}`;
+  await next(page);
+  const dialog = page.getByRole("dialog", { name: /Page changed elsewhere/ });
+  await dialog.getByRole("button", { name: /Reload saved choices/ }).click();
+  await expect(dialog).toBeHidden();
+  await next(page);
+  await expect(heading(page, /Words for your guests/)).toBeFocused();
+  await next(page);
+  await expect(heading(page, /Visibility and review/)).toBeFocused();
+  await expect(page.getByRole("main")).toContainText("Set from a fallback: please check.");
+});
+
+test("a failed first save keeps step 1 and its retry; a lost answer ends in the conflict dialog, and 401 goes to login", async ({ page }, info) => {
+  await signIn(page, info.project.name);
+  await page.getByRole("button", { name: /Set up your page/ }).click();
+  await page.getByLabel(/Partner A's name/).fill("Partner A");
+  await page.getByLabel(/Partner B's name/).fill("Partner B");
+  await page.route("**/api/owner/setup", (route) => route.fulfill({ status: 503 }));
+  await next(page);
+  await expect(page.getByRole("main")).toContainText("Not saved.");
+  await expect(heading(page, /Language and your names/)).toBeVisible();
+  await page.unroute("**/api/owner/setup");
+  await page.route("**/api/owner/setup", async (route) => {
+    await route.fetch(); // the save commits and its answer is lost
+    await route.abort();
+  });
+  await page.getByRole("button", { name: /^Try again/ }).click();
+  await expect(page.getByRole("button", { name: /^Try again/ })).toBeEnabled();
+  await page.unroute("**/api/owner/setup");
+  await page.getByRole("button", { name: /^Try again/ }).click();
+  const dialog = page.getByRole("dialog", { name: /Page changed elsewhere/ });
+  await dialog.getByRole("button", { name: /Keep mine/ }).click();
+  await expect(heading(page, /time zone/)).toBeFocused();
+  await page.route("**/api/owner/setup", (route) => route.fulfill({ status: 401 }));
+  await next(page);
+  await expect(page).toHaveURL(/\/login/);
+});
+
+test("every Change link on the review opens its own step", async ({ page }, info) => {
+  await signIn(page, info.project.name);
+  await walkToReview(page);
+  for (const [row, step, title] of [[0, 1, /Language and your names/], [1, 1, /Language and your names/], [2, 2, /time zone/], [3, 3, /What you'd like to share/], [4, 4, /Words for your guests/]] as const) {
+    await page.getByRole("button", { name: /^Change/ }).nth(row).click();
+    await expect(heading(page, title)).toBeFocused();
+    for (let at = step; at < 5; at++) await next(page);
+    await expect(heading(page, /Visibility and review/)).toBeFocused();
+  }
+});
+
+test("Enter in the focused empty name field still announces the error; a tap, which moves focus, does not repeat it", async ({ page }, info) => {
+  await signIn(page, info.project.name);
+  await page.getByRole("button", { name: /Set up your page/ }).click();
+  await page.getByLabel(/Partner A's name/).focus();
+  await page.keyboard.press("Enter");
+  await expect(alertRegion(page)).toContainText("Enter a name.");
+  await page.getByLabel(/Partner B's name/).focus();
+  await next(page);
+  await expect(page.getByLabel(/Partner A's name/)).toBeFocused();
+  await expect(alertRegion(page)).toHaveText("");
+});
+
+test("access lost in the wizard is read once, by focus", async ({ page }, info) => {
+  await signIn(page, info.project.name);
+  await createPage(page);
+  await page.route("**/api/owner/setup", (route) => route.fulfill({ status: 403 }));
+  await next(page);
+  await expect(page.getByRole("main").locator("p[tabindex]")).toBeFocused();
+  await expect(alertRegion(page)).toHaveText("");
+});
+
+test("a failed save on a resumed wizard no longer says the saved choices were restored", async ({ page }, info) => {
+  await signIn(page, info.project.name);
+  await walkToReview(page);
+  await page.getByRole("button", { name: /Leave setup/ }).click();
+  await page.getByRole("button", { name: /Continue setup/ }).click();
+  await expect(page.getByRole("main")).toContainText("Saved choices restored.");
+  await page.route("**/api/owner/finish", (route) => route.fulfill({ status: 503, json: { error: "not_published" } }));
+  await page.getByRole("button", { name: /Finish and publish/ }).click();
+  await expect(page.getByRole("main")).toContainText("Nothing was published");
+  await expect(page.getByRole("main").getByRole("status")).toHaveText("");
+  await expect(page.getByRole("main")).not.toContainText("Saved choices restored.");
+});
+
+test("retrying an uncertain Finish does not raise the old alert while it runs", async ({ page }, info) => {
+  await signIn(page, info.project.name);
+  await walkToReview(page);
+  await page.route("**/api/owner/finish", (route) => route.abort());
+  await page.getByRole("button", { name: /Finish and publish/ }).click();
+  const again = page.getByRole("button", { name: /^Try again/ });
+  await expect(again).toBeVisible();
+  await page.unroute("**/api/owner/finish");
+  let release = () => {};
+  const held = new Promise<void>((resolve) => (release = resolve));
+  await page.route("**/api/owner/finish", async (route) => {
+    await held;
+    await route.abort();
+  });
+  await again.click();
+  await expect(page.getByRole("main").getByRole("status")).toContainText("Publishing");
+  await expect(alertRegion(page)).toHaveText("");
+  release();
+  await expect(again).toBeEnabled();
+});
+
+test("a dialog opened from a control the save disabled gives focus back to the step heading", async ({ page }, info) => {
+  await signIn(page, info.project.name);
+  await createPage(page);
+  await page.getByRole("button", { name: /^Back/ }).click();
+  await sql`update public.pages set label_a = 'Partner C' where id = ${(await ownerPage(info.project.name)).id}`;
+  await page.getByRole("radio").first().focus();
+  await page.keyboard.press("Enter");
+  await expect(page.getByRole("dialog", { name: /Page changed elsewhere/ })).toBeVisible();
+  await page.keyboard.press("Escape");
+  await expect(heading(page, /Language and your names/)).toBeFocused();
+});
+
+test("a running save dims the primary button; the phone layout keeps its sizes and gaps", async ({ page }, info) => {
+  await page.setViewportSize({ width: 320, height: 800 });
+  await signIn(page, info.project.name);
+  await page.getByRole("button", { name: /Set up your page/ }).click();
+  const radio = await page.locator("label:has(input[type=radio])").first().boundingBox();
+  expect(radio!.height).toBeLessThan(80); // not the 120 px flex basis meant as a width
+  await page.getByLabel(/Partner A's name/).fill("Partner A");
+  await page.getByLabel(/Partner B's name/).fill("Partner B");
+  let release = () => {};
+  const held = new Promise<void>((resolve) => (release = resolve));
+  await page.route("**/api/owner/setup", async (route) => {
+    await held;
+    await route.continue();
+  });
+  await next(page);
+  await expect(page.getByRole("button", { name: /^Next/ })).toHaveCSS("opacity", "0.55");
+  release();
+  await expect(heading(page, /time zone/)).toBeFocused();
+  await page.unroute("**/api/owner/setup");
+  await next(page);
+  await expect(heading(page, /What you'd like to share/)).toBeFocused();
+  await next(page);
+  await expect(heading(page, /Words for your guests/)).toBeFocused();
+  const toggle = page.getByRole("button", { name: /Guest preview/ });
+  await toggle.click();
+  const a = await toggle.boundingBox();
+  const b = await page.getByRole("button", { name: /A Dreamy/ }).boundingBox();
+  expect(b!.y - (a!.y + a!.height)).toBeGreaterThanOrEqual(8);
 });

@@ -73,6 +73,8 @@ test("a malformed body is refused before the database", async () => {
     null,
     {},
     { ...FIRST, theme: "e_unknown" },
+    { ...FIRST, theme: undefined },
+    { ...FIRST, sections: ["home", "zodiac"] },
     { ...FIRST, default_lang: "fr" },
     { ...FIRST, timezone: 7 },
     { ...FIRST, sections: "memories" },
