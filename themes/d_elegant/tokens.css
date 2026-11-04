@@ -1,0 +1,63 @@
+/* Theme D Elegant (design 4 §4). Fallback fonts until the Phase 4 downloads (design 4 §8.2, Q113). */
+[data-theme="d_elegant"] {
+  --color-scheme: light;
+  color-scheme: light;
+  --bg: #f4f1ec;
+  --bg-image: none;
+  --surface: #f4f1ec;
+  --surface-border: #1a1a1a;
+  --scrim: rgb(244 241 236 / 75%);
+  --text: #1a1a1a;
+  --text-muted: #555555;
+  --text-on-accent: #f4f1ec;
+  --accent: #b3402a;
+  --accent-text: #b3402a;
+  --line: #1a1a1a;
+  --line-gold: #927132;
+  --focus: #b3402a;
+  --danger: #a3262e;
+  --success: #2e6b3a;
+  --menu-button-bg: #1a1a1a;
+  --menu-button-fg: #f4f1ec;
+  --menu-item-bg: #f4f1ec;
+  --menu-item-border: #1a1a1a;
+  --menu-item-fg: #1a1a1a;
+  --menu-item-active-bg: #1a1a1a;
+  --menu-item-active-fg: #f4f1ec;
+  --menu-card-shadow: 0 0 0 1px #1a1a1a, 0 8px 24px rgb(26 26 26 / 12%);
+  --menu-ring: rgb(26 26 26 / 45%);
+  --font-display: Georgia, serif;
+  --font-body: system-ui, sans-serif;
+  --font-hand: system-ui, sans-serif;
+  --display-style: normal;
+  --display-weight: 400;
+  --fs-xs: 0.75rem;
+  --fs-sm: 0.875rem;
+  --fs-md: 1rem;
+  --fs-lg: 1.25rem;
+  --fs-xl: 1.75rem;
+  --fs-display: 2.75rem;
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-5: 24px;
+  --space-6: 32px;
+  --space-7: 48px;
+  --space-8: 64px;
+  --radius-sm: 0;
+  --radius-md: 0;
+  --radius-pill: 0;
+  --dur-fast: 150ms;
+  --dur-slow: 300ms;
+  --ease: ease-out;
+  --ease-enter: ease-out;
+  --shadow: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  [data-theme="d_elegant"] {
+    --dur-fast: 0ms;
+    --dur-slow: 0ms;
+  }
+}
