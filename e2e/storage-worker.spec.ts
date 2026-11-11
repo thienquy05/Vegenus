@@ -5,10 +5,9 @@ import postgres from "postgres";
 
 // T2.3c against the real local Storage service (design 3 §3.4; Q134): the daily cron route deletes a queued file
 // through the Storage API and marks its deletion done only once the file is gone, and the reconcile catches a stray
-// file that no row accounts for and deletes it in the same run. API-level, so one browser project is enough.
+// file that no row accounts for and deletes it in the same run. API-level; it runs in both browser projects (the lint
+// forbids skipping a project), each with its own random paths, so two concurrent runs of the job are covered too.
 const E2E_PAGE = "00000000-0000-0000-0000-0000000000e2";
-
-test.skip(({ browserName }) => browserName !== "chromium", "API-level: runs once");
 
 test("the storage cron deletes queued and stray files, and frees their charge only once they are gone", async ({ request }) => {
   const { SUPABASE_URL, SUPABASE_SECRET_KEY, SUPABASE_DB_URL, CRON_SECRET } = process.env;
@@ -28,7 +27,7 @@ test("the storage cron deletes queued and stray files, and frees their charge on
     expect((await request.get("/api/cron/storage", { headers: { authorization: "Bearer wrong" } })).status()).toBe(403);
     const res = await request.get("/api/cron/storage", { headers: { authorization: `Bearer ${CRON_SECRET}` } });
     expect(res.status()).toBe(200);
-    expect((await res.json()).orphans).toBeGreaterThanOrEqual(1);
+    // No count check: the other project's concurrent run may be the one that reconciles this stray file.
 
     const left = await sql`select name from storage.objects where bucket_id = 'media-thumb' and name in (${queued}, ${stray})`;
     expect(left).toHaveLength(0);
