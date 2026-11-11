@@ -21,6 +21,10 @@ export const ROUTES: Record<string, RouteClass> = {
   "/api/owner/setup": "owner",
   "/api/owner/finish": "owner",
   "/api/owner/page": "owner",
+  "/api/owner/upload/begin": "owner",
+  "/api/owner/upload/complete": "owner",
+  "/api/owner/upload/cancel": "owner",
+  "/api/owner/media/delete": "owner",
   // Daily Vercel cron: the CRON_SECRET bearer (requireMachine: src/lib/machine.ts).
   "/api/cron/storage": "machine",
 };
@@ -36,6 +40,10 @@ export const HANDLER_METHODS: Record<string, string[]> = {
   "/api/owner/setup": ["POST"],
   "/api/owner/finish": ["POST"],
   "/api/owner/page": ["POST"],
+  "/api/owner/upload/begin": ["POST"],
+  "/api/owner/upload/complete": ["POST"],
+  "/api/owner/upload/cancel": ["POST"],
+  "/api/owner/media/delete": ["POST"],
   "/api/cron/storage": ["GET"],
 };
 
