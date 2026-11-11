@@ -20,13 +20,15 @@ insert into public.guest_tokens (page_id, version, token_hash, active, request_i
 update public.page_sections set enabled = true where section in ('memories', 'guestbook');
 
 insert into public.items (id, page_id, kind, status, lang, title, event_date, date_precision, sort_order) values
-  ('00000000-0000-0000-0000-0000000000a1', '00000000-0000-0000-0000-00000000000a', 'memory', 'published', 'en', 'A memory one', '2020-01-01', 'day', 1),
-  ('00000000-0000-0000-0000-0000000000a2', '00000000-0000-0000-0000-00000000000a', 'memory', 'published', 'en', 'A memory two', '2020-01-01', 'day', 2),
+  ('00000000-0000-0000-0000-0000000000a1', '00000000-0000-0000-0000-00000000000a', 'memory', 'draft', 'en', 'A memory one', '2020-01-01', 'day', 1),
+  ('00000000-0000-0000-0000-0000000000a2', '00000000-0000-0000-0000-00000000000a', 'memory', 'draft', 'en', 'A memory two', '2020-01-01', 'day', 2),
   ('00000000-0000-0000-0000-0000000000a3', '00000000-0000-0000-0000-00000000000a', 'memory', 'draft', 'en', 'A draft', '2020-01-01', 'day', 3),
-  ('00000000-0000-0000-0000-0000000000a4', '00000000-0000-0000-0000-00000000000a', 'milestone', 'published', 'en', 'A milestone', '2020-01-01', 'day', 4),
-  ('00000000-0000-0000-0000-0000000000b1', '00000000-0000-0000-0000-00000000000b', 'memory', 'published', 'vi', 'B memory', '2020-01-01', 'day', 1),
-  ('00000000-0000-0000-0000-0000000000c1', '00000000-0000-0000-0000-00000000000c', 'memory', 'published', 'en', 'C memory', '2020-01-01', 'day', 1),
-  ('00000000-0000-0000-0000-0000000000d1', '00000000-0000-0000-0000-00000000000d', 'memory', 'published', 'en', 'D memory', '2020-01-01', 'day', 1);
+  ('00000000-0000-0000-0000-0000000000a4', '00000000-0000-0000-0000-00000000000a', 'milestone', 'draft', 'en', 'A milestone', '2020-01-01', 'day', 4),
+  ('00000000-0000-0000-0000-0000000000b1', '00000000-0000-0000-0000-00000000000b', 'memory', 'draft', 'vi', 'B memory', '2020-01-01', 'day', 1),
+  ('00000000-0000-0000-0000-0000000000c1', '00000000-0000-0000-0000-00000000000c', 'memory', 'draft', 'en', 'C memory', '2020-01-01', 'day', 1),
+  ('00000000-0000-0000-0000-0000000000d1', '00000000-0000-0000-0000-00000000000d', 'memory', 'draft', 'en', 'D memory', '2020-01-01', 'day', 1);
+-- Published items carry the snapshot guests read (T2.2).
+update public.items i set status = 'published', published = public.item_snapshot(i) where i.id <> '00000000-0000-0000-0000-0000000000a3';
 
 insert into public.guestbook_entries (page_id, display_name, body, lang, status, submission_id, author_kind, token_version) values
   ('00000000-0000-0000-0000-00000000000a', '[GUEST]', 'A approved', 'en', 'approved', gen_random_uuid(), 'token', 2),

@@ -25,3 +25,11 @@ export async function ownerAuth(request: NextRequest) {
   if (!data.user) return answer(null, 401);
   return auth;
 }
+
+export const isUuid = (value: unknown) => typeof value === "string" && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(value);
+
+// What the database's refusals mean to an owner route: 42501 not the page's owner, and these codes bad input
+// (22023 rule, 23514 check, 22P02 enum text, 22P05 NUL, 22007 and 22008 date). Anything else is an outage.
+const BAD_INPUT = ["22023", "23514", "22P02", "22P05", "22007", "22008"];
+export const dbFailure = (error: { code?: string }) =>
+  error.code === "42501" ? answer(null, 403) : answer(null, BAD_INPUT.includes(error.code ?? "") ? 400 : 503);
