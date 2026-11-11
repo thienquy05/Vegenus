@@ -6,13 +6,14 @@ import postgres from "postgres";
 // T2.3b against the real local Storage service (design 3 §3.4; gate items of T2.3a's reviews): upload URLs are minted
 // only for admitted paths, the browser uploads with the token alone, a finished file cannot be overwritten through its
 // URL (upsert false), the bucket limits refuse an oversize file and a wrong type, and deleting the media queues its
-// files behind the fence. API-level, so one browser project is enough. Placeholder data only.
-const PAGE = "00000000-0000-0000-0000-0000000000e4"; // owned by owner-chromium (e2e/global-setup.ts)
-const OWNER = { email: "owner-chromium@example.test", password: "placeholder-password-1" };
-
-test.skip(({ browserName }) => browserName !== "chromium", "API-level: runs once");
+// files behind the fence. API-level; it runs in each browser project as that project's owner (the lint forbids
+// skipping a project), on a fresh item. Placeholder data only.
+const PAGES = { chromium: "00000000-0000-0000-0000-0000000000e4", webkit: "00000000-0000-0000-0000-0000000000e5" }; // e2e/global-setup.ts
 
 test("upload URLs obey the reservation, write once, and respect the bucket limits", async ({ request, baseURL }) => {
+  const project = test.info().project.name as keyof typeof PAGES;
+  const PAGE = PAGES[project];
+  const OWNER = { email: `owner-${project}@example.test`, password: "placeholder-password-1" };
   const { SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY, SUPABASE_SECRET_KEY, SUPABASE_DB_URL } = process.env;
   const sql = postgres(SUPABASE_DB_URL!, { max: 1 });
   const item = randomUUID();
@@ -80,7 +81,7 @@ test("upload URLs obey the reservation, write once, and respect the bucket limit
     expect(lateMint.error).not.toBeNull();
 
     // Deleting the finished media queues its files behind the fence (its URLs could still write until then).
-    expect((await post("/api/owner/media/delete", { media_id: upload.media_id })).status()).toBe(200);
+    expect((await post("/api/owner/upload/delete", { media_id: upload.media_id })).status()).toBe(200);
     const queued = await sql`select bytes, not_before > now() + interval '2 hours' as fenced from public.storage_deletions
       where path in (${thumb.path}, ${display.path}) order by bytes`;
     expect(queued.map((q) => [Number(q.bytes), q.fenced])).toEqual([[1000, true], [5000, true]]);

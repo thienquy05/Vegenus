@@ -16,7 +16,7 @@ vi.mock("@/lib/auth", async (original) => ({
 const begin = (await import("./begin/route")).POST;
 const complete = (await import("./complete/route")).POST;
 const cancel = (await import("./cancel/route")).POST;
-const remove = (await import("../media/delete/route")).POST;
+const remove = (await import("./delete/route")).POST;
 
 const ITEM = "00000000-0000-0000-0000-0000000000b1";
 const MEDIA = "00000000-0000-0000-0000-0000000000c1";
@@ -121,7 +121,7 @@ test("complete refuses malformed dimensions before the database", async () => {
 });
 
 test("cancel and delete answer 200, or the same 404 for an unknown or foreign id (E56)", async () => {
-  for (const [handler, path, fn] of [[cancel, "upload/cancel", "owner_upload_cancel"], [remove, "media/delete", "owner_media_delete"]] as const) {
+  for (const [handler, path, fn] of [[cancel, "upload/cancel", "owner_upload_cancel"], [remove, "upload/delete", "owner_media_delete"]] as const) {
     rpc.mockResolvedValue({ data: true, error: null });
     expect((await call(handler, path, { media_id: MEDIA })).status).toBe(200);
     expect(rpc).toHaveBeenCalledWith(fn, { media_id: MEDIA });
@@ -132,7 +132,7 @@ test("cancel and delete answer 200, or the same 404 for an unknown or foreign id
 });
 
 test("every route refuses another origin and a signed-out caller before the database", async () => {
-  for (const [handler, path] of [[begin, "upload/begin"], [complete, "upload/complete"], [cancel, "upload/cancel"], [remove, "media/delete"]] as const) {
+  for (const [handler, path] of [[begin, "upload/begin"], [complete, "upload/complete"], [cancel, "upload/cancel"], [remove, "upload/delete"]] as const) {
     expect((await call(handler, path, {}, "https://evil.example")).status).toBe(403);
     getUser.mockResolvedValueOnce({ data: { user: null } });
     expect((await call(handler, path, {})).status).toBe(401);
