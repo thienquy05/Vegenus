@@ -3,7 +3,7 @@ begin;
 select plan(11);
 
 select tables_are('public', array['pages', 'page_sections', 'memberships', 'guest_tokens', 'items', 'guestbook_entries', 'rate_limit_hits',
-  'copy_keys', 'page_copy', 'item_tombstones'], 'the T1.3, T1.4, T2.7 and T2.2 tables exist');
+  'copy_keys', 'page_copy', 'item_tombstones', 'media', 'media_variants', 'upload_reservations', 'storage_deletions'], 'the T1.3, T1.4, T2.7, T2.2 and T2.3a tables exist');
 
 select ok(exists (
   select 1 from pg_roles where rolname = 'vegenus_server'
@@ -48,13 +48,14 @@ select is((
 select is((
   select array_agg(p.proname::text order by p.proname) from pg_proc p
   where p.pronamespace = 'public'::regnamespace and has_function_privilege('authenticated', p.oid, 'execute')
-), array['owner_copy_accept_defaults', 'owner_copy_drafts', 'owner_item_delete', 'owner_item_get', 'owner_item_save', 'owner_item_set_status', 'owner_items_list', 'owner_page', 'owner_rotate_token', 'owner_save_page', 'owner_set_visibility'],
+), array['owner_copy_accept_defaults', 'owner_copy_drafts', 'owner_item_delete', 'owner_item_get', 'owner_item_save', 'owner_item_set_status', 'owner_items_list', 'owner_media_delete', 'owner_page', 'owner_rotate_token', 'owner_save_page', 'owner_set_visibility', 'owner_upload_admitted', 'owner_upload_begin', 'owner_upload_cancel', 'owner_upload_complete'],
   'authenticated executes only the owner functions (account_* come in T3.6)');
 
 select is((
   select array_agg(p.proname::text order by p.proname) from pg_proc p
   where p.pronamespace = 'public'::regnamespace and has_function_privilege('vegenus_server', p.oid, 'execute')
-), array['guest_exchange_attempt', 'login_attempt'], 'vegenus_server executes only the login and exchange limiters (guest writes come later)');
+), array['guest_exchange_attempt', 'login_attempt', 'worker_deletion_done', 'worker_due_deletions', 'worker_expire_uploads'],
+  'vegenus_server executes only the login and exchange limiters and the storage worker (guest writes come later)');
 
 select is((
   select array_agg(p.oid::regprocedure::text) from pg_proc p

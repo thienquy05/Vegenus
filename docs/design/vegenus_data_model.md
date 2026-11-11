@@ -166,7 +166,7 @@ A guest never sees an original upload: EXIF and location are stripped and the fi
 | `page_id` | uuid | composite FK with `media_id` |
 | `variants` | admitted list of `(variant, max_bytes)` | the only object paths this upload may write |
 | `charged_bytes` | bigint | what the budget counts for this upload (rule below) |
-| `write_until` | tstz | end of the write window: `created_at + 1 h`; the signed upload URLs must expire before it |
+| `write_until` | tstz | end of the write window: `created_at + 2 h 5 min` (Q135: hosted signed upload URLs last 2 hours and cannot be shortened; minted right after Begin, they expire before it) |
 
 **Charging rule.** Every byte that may still be in a bucket is charged in exactly one place:
 
@@ -179,7 +179,7 @@ Bytes **move** between those places inside one transaction and are never dropped
 - The deletion worker sets `done_at` only after the storage API confirms the object is gone. Only then is the capacity free. A failing worker keeps the bytes charged, so replacement uploads cannot overfill the budget.
 
 **Write fence.** Cancelling an upload does not stop a write that the storage service has already accepted, so its object could land after the worker has confirmed "absent" and freed the charge. So a deletion that comes from a cancelled, expired or refused upload is not attempted before its fence time:
-- `storage_deletions.not_before = write_until + drain`. After `write_until` no **new** write is allowed (the signed upload URLs have expired and the insert policy checks `write_until`). `drain` is the longest time an accepted upload request can still take to finish; proposal 15 minutes, to be replaced by the provider's real maximum request duration.
+- `storage_deletions.not_before = write_until + drain`. After `write_until` no **new** write is allowed (the signed upload URLs have expired and the insert policy checks `write_until`). `drain` is the longest time an accepted upload request can still take to finish; proposal 15 minutes, to be replaced by the provider's real maximum request duration. **Owner, 2026-11-10 (Q135): 15 minutes**, until that maximum is verified.
 - After `not_before`, the worker deletes, then confirms absence, and only then sets `done_at`. Until then the bytes stay charged.
 - Deletions of **finished** media need no fence: no reservation exists for those paths, so no write to them can be authorized.
 - The daily reconcile remains the safety net: any object without a row is enqueued and charged at its real size, and an alert is raised.
@@ -194,9 +194,9 @@ Bytes **move** between those places inside one transaction and are never dropped
 | Delete media | `owner_media_delete(media_id)`, or an item/page delete | Variant rows are deleted; the trigger moves each one's bytes to `storage_deletions` |
 | Deletion confirmed | storage deletion worker | Sets `done_at` when the object is confirmed gone; capacity is freed only now. `failed` media rows with no pending deletions are then removed (E9) |
 | Expire | Daily job (and lazily in Begin) | Same as Cancel for reservations past `write_until` |
-| Reconcile | Daily job | Compare the bucket's real bytes under `pages/<page_id>/` with variants plus charged reservations. Objects with no row are enqueued for deletion; any mismatch raises an alert. Reading object sizes from the storage schema is **unverified**; check in Phase 2 |
+| Reconcile | Daily job | Compare the bucket's real bytes under `pages/<page_id>/` with variants plus charged reservations. Objects with no row are enqueued for deletion; any mismatch raises an alert. Object sizes are in `storage.objects.metadata ->> 'size'` (**verified 2026-11-10**, Supabase docs) |
 
-**What a reservation charges.** If storage can enforce each object's size at write time (below), `charged_bytes` = the declared sizes. If it cannot, `charged_bytes` = the sum of the **class limits** of the admitted variants, the most the client could write, so the budget still holds in the worst case. Class limits (proposal, one private bucket per class so the bucket's own maximum file size enforces them): `thumb` 300 KB, `display` and `poster` 2 MB, `full` 8 MB, `audio` 10 MB, `video` 50 MB (Q27). Bucket-level size limits on Supabase are **unverified**; check in Phase 2.
+**What a reservation charges.** If storage can enforce each object's size at write time (below), `charged_bytes` = the declared sizes. If it cannot, `charged_bytes` = the sum of the **class limits** of the admitted variants, the most the client could write, so the budget still holds in the worst case. Class limits (proposal, one private bucket per class so the bucket's own maximum file size enforces them): `thumb` 300 KB, `display` and `poster` 2 MB, `full` 8 MB, `audio` 10 MB, `video` 50 MB (Q27). Bucket-level size and type limits: **verified 2026-11-10** (Supabase docs through context7: an upload that breaks a bucket's `file_size_limit` or `allowed_mime_types` is rejected). Whether a storage policy sees the object's size at insert is still unverified, so `charged_bytes` = the class limits (T2.3a).
 
 O10's meter shows used plus charged. Egress cannot be measured from the database; its source for the 60%/80% warnings is the vendor's usage data (**unverified** how it is read on the free plan; check in Phase 2).
 
@@ -541,7 +541,7 @@ Pagination is keyset (cursor = last `(sort_order, id)` or `(created_at, id)`), n
 | `rate_limit_hits` | 24 hours | Daily job |
 | `email_log` | 90 days | Daily job (Q45) |
 | `job_runs` | 30 days | Daily job (Q45) |
-| Upload reservations | Until the upload completes, or its files are confirmed deleted after cancel/expiry (write window 1 hour) | Begin (lazy), daily job, deletion worker (§3.4) |
+| Upload reservations | Until the upload completes, or its files are confirmed deleted after cancel/expiry (write window 2 hours 5 minutes, Q135) | Begin (lazy), daily job, deletion worker (§3.4) |
 | `failed` media and their files | 24 hours | Daily job (E9) |
 | Inactive `guest_tokens` rows | Kept (hash only; needed to label old pending wishes) | Page delete |
 | `auth_deletion_outbox` | Until exact Auth-user absence is confirmed; retain failed intents for retry and alert | Auth cleanup worker (§3.8) |
