@@ -54,7 +54,7 @@ select is((
 select is((
   select array_agg(p.proname::text order by p.proname) from pg_proc p
   where p.pronamespace = 'public'::regnamespace and has_function_privilege('vegenus_server', p.oid, 'execute')
-), array['guest_exchange_attempt', 'login_attempt', 'worker_deletion_done', 'worker_due_deletions', 'worker_expire_uploads'],
+), array['guest_exchange_attempt', 'login_attempt', 'worker_deletion_done', 'worker_due_deletions', 'worker_expire_uploads', 'worker_reconcile'],
   'vegenus_server executes only the login and exchange limiters and the storage worker (guest writes come later)');
 
 select is((

@@ -25,3 +25,24 @@ export async function loginAllowed(request: Request, email: string): Promise<boo
   const [row] = await sql`select public.login_attempt(${hmac(`ip:${ip}`)}, ${hmac(`email:${ip}:${email}`)}) as ok`;
   return row.ok;
 }
+
+// The daily storage job (T2.3c; design 3 §3.4). Deletion ids are Postgres bigints, kept as strings.
+export async function expireUploads(): Promise<number> {
+  const [row] = await sql`select public.worker_expire_uploads() as n`;
+  return row.n;
+}
+
+export async function reconcile(): Promise<{ orphans: number; resized: number }> {
+  const [row] = await sql`select public.worker_reconcile() as r`;
+  return row.r;
+}
+
+export async function dueDeletions(max: number): Promise<{ id: string; bucket: string; path: string }[]> {
+  const rows = await sql`select id::text as id, bucket, path from public.worker_due_deletions(${max})`;
+  return rows.map((r) => ({ id: r.id, bucket: r.bucket, path: r.path }));
+}
+
+export async function deletionDone(id: string): Promise<boolean> {
+  const [row] = await sql`select public.worker_deletion_done(${id}::bigint) as ok`;
+  return row.ok;
+}

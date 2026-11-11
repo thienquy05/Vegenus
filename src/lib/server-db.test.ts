@@ -24,7 +24,7 @@ test("the address budget is kept per client IP", async () => {
 });
 
 // Design 3 §3.9: the vegenus_server connection is used only by the server routes listed here.
-const ALLOWED = ["src/app/api/guest/session/route.ts", "src/app/api/owner/login/route.ts"];
+const ALLOWED = ["src/app/api/cron/storage/route.ts", "src/app/api/guest/session/route.ts", "src/app/api/owner/login/route.ts"];
 
 test("only the listed routes import server-db", () => {
   const files = readdirSync("src", { recursive: true, encoding: "utf8" })

@@ -3,11 +3,12 @@
 -- delete racing expiry or cancel: every function locks the media row before its reservation, so they queue instead of
 -- deadlocking. The delete is played as its own first step (lock the media row) and then its delete, so the race is
 -- forced rather than left to timing. (4) Begin racing an item delete: Begin locks the item before it expires
--- anything, so it never holds an expired media row of that item while waiting for the item (Codex round 3). Real sessions through dblink, as page_setup_race.test.sql does; their rows
+-- anything, so it never holds an expired media row of that item while waiting for the item (Codex round 3). (5) The
+-- reconcile takes the page locks before it adds a charge, so a Begin checking the budget never misses it (Codex T2.3c). Real sessions through dblink, as page_setup_race.test.sql does; their rows
 -- are committed, so the test removes them at the start and at the end. Placeholder data only.
 begin;
 create extension if not exists dblink with schema extensions;
-select plan(14);
+select plan(15);
 
 select extensions.dblink_connect(c, 'host=supabase_db_vegenus dbname=postgres user=postgres password=postgres')
 from unnest(array['setup', 'first', 'second']) c;
@@ -129,6 +130,17 @@ create temp table begun as select * from extensions.dblink_get_result('second', 
 select * from extensions.dblink_get_result('second', false) as t(upload jsonb);
 select is(extensions.dblink_error_message('second'), 'OK', 'and Begin finishes without error');
 select is((select upload from begun), null, 'answering null: the item is gone');
+
+select * from extensions.dblink_get_result('second', false) as t(upload jsonb); -- the empty end of the async query
+
+-- (5) Reconcile racing Begin's budget check: Begin holds the page row while it reads usage.
+select extensions.dblink_exec('first', 'begin');
+select * from extensions.dblink('first', $$ select 1 from public.pages where id = '00000000-0000-0000-0000-0000000000a7' for update $$) as t(x int);
+select extensions.dblink_send_query('second', 'select public.worker_reconcile()');
+select ok(pg_temp.wait_blocked(), 'the reconcile waits for the page lock before changing any charge');
+select extensions.dblink_exec('first', 'commit');
+select * from extensions.dblink_get_result('second', false) as t(r jsonb);
+select * from extensions.dblink_get_result('second', false) as t(r jsonb);
 
 select extensions.dblink_exec('setup', $$
   delete from public.storage_deletions where page_id = '00000000-0000-0000-0000-0000000000a7';

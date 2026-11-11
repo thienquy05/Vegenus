@@ -26,6 +26,8 @@ export const ROUTES: Record<string, RouteClass> = {
   "/api/owner/item/get": "owner",
   "/api/owner/item/status": "owner",
   "/api/owner/item/delete": "owner",
+  // Daily Vercel cron: the CRON_SECRET bearer (requireMachine: src/lib/machine.ts).
+  "/api/cron/storage": "machine",
 };
 
 // The methods each route handler exports. The crawler (e2e/routes.spec.ts) checks each one without
@@ -44,6 +46,7 @@ export const HANDLER_METHODS: Record<string, string[]> = {
   "/api/owner/item/get": ["POST"],
   "/api/owner/item/status": ["POST"],
   "/api/owner/item/delete": ["POST"],
+  "/api/cron/storage": ["GET"],
 };
 
 // E35: where login may send the owner afterwards. Only an exact owner page from this table (never a
