@@ -21,6 +21,11 @@ export const ROUTES: Record<string, RouteClass> = {
   "/api/owner/setup": "owner",
   "/api/owner/finish": "owner",
   "/api/owner/page": "owner",
+  "/api/owner/items": "owner",
+  "/api/owner/item": "owner",
+  "/api/owner/item/get": "owner",
+  "/api/owner/item/status": "owner",
+  "/api/owner/item/delete": "owner",
 };
 
 // The methods each route handler exports. The crawler (e2e/routes.spec.ts) checks each one without
@@ -34,6 +39,11 @@ export const HANDLER_METHODS: Record<string, string[]> = {
   "/api/owner/setup": ["POST"],
   "/api/owner/finish": ["POST"],
   "/api/owner/page": ["POST"],
+  "/api/owner/items": ["POST"],
+  "/api/owner/item": ["POST"],
+  "/api/owner/item/get": ["POST"],
+  "/api/owner/item/status": ["POST"],
+  "/api/owner/item/delete": ["POST"],
 };
 
 // E35: where login may send the owner afterwards. Only an exact owner page from this table (never a
