@@ -40,7 +40,7 @@ Types are PostgreSQL. `tstz` = `timestamptz` (stored in UTC). Every table also h
 | Column | Type | Rule |
 |---|---|---|
 | `id` | uuid PK | random |
-| `theme` | enum `theme_id` (`a_dreamy`, `b_cosmic`, `c_cozy`, `d_elegant`) | PRD §6.2; new themes add enum values |
+| `theme` | enum `theme_id` (`a_dreamy`, `b_cosmic`, `c_cozy`, `d_elegant`), nullable, no default | The owner's optional suggested theme (null: none); each guest chooses their own on the first visit (Q128). PRD §6.2; new themes add enum values |
 | `default_lang` | enum `lang` (`en`, `vi`) | |
 | `visibility` | enum `visibility` (`private`, `token_only`, `published`) | the row is created **`private`**; the setup wizard's final step sets the owner's choice (the wizard offers `token_only` as its default, S3) in the same transaction as the wording acceptance (§3.12). A page that has not finished setup is therefore never visible to guests |
 | `label_a`, `label_b` | text | 1–40 chars, NFC; how the page names the two partners; fill `{partner_a}` / `{partner_b}` (§3.12). Required before setup can finish |
@@ -459,7 +459,7 @@ All 54 rows (27 keys × 2 languages) are created with the page, with `draft_text
 - **Guest reads:** **every** `public_*`, `guest_*` and `account_*` read function (open, list, guestbook list, media URL minting, profile and Zodiac reads) **refuses (the generic not-available result) while `copy_published_at` is null**, whatever the visibility. They share one predicate, `page_is_live(page)`: visibility is not `private`, section enabled where relevant, and `copy_published_at` is not null. The open functions otherwise return `copy` (the published text of every key for each offered language) and `languages_ready`; they never return a `draft_text`. `{count}` values come from the same call's published and approved counts. A language is **offered** exactly when all 27 of its `published_text` values are set, so it is derived from the snapshot and cannot be stale. If the guest's wanted language is not offered, the function returns the default language, which is always offered once the page is visible.
 - **Page rules:** `owner_set_visibility` refuses `token_only` and `published` while `copy_published_at` is null (a page cannot be shown to guests before its first wording publication; accepting the suggested wording is that publication); `owner_save_page` refuses a `default_lang` that is not complete in the published snapshot, once `copy_published_at` is set (with T2.7's invariant trigger). A publish that leaves a non-default language incomplete is allowed: that language drops out of the offered set at once and remembered guest choices fall back to the default.
 
-Wording is public once published. It holds no token, no email address and no personal data of guests; the partner names in `{partner_a}` / `{partner_b}` come from `pages.label_a` and `pages.label_b` (core, 1–40 characters, NFC, entered in the second O3 step), not from Zodiac data, so wording works on a page with no Zodiac section; Z1 labels may default to them.
+Wording is public once published. It holds no token, no email address and no personal data of guests; the partner names in `{partner_a}` / `{partner_b}` come from `pages.label_a` and `pages.label_b` (core, 1–40 characters, NFC, entered in the first O3 step), not from Zodiac data, so wording works on a page with no Zodiac section; Z1 labels may default to them.
 
 ## 4. Relationships
 
@@ -492,7 +492,7 @@ Deleting a page cascades to its page rows only after enqueuing storage keys and 
 
 | Table | `anon` (visitor, token guest) | Member (guest account) | Owner | Co-editor (reserved, unused) | Service role |
 |---|---|---|---|---|---|
-| `pages` | fn (`public_open`, `guest_open`) | fn (`account_open`) | read through `owner_page()`; create and update through `owner_save_page` (the first save creates the page with the caller's owner membership; later saves name the `version` they read, Q116) / `owner_set_visibility` only (a trigger also enforces the wording invariants on any direct update) | read | admin jobs |
+| `pages` | fn (`public_open`, `guest_open`) | fn (`account_open`) | read through `owner_page()` (and its drafted wording through `owner_copy_drafts()`, Q124); create and update through `owner_save_page` (the first save creates the page with the caller's owner membership; later saves name the `version` they read, Q116) / `owner_set_visibility` only (a trigger also enforces the wording invariants on any direct update) | read | admin jobs |
 | `page_sections` | fn | fn | read through `owner_page()`; update through `owner_save_page` (Home always on, Q118) | read | |
 | `memberships`, `owner_settings` | — | — | read own; settings update own | read own; settings update own | provisioning (Q30) |
 | `guest_tokens` | fn (hash lookup inside) | — | create, rotate through `owner_rotate_token`; never read `token_hash` | — | |

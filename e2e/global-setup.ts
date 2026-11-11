@@ -30,8 +30,9 @@ export default async function globalSetup() {
     const token = randomBytes(32).toString("base64url");
     process.env[env] = token;
     await sql`delete from public.pages where id = ${id}`;
-    await sql`insert into public.pages (id, theme, default_lang, visibility, timezone, copy_published_at)
-      values (${id}, 'a_dreamy', 'en', 'token_only', 'UTC', now())`;
+    // Finished setups (T2.1b): names and setup_completed_at, so their owners see the done dashboard.
+    await sql`insert into public.pages (id, theme, default_lang, visibility, timezone, copy_published_at, setup_completed_at, label_a, label_b)
+      values (${id}, 'a_dreamy', 'en', 'token_only', 'UTC', now(), now(), 'Partner A', 'Partner B')`;
     await sql`update public.page_sections set enabled = true where page_id = ${id} and section in ('home', ${section})`;
     await sql`insert into public.guest_tokens (page_id, version, token_hash, request_id)
       values (${id}, 1, sha256(convert_to(${token}, 'UTF8')), gen_random_uuid())`;
@@ -39,7 +40,7 @@ export default async function globalSetup() {
 
   // Closed registration: accounts exist only because the owner (here: this setup) creates them.
   const admin = createClient(SUPABASE_URL!, SUPABASE_SECRET_KEY!).auth.admin;
-  for (const name of ["chromium", "webkit", "chromium-limited", "webkit-limited", "visibility-chromium", "visibility-webkit"]) {
+  for (const name of ["chromium", "webkit", "chromium-limited", "webkit-limited", "visibility-chromium", "visibility-webkit", "setup-chromium", "setup-webkit"]) {
     const { error } = await admin.createUser({
       email: `owner-${name}@example.test`,
       password: "placeholder-password-1",
@@ -58,8 +59,8 @@ export default async function globalSetup() {
     [VISIBILITY_PAGE_WEBKIT, "visibility-webkit"],
   ]) {
     await sql`delete from public.pages where id = ${id}`;
-    await sql`insert into public.pages (id, theme, default_lang, visibility, timezone, copy_published_at)
-      values (${id}, 'a_dreamy', 'en', 'token_only', 'UTC', now())`;
+    await sql`insert into public.pages (id, theme, default_lang, visibility, timezone, copy_published_at, setup_completed_at, label_a, label_b)
+      values (${id}, 'a_dreamy', 'en', 'token_only', 'UTC', now(), now(), 'Partner A', 'Partner B')`;
     await sql`update public.page_sections set enabled = true where page_id = ${id} and section = 'home'`;
     await sql`insert into public.memberships (page_id, user_id, role)
       select ${id}, u.id, 'owner' from auth.users u where u.email = ${`owner-${name}@example.test`}`;

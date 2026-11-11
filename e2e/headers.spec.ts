@@ -27,7 +27,7 @@ test("pages send the baseline and a strict nonce CSP", async ({ request }) => {
 });
 
 test("route handlers send the baseline and a CSP that allows nothing", async ({ request }) => {
-  for (const path of ["/api/guest/session", "/api/owner/token"]) {
+  for (const path of ["/api/guest/session", "/api/owner/token", "/api/owner/finish", "/api/owner/page"]) {
     const headers = (await request.post(path, { headers: { origin: ORIGIN } })).headers();
     expect(headers, path).toMatchObject({ ...BASELINE, "content-security-policy": "default-src 'none'; frame-ancestors 'none'" });
   }

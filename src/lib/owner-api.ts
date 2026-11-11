@@ -10,6 +10,10 @@ export const answer = (body: object | null, status: number) => {
   return res;
 };
 
+// pages.version is a Postgres int, starting at 1 (design 3 §1.6).
+const MAX_VERSION = 2 ** 31 - 1;
+export const isVersion = (value: unknown) => Number.isInteger(value) && (value as number) >= 1 && (value as number) <= MAX_VERSION;
+
 // Origin first, then the session. getUser() asks the Auth server, so a signed-out or revoked session
 // fails here (as requireOwner does). An Auth outage also answers no user (authUnavailable): 503, not
 // "signed out" (Codex, T1.5c). Returns the signed-in client, or the answer to send.
