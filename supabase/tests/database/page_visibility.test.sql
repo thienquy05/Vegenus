@@ -24,8 +24,8 @@ insert into public.memberships (page_id, user_id, role) values
 insert into public.guest_tokens (page_id, version, token_hash, request_id) values
   ('00000000-0000-0000-0000-00000000000a', 1, sha256('token-a'::bytea), gen_random_uuid()),
   ('00000000-0000-0000-0000-00000000000b', 1, sha256('token-b'::bytea), gen_random_uuid());
-insert into public.items (page_id, kind, status, lang, title, event_date, date_precision) values
-  ('00000000-0000-0000-0000-00000000000a', 'memory', 'published', 'en', 'A memory', '2020-01-01', 'day');
+insert into public.items (page_id, kind, status, lang, title, event_date, date_precision, published) values
+  ('00000000-0000-0000-0000-00000000000a', 'memory', 'published', 'en', 'A memory', '2020-01-01', 'day', '{"lang": "en", "title": "A memory"}');
 
 create function pg_temp.act_as(id uuid) returns void language sql as $$
   select set_config('request.jwt.claims', json_build_object('sub', id, 'role', 'authenticated')::text, true)
