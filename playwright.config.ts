@@ -22,6 +22,7 @@ if (!process.env.SUPABASE_URL) {
       VEGENUS_SERVER_DB_PASSWORD: password,
       VEGENUS_SERVER_DB_URL: db.href,
       VEGENUS_HMAC_SECRET: randomBytes(32).toString("base64url"),
+      CRON_SECRET: randomBytes(32).toString("base64url"), // the storage cron route (e2e/storage-worker.spec.ts)
     });
   } catch {}
 }
