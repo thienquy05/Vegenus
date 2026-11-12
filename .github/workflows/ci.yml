@@ -90,6 +90,8 @@ jobs:
           node-version: 24
           cache: npm
       - run: npm ci
+      # The media processing tests run in Vitest browser mode (T2.3b).
+      - run: npx playwright install --with-deps chromium
       - run: npx vitest run --coverage
 
   db:
