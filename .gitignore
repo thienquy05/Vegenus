@@ -105,3 +105,14 @@ test-results/
 .lighthouseci/
 next-env.d.ts
 *.tsbuildinfo
+
+# Agent tool state and handoffs (from Templates/gitignore.base; Python-only lines left out)
+.handoff/
+.claude/.cc-writes/
+.claude/worktrees/
+.hive-mind/
+ruvector.db
+.cache/
+out/
+.vscode/
+*.p12
