@@ -30,5 +30,10 @@
       ],
       "command": "npx supabase test db"
     }
-  ]
+  ],
+  "risk": {
+    "ignoreKeywords": [
+      "order"
+    ]
+  }
 }
