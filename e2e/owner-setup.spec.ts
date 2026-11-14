@@ -310,6 +310,8 @@ test("every dashboard state and wizard step passes axe at phone, tablet and lapt
     }
     if (step === 4 && (await page.getByRole("button", { name: /Guest preview/ }).isVisible()))
       await page.getByRole("button", { name: /Guest preview/ }).click();
+    // Finish stays aria-disabled for REVIEW_PAUSE_MS after step 4 (double-tap guard); an inactive control is exempt from contrast (WCAG 1.4.3), so measure it settled.
+    if (step === 5) await expect(page.getByRole("button", { name: /Finish and publish/ })).not.toHaveAttribute("aria-disabled", "true");
     await check(`O3 step ${step}`);
     if (step < 5) await next(page);
   }
