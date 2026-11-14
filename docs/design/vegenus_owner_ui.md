@@ -50,6 +50,87 @@ Where this section and the O2/O3 rows above disagree, this section wins (PRD Q11
 - **Accessibility:** real controls with visible labels; 44 px targets with 8 px spacing, 48 px primary buttons; focus moves to the new step heading after Next and to the first invalid field after a failed submit; dialogs are native modals (Esc takes the non-destructive choice, focus returns to the opener); persistent polite and alert regions announce saves and errors once; checked at 320 px with 200 % text by an automated reflow render (Q119): no page scroll, no clipped container, no target under 44 px.
 - **Hallmark:** the app-screen rules were applied as a check (genre modern-minimal). Recorded exception: theme A Dreamy's approved gradient ground in the previews (Floor gate 2a); Hallmark does not govern the guest themes.
 
+### O6 Upload for T2.3b (2026-11-14, boards drawn; owner sign-off pending)
+
+Boards: OwnerUpload, OwnerUploadTab and OwnerUploadLap on canvas page 10 "Owner area" (Theme Preview version 112), each with a `reviewState` picker for 28 states. Codex lead design, Claude review and render; working copies, generator and checks in the git-ignored `.design/o6/`. Open points decided as defaults pending the owner: PRD Q139.
+
+- **Placement and flow:** opened from one item in O5 ("Add photos or video"); Back and Done return to that item. Owner look and tokens as O2/O3. The owner picks files, then "Start uploads"; each file is prepared in the browser (`src/lib/media.ts`), uploaded and confirmed.
+- **Compositions:** phone stacks the picker, queue rows and storage panel; tablet adds a selected-file details column with storage; laptop adds the item context column (item title) on the left. Tablet and laptop fall back to one column below 700 px.
+- **Row states:** Waiting; Preparing photo / Preparing video (no percent: the browser gives none); Photo prepared (the "Location data removed" note appears only from here on); Uploading (a `<progress>` showing the value, its accessible name holds the file name); Confirming with the server; Saved (only a server-confirmed file is called saved); Unsupported, with HEIC and "this browser can't compress video" variants (Remove only, no Try again); Too large (video over 50 MB after compression); Upload interrupted or expired (Try again starts a new upload, Q139); Canceled ("Space is freed after cleanup."); Not saved (503, Try again).
+- **Screen states:** default; empty; loading; read failure; count cap (25th photo or 2nd video refused by name); storage at 80 % (amber) and full (nothing added; deleted media keep counting until cleanup; View usage); offline (queue kept, new uploads paused, resumes on reconnect; connectivity is tracked apart from other blocks, so reconnecting never lifts a 401, 403 or storage-full block); session expired (401: queue kept, uploads paused, sign in again); access lost (403 with Log out); remove confirmation and leave-while-uploading dialogs (native modals, Esc keeps the file or stays); long Vietnamese; all done (the notice clears as soon as an unconfirmed file is added). Server numbers only, never an estimate.
+- **Accessibility:** one polite region announces each stage change once (never every percent; simultaneous changes in one update); an alert region announces blocking errors once; a failing row never takes focus; when the focused control disappears or is disabled, focus moves to the same row's next action, else the selected file, else Back; filenames inherit the page language; the two side panels are named landmarks.
+- **Checks (2026-11-14):** the board logic checks (84 board and state cases plus 18 regression checks per board (R1-R12, V1-V6), each seen failing first) pass; rendered in Chromium 156 and WebKit 27.2, every state of every board at its own size and at 320 px with a 200 % root font: no sideways scroll, no clipped box, no target under 44 px, no axe violation, no console error (168 cases per engine). Codex adversarial review: five rounds, every finding fixed except round 5's two, stopped there at the owner's request (2026-11-14) and kept as known issues for the screen build: the recovery buttons (Try again after a read failure, Reconnect, Sign in again) leave focus on the document after the redraw, and three bilingual `aria-label`s (the two side panels and the progress bar) have no language boundary, so the screen should use `aria-labelledby` on `lang`-marked text.
+
+Drafted copy for the owner's approval (EN and VI as drawn; shipped strings marked as such in `.design/o6/COPY.md`):
+
+| Key | English | Vietnamese |
+|---|---|---|
+| `title` | Add photos or video | Thêm ảnh hoặc video |
+| `back` | Back | Quay lại |
+| `close` | Close | Đóng |
+| `logout` | Log out | Đăng xuất |
+| `retry` | Try again | Thử lại |
+| `loading` | Loading… | Đang tải… |
+| `read` | Couldn’t load this. Try again. | Chưa tải được. Thử lại. |
+| `offline` | You’re offline. Reconnect to continue. | Bạn đang ngoại tuyến. Kết nối lại để tiếp tục. |
+| `access` | Access is no longer available. | Quyền truy cập không còn hiệu lực. |
+| `location` | Location data removed | Đã xóa dữ liệu vị trí |
+| `queue` | Upload queue | Hàng đợi tải lên |
+| `details` | File details | Chi tiết tệp |
+| `context` | Memory item | Mục kỷ niệm |
+| `usage` | Page storage | Dung lượng trang |
+| `used` | [612] MB of [900] MB used | Đã dùng [612] MB trên [900] MB |
+| `warnUsed` | [720] MB of [900] MB used | Đã dùng [720] MB trên [900] MB |
+| `fullUsed` | [900] MB of [900] MB used | Đã dùng [900] MB trên [900] MB |
+| `limits` | Up to 24 photos and 1 video per memory. Video must be 50 MB or less after compression. | Mỗi kỷ niệm có tối đa 24 ảnh và 1 video. Video sau khi nén phải có dung lượng không quá 50 MB. |
+| `process` | Photos are prepared as WebP or JPEG with EXIF and location data removed. Video is compressed to 720p H.264. | Ảnh được chuyển sang WebP hoặc JPEG và xóa EXIF cùng dữ liệu vị trí. Video được nén thành H.264 ở độ phân giải 720p. |
+| `picker` | Choose files | Chọn tệp |
+| `start` | Start uploads | Bắt đầu tải lên |
+| `done` | Done | Hoàn tất |
+| `empty` | No files yet. Choose photos or a video for this item. | Chưa có tệp nào. Chọn ảnh hoặc video cho mục này. |
+| `queued` | Waiting | Đang chờ |
+| `preparingPhoto` | Preparing photo… | Đang chuẩn bị ảnh… |
+| `preparingVideo` | Preparing video… | Đang chuẩn bị video… |
+| `prepared` | Photo prepared | Đã chuẩn bị ảnh |
+| `uploading` | Uploading | Đang tải lên |
+| `saving` | Confirming with the server… | Đang xác nhận với máy chủ… |
+| `ready` | Saved | Đã lưu |
+| `unsupported` | Can’t read this file. Save as JPEG/PNG or MP4, or try another browser. | Không đọc được tệp này. Lưu lại dưới dạng JPEG/PNG hoặc MP4, hoặc thử trình duyệt khác. |
+| `heic` | Can’t read this HEIC file. Save as JPEG/PNG, or try another browser. | Không đọc được tệp HEIC này. Lưu lại dưới dạng JPEG/PNG hoặc thử trình duyệt khác. |
+| `videoUnsupported` | This browser can’t compress video. Save as MP4, or try another browser. | Trình duyệt này không thể nén video. Lưu lại dưới dạng MP4 hoặc thử trình duyệt khác. |
+| `large` | Video is over 50 MB after compression. Trim it or pick a shorter clip. | Video sau khi nén vượt quá 50 MB. Hãy cắt bớt hoặc chọn đoạn ngắn hơn. |
+| `failed` | Upload interrupted or expired. Try again to restart the upload. | Lượt tải lên bị gián đoạn hoặc đã hết hạn. Thử lại để tải lên từ đầu. |
+| `canceled` | Canceled. Space is freed after cleanup. | Đã hủy. Dung lượng được giải phóng sau khi dọn dẹp. |
+| `notSaved` | Not saved. The server or network could not confirm this file. Try again. | Chưa lưu. Máy chủ hoặc mạng chưa thể xác nhận tệp này. Hãy thử lại. |
+| `remove` | Remove | Xóa |
+| `cancel` | Cancel | Hủy |
+| `photo` | Photo | Ảnh |
+| `video` | Video | Video |
+| `size` | Measured size | Dung lượng đã đo |
+| `original` | Source size; prepared size appears after preparation. | Dung lượng tệp nguồn; dung lượng sau xử lý sẽ hiện khi chuẩn bị xong. |
+| `pause` | Queue kept. New uploads are paused; uploads resume when you reconnect. | Hàng đợi được giữ lại. Tạm dừng lượt tải mới; các lượt tải tiếp tục khi kết nối lại. |
+| `session` | Session expired. Queue kept; further uploads are paused. Sign in again to continue. Unconfirmed files are not marked as saved. | Phiên đăng nhập đã hết hạn. Hàng đợi được giữ lại; tạm dừng các lượt tải tiếp theo. Đăng nhập lại để tiếp tục. Tệp chưa được xác nhận không được đánh dấu là đã lưu. |
+| `signin` | Sign in again | Đăng nhập lại |
+| `warning` | Storage is at 80%. Check page usage before adding more. | Đã dùng 80% dung lượng. Kiểm tra dung lượng trang trước khi thêm tệp. |
+| `full` | Storage is full. Nothing was added. Delete something to make room. Deleted media keep counting until cleanup. | Dung lượng đã đầy. Không có tệp nào được thêm. Xóa bớt nội dung để có chỗ trống. Nội dung đã xóa vẫn chiếm dung lượng cho đến khi dọn dẹp. |
+| `viewUsage` | View usage | Xem dung lượng |
+| `refused` | photo-25.jpg was not added: 24-photo limit reached. video-02.mp4 was not added: 1-video limit reached. | Không thêm photo-25.jpg: đã đạt giới hạn 24 ảnh. Không thêm video-02.mp4: đã đạt giới hạn 1 video. |
+| `allDone` | All files are confirmed. Return to the item to continue editing. | Tất cả tệp đã được xác nhận. Quay lại mục để tiếp tục chỉnh sửa. |
+| `return` | Returned to the item editor. | Đã quay lại trình chỉnh sửa mục. |
+| `removeTitle` | Remove this saved file? | Xóa tệp đã lưu này? |
+| `removeBody` | The file will be removed from this item. Space is freed after cleanup. | Tệp sẽ bị xóa khỏi mục này. Dung lượng được giải phóng sau khi dọn dẹp. |
+| `keep` | Keep file | Giữ tệp |
+| `leaveTitle` | Leave uploads? | Rời màn hình tải lên? |
+| `leaveBody` | Leaving cancels unfinished uploads. Confirmed files stay on the item. Space is freed after cleanup. | Rời màn hình sẽ hủy các lượt tải chưa hoàn tất. Tệp đã được xác nhận vẫn ở trong mục. Dung lượng được giải phóng sau khi dọn dẹp. |
+| `stay` | Stay here | Ở lại đây |
+| `leave` | Leave and cancel | Rời đi và hủy |
+| `select` | Select file | Chọn tệp |
+| `savedCount` | Only Saved files are confirmed by the server. | Chỉ tệp có trạng thái Đã lưu mới được máy chủ xác nhận. |
+| `long` | The upload could not finish because the connection was interrupted before the server confirmed that this file was saved. Try again to restart the upload. | Không thể hoàn tất lượt tải lên vì kết nối đã bị gián đoạn trước khi máy chủ xác nhận rằng tệp này đã được lưu thành công. Hãy thử lại để bắt đầu tải tệp lên từ đầu. |
+| `queueCounts` | Photos {photos} of 24 · Video {videos} of 1 | Ảnh {photos}/24 · Video {videos}/1 |
+| `capPhoto` | Not added: the 24-photo limit has been reached. | Không được thêm: đã đạt giới hạn 24 ảnh. |
+| `capVideo` | Not added: the 1-video limit has been reached. | Không được thêm: đã đạt giới hạn 1 video. |
+
 ### Limits and owner preview behavior
 
 - **Confirmed:** wishes 40/500, Q34c; pending hidden, Q34d; wish limits, Q75 and Q78 (per-IP limit 20); guest-account cap 50, Q38; video ≤50 MB and approximately 25 MB target, Q27.
