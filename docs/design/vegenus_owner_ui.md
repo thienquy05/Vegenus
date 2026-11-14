@@ -131,6 +131,145 @@ Copy approved by the owner on 2026-11-14 (EN and VI as drawn; shipped strings ma
 | `capPhoto` | Not added: the 24-photo limit has been reached. | Không được thêm: đã đạt giới hạn 24 ảnh. |
 | `capVideo` | Not added: the 1-video limit has been reached. | Không được thêm: đã đạt giới hạn 1 video. |
 
+### O4 Content list and O5 Item editor (2026-11-14, boards drawn; owner sign-off pending, Q140)
+
+Boards: OwnerContent and OwnerItem at phone, tablet and laptop on canvas page 10 "Owner area" (Theme Preview version 113); 12 O4 states and 30 O5 states in each board's `reviewState` picker. Codex lead design, Claude review and render; working copies, generator and checks in the git-ignored `.design/o4-o5/`. Owner decisions (2026-11-14, Q140): O5 is the simple editor the T2.2 database supports (the album editor with pages, layouts, slots, text boxes and stickers is a later unit); items are listed by date with no manual reorder.
+
+- **O4:** reached from the dashboard's Content link, Back to O2. Two sections: Memories (kind memory, newest first) and Together (milestone and anniversary, oldest first, a timeline). Each row: title (wraps), kind in Together, date at its precision (day, month or year, never a fake day), Draft or Published, and "Unpublished changes" when a published item has saved edits guests do not see yet (derived from the saved version differing from the published one). Open, New item, Publish/Unpublish from the list; a badge changes only after the server confirms. Phone stacks records; tablet two regions; laptop sections, list and the selected item. States: default, empty per section, loading, read failure (never shown as empty), offline (last confirmed list, actions blocked), access lost, status change in progress and confirmed, 409 (the list re-reads; never says which change happened), long Vietnamese. No item-count limit.
+- **O5:** new (kind chosen first: Memory, or Milestone or Anniversary in Together; locked after the first save) or existing. Title 1-120 (a wrapped echo shows a long title in full), text up to 5,000, date required with precision (month and year store the first day), Anniversary always day precision with "repeats every year", "remind me" and a non-leap-year hint on 29 Feb; optional second language (a language other than the main one, preselected when switched on; title and text; removing it drops its photo alt text, and the remove action says so). Media through O6 once the item is saved ("Save the draft first to add photos" before that); a thumbnail list with alt text per photo per language (up to 300) and Remove with confirmation ("Space is freed after cleanup."). Save draft and Publish enable only on real changes; Publish saves unsaved edits first; Unpublish; Delete with confirmation (photos and video go too). States: new, editing, validation errors (each on the control that is actually invalid, one summary, focus to the first invalid control), saving, saved draft, publishing, published, published with unpublished changes, unpublish and delete confirmations, conflict 409 (the screen re-reads a complete confirmed item, including media and alt text, and offers Reload saved or Keep mine without saying whether it was edited or deleted), not found (same wording whatever the reason), 400 (one generic message), 503 (input kept, Try again), 401, 403, offline, leave with unsaved changes (Esc keeps writing), long Vietnamese, Anniversary on 29 Feb.
+- **Accessibility:** as O6, plus bilingual accessible names through `aria-labelledby` on `lang`-marked text (never a bilingual `aria-label`), user content never marked English, empty headings omitted, radio and checkbox targets measured by their 44 px label.
+- **Build needs found in the design:** the item read and list return no media, and no route updates alt text or reads a media list (`owner_media_update` waits for this unit); a new item needs its first save before media can attach (`media.item_id` is required); the album editor and any reorder have no schema or route (out of scope by Q140).
+- **Checks (2026-11-14):** board logic checks 7,326 assertions across 126 board and state cases, each fix's check seen failing first; rendered in Chromium 156 and WebKit 27.2 for every state at its own size and at 320 px with a 200 % root font: WebKit clean (252 cases), Chromium clean except a long title scrolling inside its input (accepted, as O3's long names: the wrapped echo shows it in full). Codex adversarial review: five rounds (6, 3, 2, 1 findings, then approve with none); all fixed.
+
+Drafted copy for the owner's approval (EN and VI as drawn; source `.design/o4-o5/COPY.md`):
+
+| Key | English | Vietnamese |
+|---|---|---|
+| `content` | Content | Nội dung |
+| `editor` | Item editor | Sửa nội dung |
+| `back` | Back | Quay lại |
+| `close` | Close | Đóng |
+| `logout` | Log out | Đăng xuất |
+| `memorySection` | Memories | Kỷ niệm |
+| `together` | Together | Bên nhau |
+| `memory` | Memory | Kỷ niệm |
+| `milestone` | Milestone | Cột mốc |
+| `anniversary` | Anniversary | Ngày kỷ niệm |
+| `loading` | Loading… | Đang tải… |
+| `read` | Couldn’t load this. Try again. | Chưa tải được. Thử lại. |
+| `retry` | Try again | Thử lại |
+| `offline` | You’re offline. Reconnect to continue. | Bạn đang ngoại tuyến. Kết nối lại để tiếp tục. |
+| `stale` | This list may be out of date. | Danh sách này có thể chưa được cập nhật. |
+| `access` | Access is no longer available. | Quyền truy cập không còn hiệu lực. |
+| `notSaved` | Not saved. Your changes are still here. | Chưa lưu được. Nội dung bạn sửa vẫn còn ở đây. |
+| `saving` | Saving… | Đang lưu… |
+| `firstMemory` | Add your first memory | Thêm kỷ niệm đầu tiên |
+| `firstTogether` | Add your first moment together | Thêm dấu mốc bên nhau đầu tiên |
+| `save` | Save draft | Lưu bản nháp |
+| `publish` | Publish | Đăng |
+| `unpublish` | Unpublish | Gỡ đăng |
+| `draft` | Draft | Bản nháp |
+| `published` | Published | Đã đăng |
+| `changes` | Unpublished changes | Thay đổi chưa đăng |
+| `changesHint` | Unpublished changes: guests still see the last published version | Thay đổi chưa đăng: khách vẫn thấy phiên bản đã đăng gần nhất |
+| `conflict` | This item changed elsewhere | Nội dung đã được sửa ở nơi khác |
+| `keepMine` | Keep mine | Giữ bản của tôi |
+| `reload` | Reload saved | Tải lại bản đã lưu |
+| `conflictHint` | The saved item was re-read. Your input is kept below; choose which version to continue with. | Đã đọc lại nội dung đã lưu. Phần bạn nhập vẫn ở bên dưới; hãy chọn bản để tiếp tục. |
+| `listConflict` | This item changed elsewhere. The list has been refreshed. | Nội dung đã được sửa ở nơi khác. Danh sách đã được tải lại. |
+| `addMedia` | Add photos or video | Thêm ảnh hoặc video |
+| `cleanup` | Space is freed after cleanup. | Dung lượng được giải phóng sau khi dọn dẹp. |
+| `newItem` | New item | Nội dung mới |
+| `newest` | By date, newest first | Theo ngày, mới nhất trước |
+| `oldest` | By date, oldest first | Theo ngày, cũ nhất trước |
+| `open` | Open | Mở |
+| `sections` | Sections | Các mục |
+| `selected` | Selected item | Nội dung đang chọn |
+| `preview` | Guest preview | Xem trước cho khách |
+| `previewHint` | Working copy only. Guests see changes after Publish succeeds. | Chỉ là bản đang sửa. Khách thấy thay đổi sau khi đăng thành công. |
+| `empty` | No items in this section yet. | Mục này chưa có nội dung. |
+| `statusPending` | Updating status… | Đang cập nhật trạng thái… |
+| `statusDone` | Status updated. | Đã cập nhật trạng thái. |
+| `kind` | Kind | Loại nội dung |
+| `kindHint` | Kind is locked after the first save. | Loại nội dung cố định sau lần lưu đầu tiên. |
+| `title` | Title | Tiêu đề |
+| `text` | Text | Nội dung chữ |
+| `date` | Date | Ngày tháng |
+| `precision` | Date precision | Độ chính xác ngày tháng |
+| `day` | Day | Ngày |
+| `month` | Month | Tháng |
+| `year` | Year | Năm |
+| `dateHint` | Enter year, month and day as required by the chosen precision. | Nhập năm, tháng và ngày theo độ chính xác đã chọn. |
+| `yearField` | Year | Năm |
+| `monthField` | Month | Tháng |
+| `dayField` | Day | Ngày |
+| `required` | Required · 1–120 characters after trimming | Bắt buộc · 1–120 ký tự sau khi bỏ khoảng trắng đầu và cuối |
+| `textHint` | Optional · up to 5,000 characters | Không bắt buộc · tối đa 5.000 ký tự |
+| `second` | Add a second language | Thêm ngôn ngữ thứ hai |
+| `mainLanguage` | Main language | Ngôn ngữ chính |
+| `language` | Second language | Ngôn ngữ thứ hai |
+| `secondTitle` | Second-language title | Tiêu đề ngôn ngữ thứ hai |
+| `secondText` | Second-language text | Nội dung chữ ngôn ngữ thứ hai |
+| `secondHint` | Choose a different language and complete both fields, or remove the second language. | Chọn ngôn ngữ khác và điền cả hai trường, hoặc bỏ ngôn ngữ thứ hai. |
+| `removeSecondHint` | Removing the second language also removes its photo alt text from the saved item. | Bỏ ngôn ngữ thứ hai cũng xóa văn bản thay thế ảnh của ngôn ngữ đó khỏi nội dung được lưu. |
+| `vi` | Vietnamese | Tiếng Việt |
+| `en` | English | Tiếng Anh |
+| `repeat` | Repeats every year | Lặp lại hằng năm |
+| `remind` | Remind me | Nhắc tôi |
+| `leap` | In non-leap years, 29 Feb appears on 28 Feb. | Trong các năm không có ngày 29 tháng 2, ngày này hiển thị vào 28 tháng 2. |
+| `media` | Photos and video | Ảnh và video |
+| `limits` | Per memory: up to 24 photos and 1 video. | Mỗi kỷ niệm: tối đa 24 ảnh và 1 video. |
+| `saveFirst` | Save the draft first to add photos | Lưu bản nháp trước để thêm ảnh |
+| `alt` | Photo alt text | Văn bản thay thế cho ảnh |
+| `altHint` | Describe what matters in the photo for people who cannot see it. Up to 300 characters per language. | Mô tả điều quan trọng trong ảnh cho người không thể xem ảnh. Tối đa 300 ký tự mỗi ngôn ngữ. |
+| `remove` | Remove | Xóa tệp |
+| `removeTitle` | Remove this file? | Xóa tệp này? |
+| `removeBody` | This file will be removed from the item. | Tệp này sẽ bị xóa khỏi nội dung. |
+| `keepFile` | Keep file | Giữ tệp |
+| `delete` | Delete | Xóa nội dung |
+| `deleteTitle` | Delete this item? | Xóa nội dung này? |
+| `deleteBody` | The item and its photos and video will be deleted. | Nội dung cùng ảnh và video sẽ bị xóa. |
+| `cancel` | Cancel | Hủy |
+| `unpublishTitle` | Unpublish this item? | Gỡ đăng nội dung này? |
+| `unpublishBody` | Guests will stop seeing this item after the server confirms. | Khách sẽ ngừng thấy nội dung này sau khi máy chủ xác nhận. |
+| `leaveTitle` | Leave without saving? | Rời đi khi chưa lưu? |
+| `leaveBody` | Your unsaved changes will be discarded. | Những thay đổi chưa lưu sẽ bị bỏ. |
+| `keepWriting` | Keep writing | Tiếp tục viết |
+| `discard` | Discard | Bỏ thay đổi |
+| `notFound` | This item is no longer available | Nội dung này không còn khả dụng |
+| `generic` | Couldn’t save this. Review your input before saving again. | Chưa lưu được. Kiểm tra nội dung nhập trước khi lưu lại. |
+| `session` | Sign in again. Your input is kept here. | Đăng nhập lại. Phần bạn nhập vẫn được giữ ở đây. |
+| `signin` | Sign in again | Đăng nhập lại |
+| `errors` | Check the highlighted fields before saving. | Kiểm tra các trường được đánh dấu trước khi lưu. |
+| `titleError` | Enter a title of 1–120 characters. | Nhập tiêu đề từ 1–120 ký tự. |
+| `textError` | Use no more than 5,000 characters. | Nhập tối đa 5.000 ký tự. |
+| `dateError` | Enter a valid date at the selected precision. | Nhập ngày tháng hợp lệ theo độ chính xác đã chọn. |
+| `secondError` | Choose a different language and complete the title and text. | Chọn ngôn ngữ khác và điền đủ tiêu đề cùng nội dung chữ. |
+| `altError` | Use no more than 300 characters per language. | Nhập tối đa 300 ký tự mỗi ngôn ngữ. |
+| `saved` | Draft saved. | Đã lưu bản nháp. |
+| `publishing` | Publishing… | Đang đăng… |
+| `publishedDone` | Published. | Đã đăng. |
+| `unpublishedDone` | Unpublished. | Đã gỡ đăng. |
+| `deleted` | Item deleted. | Đã xóa nội dung. |
+| `removing` | Removing… | Đang xóa tệp… |
+| `deleting` | Deleting… | Đang xóa nội dung… |
+| `removed` | File removed. | Đã xóa tệp. |
+| `simulation` | Interactive design only. Server responses and navigation are simulated; no data leaves this board. | Chỉ là thiết kế tương tác. Phản hồi máy chủ và điều hướng được mô phỏng; không có dữ liệu rời bản này. |
+| `confirmResponse` | Confirm server success in preview | Xác nhận máy chủ thành công trong bản xem trước |
+| `respondConflict` | Respond with 409 in preview | Mô phỏng phản hồi 409 |
+| `respond503` | Respond with 503 in preview | Mô phỏng phản hồi 503 |
+| `returnEditor` | Return to editor | Trở lại trình sửa |
+| `uploadDestination` | O6 · Upload destination | O6 · Nơi thêm tệp |
+| `uploadHint` | The approved upload flow opens here after the first save. Return keeps the working copy. | Luồng tải lên đã duyệt mở ở đây sau lần lưu đầu tiên. Khi trở lại, bản đang sửa được giữ nguyên. |
+| `dashboard` | O2 · Dashboard destination | O2 · Nơi tổng quan |
+| `loginDestination` | Sign-in destination · input kept | Nơi đăng nhập · giữ phần đã nhập |
+| `returnSignedIn` | Return signed in | Trở lại sau khi đăng nhập |
+| `noMedia` | No media yet. | Chưa có ảnh hoặc video. |
+| `savedVersion` | Re-read saved version | Bản đã lưu vừa đọc lại |
+| `working` | Working copy | Bản đang sửa |
+| `unchanged` | No saved version yet. | Chưa có bản đã lưu. |
+| `statusLabel` | Status | Trạng thái |
+
 ### Limits and owner preview behavior
 
 - **Confirmed:** wishes 40/500, Q34c; pending hidden, Q34d; wish limits, Q75 and Q78 (per-IP limit 20); guest-account cap 50, Q38; video ≤50 MB and approximately 25 MB target, Q27.
