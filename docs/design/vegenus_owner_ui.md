@@ -50,7 +50,7 @@ Where this section and the O2/O3 rows above disagree, this section wins (PRD Q11
 - **Accessibility:** real controls with visible labels; 44 px targets with 8 px spacing, 48 px primary buttons; focus moves to the new step heading after Next and to the first invalid field after a failed submit; dialogs are native modals (Esc takes the non-destructive choice, focus returns to the opener); persistent polite and alert regions announce saves and errors once; checked at 320 px with 200 % text by an automated reflow render (Q119): no page scroll, no clipped container, no target under 44 px.
 - **Hallmark:** the app-screen rules were applied as a check (genre modern-minimal). Recorded exception: theme A Dreamy's approved gradient ground in the previews (Floor gate 2a); Hallmark does not govern the guest themes.
 
-### O6 Upload for T2.3b (2026-11-14, boards drawn; owner sign-off pending)
+### O6 Upload for T2.3b (2026-11-14, approved by the owner 2026-11-14, Q139)
 
 Boards: OwnerUpload, OwnerUploadTab and OwnerUploadLap on canvas page 10 "Owner area" (Theme Preview version 112), each with a `reviewState` picker for 28 states. Codex lead design, Claude review and render; working copies, generator and checks in the git-ignored `.design/o6/`. Open points decided as defaults pending the owner: PRD Q139.
 
@@ -61,7 +61,7 @@ Boards: OwnerUpload, OwnerUploadTab and OwnerUploadLap on canvas page 10 "Owner 
 - **Accessibility:** one polite region announces each stage change once (never every percent; simultaneous changes in one update); an alert region announces blocking errors once; a failing row never takes focus; when the focused control disappears or is disabled, focus moves to the same row's next action, else the selected file, else Back; filenames inherit the page language; the two side panels are named landmarks.
 - **Checks (2026-11-14):** the board logic checks (84 board and state cases plus 18 regression checks per board (R1-R12, V1-V6), each seen failing first) pass; rendered in Chromium 156 and WebKit 27.2, every state of every board at its own size and at 320 px with a 200 % root font: no sideways scroll, no clipped box, no target under 44 px, no axe violation, no console error (168 cases per engine). Codex adversarial review: five rounds, every finding fixed except round 5's two, stopped there at the owner's request (2026-11-14) and kept as known issues for the screen build: the recovery buttons (Try again after a read failure, Reconnect, Sign in again) leave focus on the document after the redraw, and three bilingual `aria-label`s (the two side panels and the progress bar) have no language boundary, so the screen should use `aria-labelledby` on `lang`-marked text.
 
-Drafted copy for the owner's approval (EN and VI as drawn; shipped strings marked as such in `.design/o6/COPY.md`):
+Copy approved by the owner on 2026-11-14 (EN and VI as drawn; shipped strings marked as such in `.design/o6/COPY.md`):
 
 | Key | English | Vietnamese |
 |---|---|---|
