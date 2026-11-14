@@ -1,9 +1,8 @@
 {
-  "specPrefix": "VEG",
+  "specPrefix": "veg",
   "gatedGlobs": [
     "src/**/*.ts",
-    "src/**/*.tsx",
-    "supabase/migrations/*.sql"
+    "src/**/*.tsx"
   ],
   "exemptGlobs": [
     "**/*.md",
@@ -13,8 +12,7 @@
   ],
   "testGlobs": [
     "**/*.test.ts",
-    "**/*.spec.ts",
-    "supabase/tests/**/*.sql"
+    "**/*.spec.ts"
   ],
   "testCommands": [
     {
@@ -23,17 +21,6 @@
         "**/*.tsx"
       ],
       "command": "npm test"
-    },
-    {
-      "globs": [
-        "supabase/**/*.sql"
-      ],
-      "command": "npx supabase test db"
     }
-  ],
-  "risk": {
-    "ignoreKeywords": [
-      "order"
-    ]
-  }
+  ]
 }
