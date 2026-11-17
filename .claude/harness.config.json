@@ -1,5 +1,5 @@
 {
-  "specPrefix": "veg",
+  "specPrefix": "VEGENU",
   "gatedGlobs": [
     "src/**/*.ts",
     "src/**/*.tsx"
