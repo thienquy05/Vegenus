@@ -15,9 +15,10 @@ MANIFESTS=(assets/zodiac-sign/western/manifest.json assets/zodiac-sign/vietnames
 EMPTY_TREE=4b825dc642cb6eb9a060e54bf8d69288fbee4904
 
 EMAIL='[A-Za-z0-9._%+-]+@(?:(?:[A-Za-z0-9-]+\.)+[A-Za-z]{2,}|localhost)\b'
-# GitHub noreply, the Anthropic co-author line, Resend's public sender (design 6 §8), and domains
-# reserved so they never belong to a person (RFC 2606, RFC 6761; Q109). Matched in lower case.
-ALLOWED_EMAIL='^([0-9]+\+[a-z0-9-]+@users\.noreply\.github\.com|noreply@(github|anthropic)\.com|onboarding@resend\.dev|[^@]+@((.+\.)?example\.(com|net|org)|(.+\.)?(test|example|invalid|localhost)))$'
+# GitHub noreply, GitHub's own address in Dependabot's "Signed-off-by" line, the Anthropic co-author line,
+# Resend's public sender (design 6 §8), and domains reserved so they never belong to a person (RFC 2606,
+# RFC 6761; Q109). Matched in lower case.
+ALLOWED_EMAIL='^([0-9]+\+[a-z0-9-]+@users\.noreply\.github\.com|noreply@(github|anthropic)\.com|support@github\.com|onboarding@resend\.dev|[^@]+@((.+\.)?example\.(com|net|org)|(.+\.)?(test|example|invalid|localhost)))$'
 # npm's own deprecation text in the lockfile may name a maintainer (Q93); nowhere else. The line must
 # be that one field and nothing more, so no other field rides along.
 LOCK_DEPRECATED='^([0-9a-f]+ )?package-lock\.json:[0-9]+\t\s*"deprecated": "(?:[^"\\]|\\.)*",?$'
