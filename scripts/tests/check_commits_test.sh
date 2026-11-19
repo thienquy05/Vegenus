@@ -32,6 +32,8 @@ fresh; put a.txt x; ci; t noreply-clean pass
 fresh; put a.txt x; A=$ME ci; t personal-author fail
 fresh; put a.txt x; K=$ME ci; t personal-committer fail
 fresh; put a.txt x; ci $'feat: x\n\nCo-Authored-By: Claude <noreply@anthropic.com>'; t anthropic-coauthor pass
+fresh; put a.txt x; ci $'build(deps): bump next\n\nSigned-off-by: dependabot[bot] <support@''github.com>'; t dependabot-signoff pass
+fresh; put a.txt x; ci "fix: thanks <jane@""github.com>"; t other-github-address fail
 fresh; put a.txt x; ci "fix: reported by $ME"; t personal-in-message fail
 fresh; put a.txt x; ci $'d\ndeploy notes'; t message-line-d pass
 fresh; t no-new-commits pass master..master
