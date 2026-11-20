@@ -27,10 +27,10 @@ import s from "./owner.module.css";
 
 // O5 item editor (owner UI "O4 Content list and O5 Item editor"; Q140; E12, E13, E15): the simple editor the item
 // schema supports. Every write names the version read; a 409 re-reads the whole item and lets the owner choose.
-// Adding media is O6's (Q142: hidden until it ships); removing it and its alt text are here.
-type Props = { id: string | null; kind: Kind; lang: Lang; onBack: (status?: CopyKey) => void; onSignedOut: () => void };
+// Adding media is O6's, opened with Add photos or video once the item is saved; removing it and its alt text are here.
+type Props = { id: string | null; kind: Kind; lang: Lang; onBack: (status?: CopyKey) => void; onSignedOut: () => void; onUpload: (id: string) => void };
 type Load = "loading" | "ready" | "notFound" | "error" | "accessLost";
-type Dialog = { name: "unpublish" | "delete" | "leave" } | { name: "remove"; media: Media };
+type Dialog = { name: "unpublish" | "delete" } | { name: "leave"; upload?: boolean } | { name: "remove"; media: Media };
 // Try again names the action, so it runs with what is on screen when it is pressed, not when the write failed.
 type Retry = "save" | "publish" | "unpublish" | "delete" | "reread" | { remove: Media };
 type Notice = { key: CopyKey; retry?: Retry; signin?: boolean; logout?: boolean };
@@ -56,7 +56,7 @@ function mainLanguage(d: Draft, lang: Lang): Draft {
   return { ...d, lang, lang_alt: d.lang, title: d.title_alt, title_alt: d.title, body: d.body_alt, body_alt: d.body, alts };
 }
 
-export function Item({ id: opened, kind, lang, onBack, onSignedOut }: Props) {
+export function Item({ id: opened, kind, lang, onBack, onSignedOut, onUpload }: Props) {
   const online = useOnline();
   // A new item carries the id it will be created with, so a retried first save cannot make a second item.
   const [id] = useState(() => opened ?? crypto.randomUUID());
@@ -224,7 +224,7 @@ export function Item({ id: opened, kind, lang, onBack, onSignedOut }: Props) {
     const open = dialog;
     setDialog(null);
     if (!open) return;
-    if (open.name === "leave") return onBack();
+    if (open.name === "leave") return open.upload ? onUpload(id) : onBack();
     // The confirmed button was disabled while the change ran and may be gone now: if focus fell to the page, it goes to
     // the page heading; a conflict or not-found heading that took it keeps it.
     const done = () => document.activeElement === document.body && heading.current?.focus();
@@ -648,6 +648,11 @@ export function Item({ id: opened, kind, lang, onBack, onSignedOut }: Props) {
                 <p className={s.small}>
                   <T k="content.saveFirst" />
                 </p>
+              )}
+              {item && (
+                <button type="button" className={s.secondary} disabled={blocked} onClick={() => (unsaved ? setDialog({ name: "leave", upload: true }) : onUpload(id))}>
+                  <L k="upload.title" />
+                </button>
               )}
               {item && media.length === 0 && (
                 <p>

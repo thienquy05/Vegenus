@@ -55,7 +55,8 @@ test("photo: orientation applied, EXIF and location dropped, thumb 480 and displ
   const source = await cameraJpeg(3000, 1500);
   expect(await has(source, "SECRETGPS")).toBe(true);
 
-  const { thumb, display } = await processPhoto(source);
+  const { thumb, display, width, height } = await processPhoto(source);
+  expect([width, height]).toEqual([1024, 2048]); // the display file's size, sent with Complete (O6)
   for (const out of [thumb, display]) {
     expect(out.type).toBe("image/webp");
     expect(await has(out, "SECRETGPS")).toBe(false);
@@ -145,7 +146,11 @@ async function phoneClip(width = 1920, height = 1080, audio?: "aac" | "pcm-s16" 
 test("video: 720p MP4 without metadata, poster and thumb from the first frame (Q27, Q133)", async () => {
   const clip = await phoneClip();
   expect(await has(clip, "SECRETTRACK")).toBe(true);
-  const { video, poster, thumb } = await processVideo(clip);
+  const { video, poster, thumb, width, height, duration_ms } = await processVideo(clip);
+  // The stored clip's size and length, sent with Complete (O6): ten frames of 0.1 s.
+  expect([width, height]).toEqual([1280, 720]);
+  expect(duration_ms).toBeGreaterThanOrEqual(900);
+  expect(duration_ms).toBeLessThanOrEqual(1100);
 
   expect(video.type).toBe("video/mp4");
   const input = new Input({ formats: ALL_FORMATS, source: new BlobSource(video) });
@@ -236,4 +241,12 @@ test("video: a file whose sound is cut off is refused, even when the picture is 
   // 1.62.1: the cut file keeps all 10 frames and 156 of 173 sound packets).
   const clip = await phoneClip(1920, 1080, "aac", 4);
   await expect(processVideo(clip.slice(0, clip.size - 100))).rejects.toThrow(new MediaError("unsupported"));
+});
+
+test("video: an aborted preparation stops, so O6 Cancel does not leave the encoder running", async () => {
+  const clip = await phoneClip();
+  const stop = new AbortController();
+  const done = processVideo(clip, stop.signal);
+  stop.abort();
+  await expect(done).rejects.toMatchObject({ name: "AbortError" });
 });

@@ -7,6 +7,7 @@ import { Content } from "./content";
 import type { CopyKey } from "./copy";
 import { Item } from "./item";
 import { Announcers, L, LogOut, SectionList, T, useOnline } from "./parts";
+import { Upload } from "./upload";
 import { Wizard } from "./wizard";
 import s from "./owner.module.css";
 
@@ -168,9 +169,12 @@ export default function Owner() {
   const [state, setState] = useState<State>("loading");
   const [data, setData] = useState<{ page: Page | null; drafts: Drafts | null }>({ page: null, drafts: null });
   const [wizard, setWizard] = useState(false);
-  // O4 and O5 are views of /app, not routes (dynamic routes are refused, src/lib/routes.ts).
+  // O4, O5 and O6 are views of /app, not routes (dynamic routes are refused, src/lib/routes.ts).
   const [view, setView] = useState<
-    { name: "dashboard" } | { name: "content"; section: Section; status?: CopyKey } | { name: "item"; id: string | null; kind: Kind; section: Section }
+    | { name: "dashboard" }
+    | { name: "content"; section: Section; status?: CopyKey }
+    | { name: "item"; id: string | null; kind: Kind; section: Section }
+    | { name: "upload"; id: string; kind: Kind; section: Section }
   >({ name: "dashboard" });
   const [status, setStatus] = useState<CopyKey | null>(null);
   // A Finish whose outcome is unknown keeps its retry through Leave and resume (owner UI O3 states).
@@ -253,8 +257,12 @@ export default function Owner() {
         lang={(data.page?.default_lang ?? "vi") as Lang}
         onSignedOut={signedOut}
         onBack={(status) => setView({ name: "content", section: view.section, status })}
+        onUpload={(id) => setView({ name: "upload", id, kind: view.kind, section: view.section })}
       />
     );
+  }
+  if (view.name === "upload") {
+    return <Upload id={view.id} onSignedOut={signedOut} onBack={() => setView({ name: "item", id: view.id, kind: view.kind, section: view.section })} />;
   }
   return (
     <Dashboard

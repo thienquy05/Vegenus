@@ -17,6 +17,10 @@
   --focus: #b3402a;
   --danger: #a3262e;
   --success: #2e6b3a;
+  /* Owner storage warning at 80 % (owner UI O6 boards). */
+  --warning-text: #704700;
+  --warning-line: #956000;
+  --warning-bg: #f8edce;
   --menu-button-bg: #1a1a1a;
   --menu-button-fg: #f4f1ec;
   --menu-item-bg: #f4f1ec;

@@ -820,3 +820,94 @@ a.secondary {
   color: inherit;
   text-decoration: none;
 }
+
+/* O6 upload (owner UI "O6 Upload for T2.3b"): phone stacks the item, the queue and storage; tablet puts the selected
+   file's details and storage beside the queue; laptop adds the item column on the left. */
+.warning {
+  color: var(--warning-text);
+  border-color: var(--warning-line);
+  background: var(--warning-bg);
+}
+.upload {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: var(--space-5);
+  align-items: start;
+}
+.uploadRow {
+  border-top: 1px solid var(--line);
+  padding-top: var(--space-4);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  min-width: 0;
+}
+.fileName {
+  font-size: var(--fs-md);
+  font-weight: 600;
+  overflow-wrap: anywhere;
+}
+.progress {
+  display: block;
+  width: 100%;
+  height: 8px;
+  accent-color: var(--accent);
+}
+.picker {
+  position: relative;
+  flex: 1 1 12em;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.fileInput {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  opacity: 0;
+  cursor: pointer;
+}
+.picker:has(input:focus-visible) {
+  outline: 2px solid var(--focus);
+  outline-offset: 2px;
+}
+.picker:has(input:disabled) {
+  opacity: 0.55;
+}
+.picker input:disabled {
+  cursor: not-allowed;
+}
+.uploadDetails,
+.tabletUp {
+  display: none;
+}
+@media (min-width: 701px) {
+  .upload {
+    grid-template-columns: minmax(0, 1.4fr) minmax(0, 1fr);
+    /* The tall queue's extra height goes to the last row, so storage sits right under the details. */
+    grid-template-rows: auto auto 1fr;
+  }
+  .uploadContext {
+    grid-column: 1 / -1;
+  }
+  .uploadQueue {
+    grid-row: span 2;
+  }
+  .uploadDetails {
+    display: flex;
+  }
+  .tabletUp {
+    display: block;
+  }
+}
+@media (min-width: 1101px) {
+  .upload {
+    grid-template-columns: minmax(0, 0.8fr) minmax(0, 1.4fr) minmax(0, 1fr);
+    grid-template-rows: auto 1fr;
+  }
+  .uploadContext {
+    grid-column: auto;
+    grid-row: span 2;
+  }
+}
