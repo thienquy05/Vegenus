@@ -59,6 +59,21 @@ test("upload URLs obey the reservation, write once, and respect the bucket limit
     const [{ size }] = await sql`select (metadata ->> 'size')::int as size from storage.objects where bucket_id = ${thumb.bucket} and name = ${thumb.path}`;
     expect(size).toBe(1000);
 
+    // O5 reads the finished photo with a preview URL signed under the owner's session (the storage read policy of
+    // 20261120120000_owner_content.sql) in place of its {bucket, path}; the URL serves the thumbnail. Another owner
+    // cannot sign it.
+    const read = await (await post("/api/owner/item/get", { id: item })).json();
+    expect(read.item.media).toHaveLength(1);
+    expect(read.item.media[0]).not.toHaveProperty("preview");
+    const preview = await request.get(read.item.media[0].preview_url);
+    expect(preview.status()).toBe(200);
+    expect((await preview.body()).length).toBe(1000);
+    const otherProject = project === "chromium" ? "webkit" : "chromium";
+    const other = createClient(SUPABASE_URL!, SUPABASE_PUBLISHABLE_KEY!, { auth: { persistSession: false } });
+    expect((await other.auth.signInWithPassword({ ...OWNER, email: `owner-${otherProject}@example.test` })).error).toBeNull();
+    expect((await other.storage.from(thumb.bucket).createSignedUrl(thumb.path, 60)).error).not.toBeNull();
+    expect((await owner.storage.from(thumb.bucket).createSignedUrl(thumb.path, 60)).error).toBeNull();
+
     // An oversize file is refused by its class bucket; cancelling releases nothing early.
     const second = await (await post("/api/owner/upload/begin", { item_id: item, kind: "photo", variants: ["thumb", "display"] })).json();
     written.push(...second.files);
