@@ -56,5 +56,13 @@ test("owner pages may show images from the Supabase origin; other pages may not"
   const img = (policy: string) => policy.split(";").find((d) => d.trim().startsWith("img-src"))?.trim();
   expect(img(await csp("/app"))).toBe("img-src 'self' blob: data: https://project.supabase.example");
   for (const path of ["/", "/login", "/g", "/g/home"]) expect(img(await csp(path)), path).toBe("img-src 'self' blob: data:");
-  expect(await csp("/app")).toContain("connect-src 'self';");
+});
+
+// O6 uploads (owner UI "O6 Upload"): owner pages send files to their signed upload URLs on the Supabase origin.
+test("owner pages may send files to Supabase signed upload URLs and nothing else there; other pages may not", async () => {
+  vi.stubEnv("SUPABASE_URL", "https://project.supabase.example/");
+  const connect = (policy: string) => policy.split(";").find((d) => d.trim().startsWith("connect-src"))?.trim();
+  // Only the signed-upload path (a trailing / matches as a prefix), not the whole origin: no REST or auth calls.
+  expect(connect(await csp("/app"))).toBe("connect-src 'self' https://project.supabase.example/storage/v1/object/upload/sign/");
+  for (const path of ["/", "/login", "/g", "/g/home"]) expect(connect(await csp(path)), path).toBe("connect-src 'self'");
 });

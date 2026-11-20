@@ -5,7 +5,7 @@
 -- bytes there; the worker frees a charge only once the object is gone. Uploads are simulated by inserting
 -- storage.objects rows as the storage service would. Placeholder data only.
 begin;
-select plan(53);
+select plan(55);
 
 insert into auth.users (id, email) values
   ('00000000-0000-0000-0000-0000000000e1', 'owner@example.test'),
@@ -71,6 +71,9 @@ select ok((select (v ->> 'write_until')::timestamptz between now() + interval '1
 select is((select m.state::text || ' ' || m.item_id from public.media m where m.id = pg_temp.media('a')),
   'uploading 00000000-0000-0000-0000-0000000000b1', 'the media row is uploading, on its item');
 select is(pg_temp.used(), pg_temp.photo_charge(), 'the reservation charges the class limits of the admitted files');
+-- O6 shows the server's numbers only (owner UI "O6 Upload"; Q66): the page's use, reservations included, of its budget.
+select is((public.owner_page() ->> 'storage_used_bytes')::bigint, pg_temp.photo_charge(), 'owner_page shows the bytes the page uses');
+select is((public.owner_page() ->> 'storage_budget_bytes')::bigint, 943718400::bigint, 'owner_page shows the page''s budget');
 
 select throws_ok($$ select public.owner_upload_begin('00000000-0000-0000-0000-0000000000b1', 'photo', '{video}') $$,
   '22023', null, 'a photo cannot carry a video file');

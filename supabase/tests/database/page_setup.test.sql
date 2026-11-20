@@ -47,8 +47,9 @@ select is(public.owner_save_page(null, 'b_cosmic', 'vi', null, null, 'Asia/Ho_Ch
 select is(public.owner_page(), jsonb_build_object(
     'version', 1, 'theme', 'b_cosmic', 'default_lang', 'vi', 'label_a', null, 'label_b', null,
     'timezone', 'Asia/Ho_Chi_Minh', 'visibility', 'private', 'setup_completed', false,
-    'sections', jsonb_build_array('home', 'memories')),
-  'owner_page returns the saved choices, Home always on');
+    'sections', jsonb_build_array('home', 'memories'),
+    'storage_used_bytes', 0, 'storage_budget_bytes', 943718400),
+  'owner_page returns the saved choices, Home always on, and the storage the page uses of its budget');
 select ok((select p.visibility = 'private' and p.copy_published_at is null and p.setup_completed_at is null
   from public.pages p where p.id = pg_temp.page_of('00000000-0000-0000-0000-0000000000f6')),
   'the new page is Private, its wording unpublished and its setup unfinished');
@@ -72,7 +73,8 @@ select is(public.owner_save_page(1, 'a_dreamy', 'en', 'Partner A', 'Partner B', 
 select is(public.owner_page(), jsonb_build_object(
     'version', 2, 'theme', 'a_dreamy', 'default_lang', 'en', 'label_a', 'Partner A', 'label_b', 'Partner B',
     'timezone', 'UTC', 'visibility', 'private', 'setup_completed', false,
-    'sections', jsonb_build_array('home', 'together', 'guestbook')),
+    'sections', jsonb_build_array('home', 'together', 'guestbook'),
+    'storage_used_bytes', 0, 'storage_budget_bytes', 943718400),
   'owner_page returns the updated choices');
 select is(public.owner_save_page(1, 'c_cozy', 'vi', 'Partner A', 'Partner B', 'UTC', '{memories}'), null,
   'a save naming an old version changes nothing (E15)');
