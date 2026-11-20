@@ -1,8 +1,11 @@
 "use client";
 import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useRef, useState, type RefObject } from "react";
+import type { Kind, Lang, Section } from "@/lib/content";
 import { dashState, resumeStep, type Drafts, type Page } from "@/lib/setup";
+import { Content } from "./content";
 import type { CopyKey } from "./copy";
+import { Item } from "./item";
 import { Announcers, L, LogOut, SectionList, T, useOnline } from "./parts";
 import { Wizard } from "./wizard";
 import s from "./owner.module.css";
@@ -32,6 +35,7 @@ type Props = {
   offline: boolean;
   onSetup: () => void;
   onRetry: () => void;
+  onContent: () => void;
   status?: CopyKey | null;
   // The result's heading or message, focused after a read the owner asked for.
   headingRef?: RefObject<HTMLElement | null>;
@@ -39,7 +43,7 @@ type Props = {
   focused?: boolean;
 };
 
-export function Dashboard({ state, page, offline, onSetup, onRetry, status, headingRef, focused = false }: Props) {
+export function Dashboard({ state, page, offline, onSetup, onRetry, onContent, status, headingRef, focused = false }: Props) {
   const h2 = headingRef as RefObject<HTMLHeadingElement | null> | undefined;
   const message = headingRef as RefObject<HTMLParagraphElement | null> | undefined;
   const reason = offline ? "offline-reason" : undefined;
@@ -132,6 +136,9 @@ export function Dashboard({ state, page, offline, onSetup, onRetry, status, head
               <h2 tabIndex={-1} ref={h2}>
                 <bdi>{page.label_a}</bdi> &amp; <bdi>{page.label_b}</bdi>
               </h2>
+              <button type="button" className={s.primary} disabled={offline} aria-describedby={reason} onClick={onContent}>
+                <L k="content.content" />
+              </button>
             </section>
             <section className={s.surface}>
               <h3>
@@ -161,6 +168,10 @@ export default function Owner() {
   const [state, setState] = useState<State>("loading");
   const [data, setData] = useState<{ page: Page | null; drafts: Drafts | null }>({ page: null, drafts: null });
   const [wizard, setWizard] = useState(false);
+  // O4 and O5 are views of /app, not routes (dynamic routes are refused, src/lib/routes.ts).
+  const [view, setView] = useState<
+    { name: "dashboard" } | { name: "content"; section: Section; status?: CopyKey } | { name: "item"; id: string | null; kind: Kind; section: Section }
+  >({ name: "dashboard" });
   const [status, setStatus] = useState<CopyKey | null>(null);
   // A Finish whose outcome is unknown keeps its retry through Leave and resume (owner UI O3 states).
   const [uncertain, setUncertain] = useState(false);
@@ -183,6 +194,7 @@ export default function Owner() {
     },
     [router],
   );
+  const signedOut = useCallback(() => router.push("/login?next=%2Fapp"), [router]);
   const read = () => {
     setState("loading");
     void fetchPage().then(apply);
@@ -197,7 +209,7 @@ export default function Owner() {
       focusResult.current = false;
       heading.current?.focus();
     }
-  }, [state, wizard]);
+  }, [state, wizard, view]);
 
   if (wizard) {
     return (
@@ -218,6 +230,32 @@ export default function Owner() {
       />
     );
   }
+  if (view.name === "content") {
+    return (
+      <Content
+        initialSection={view.section}
+        status={view.status}
+        onSignedOut={signedOut}
+        onOpen={({ id, kind, section }) => setView({ name: "item", id, kind, section })}
+        onBack={() => {
+          focusResult.current = true;
+          setStatus(null);
+          setView({ name: "dashboard" });
+        }}
+      />
+    );
+  }
+  if (view.name === "item") {
+    return (
+      <Item
+        id={view.id}
+        kind={view.kind}
+        lang={(data.page?.default_lang ?? "vi") as Lang}
+        onSignedOut={signedOut}
+        onBack={(status) => setView({ name: "content", section: view.section, status })}
+      />
+    );
+  }
   return (
     <Dashboard
       state={state}
@@ -230,6 +268,7 @@ export default function Owner() {
         setStatus(null);
         setWizard(true);
       }}
+      onContent={() => setView({ name: "content", section: "memories" })}
       onRetry={() => {
         focusResult.current = true;
         setAsked(true);

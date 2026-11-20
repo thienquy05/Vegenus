@@ -12,7 +12,7 @@ const PAGE = {
 const hasTag = (html: string, ...attrs: string[]) => (html.match(/<[^>]+>/g) ?? []).some((tag) => attrs.every((attr) => tag.includes(attr)));
 const render = (props: Partial<Parameters<typeof Dashboard>[0]>) =>
   renderToStaticMarkup(
-    createElement(Dashboard, { state: "loading", page: null, offline: false, onSetup: vi.fn(), onRetry: vi.fn(), ...props }),
+    createElement(Dashboard, { state: "loading", page: null, offline: false, onSetup: vi.fn(), onRetry: vi.fn(), onContent: vi.fn(), ...props }),
   );
 
 test("every state keeps the heading, both live regions and the native Log out form", () => {
@@ -94,4 +94,12 @@ test("a message that takes focus is read once: the alert region stays empty afte
 
 test("going offline is announced by the polite region, since nothing takes focus", () => {
   expect(region(render({ state: "empty", offline: true }), "status")).toContain("offline");
+});
+
+test("the set-up dashboard links to Content; no other state does (owner UI O4)", () => {
+  expect(render({ state: "done", page: PAGE })).toMatch(/<button type="button"[^>]*>.*<span lang="en">Content<\/span>/s);
+  for (const state of ["loading", "empty", "resumed", "error", "accessLost"] as const) {
+    expect(render({ state, page: PAGE }), state).not.toContain('<span lang="en">Content</span>');
+  }
+  expect(render({ state: "done", page: PAGE, offline: true })).toMatch(/<button type="button"[^>]*disabled=""[^>]*>.*Content/s);
 });
