@@ -14,6 +14,19 @@ const text = (value: unknown, trim: boolean) =>
 const orNull = (value: string | null | undefined) => (value === "" ? null : value);
 const oneOf = (value: unknown, list: string[]) => value === null || (typeof value === "string" && list.includes(value));
 
+// Alt text per photo per language (O5): [{id, alt, alt_alt}], one entry per media at most (two for one media would
+// leave which one wins undefined). The screen sends only changed entries. null or absent leaves alt text alone;
+// undefined marks a malformed list.
+// shortcut: 100 bounds the request, not the media; the server counts no media per item (Q139). Raise it if a limit is enforced.
+const MAX_ALTS = 100;
+const parseAlts = (value: unknown) => {
+  if (value === undefined || value === null) return null;
+  if (!Array.isArray(value) || value.length > MAX_ALTS) return undefined;
+  const alts = value.map((a) => ({ id: a?.id, alt: text(a?.alt, false), alt_alt: text(a?.alt_alt, false) }));
+  const ok = alts.every((a) => isUuid(a.id) && a.alt !== undefined && a.alt_alt !== undefined);
+  return ok && new Set(alts.map((a) => a.id.toLowerCase())).size === alts.length ? alts : undefined;
+};
+
 export async function POST(request: NextRequest) {
   const auth = await ownerAuth(request);
   if (auth instanceof Response) return auth;
@@ -22,6 +35,7 @@ export async function POST(request: NextRequest) {
   const title_alt = orNull(text(b?.title_alt, true));
   const body = orNull(text(b?.body, false));
   const body_alt = orNull(text(b?.body_alt, false));
+  const alts = parseAlts(b?.alts);
   if (
     !isUuid(b?.id) ||
     !(b.expected_version === null || isVersion(b.expected_version)) ||
@@ -35,7 +49,8 @@ export async function POST(request: NextRequest) {
     !(b.event_date === null || (typeof b.event_date === "string" && /^\d{4}-\d{2}-\d{2}$/.test(b.event_date))) ||
     !oneOf(b.date_precision, PRECISIONS) ||
     typeof b.recurs_yearly !== "boolean" ||
-    typeof b.remind_owner !== "boolean"
+    typeof b.remind_owner !== "boolean" ||
+    alts === undefined
   ) {
     return answer(null, 400);
   }
@@ -54,6 +69,7 @@ export async function POST(request: NextRequest) {
     date_precision: b.date_precision,
     recurs_yearly: b.recurs_yearly,
     remind_owner: b.remind_owner,
+    alts,
   });
   if (error) return dbFailure(error);
   if (data === null) return answer({ error: "changed_elsewhere" }, 409);

@@ -203,10 +203,10 @@ O10's meter shows used plus charged. Egress cannot be measured from the database
 **Storage policies.** Private buckets, one per size class. No `anon` policy, and **no general owner write policy**: the owner cannot upload to an arbitrary path under the page prefix.
 - **Insert** is allowed only for a path listed in an existing reservation of the caller's page, before `write_until`, and only once (no update or upsert policy, so an admitted object cannot be overwritten with a bigger one). If the storage policy can see the object's size at insert, it also requires size ≤ the admitted `max_bytes` (**unverified**; this decides the charging rule above).
 - **Delete** is done by the storage deletion worker, not by the owner directly.
-- **Read** by the owner is through signed URLs minted by owner functions, like guests.
+- **Read** by the owner (O5 previews, 2026-11-20): the select policy `media_owner_read` admits a path only when a `media_variants` row of a page the caller owns names it (`owner_media_readable`). So an upload in progress (a reservation, no variant yet), deleted media whose file waits for the worker, another page's files and stray objects stay unreadable; co-editors read nothing yet. The item route signs one-hour preview URLs with the owner's session (no secret key). Reading lets the owner download, list and copy their own finished files through the Storage API; there is still no update or delete policy, so a file is still written once (a copy into an admitted path within the mint window is Q141).
 - Guests never touch the buckets; they get signed URLs (5 minutes, Q29) minted inside `guest_media_url` / `public_media_url` / `account_*` after the publication checks.
 
-**Table writes go through functions only.** The owner has **no** direct insert, update or delete on `media`, `media_variants` or `upload_reservations`. Changes go through `owner_upload_begin/complete/cancel`, `owner_media_update` (alt text, position only) and `owner_media_delete` (enqueues the files). So a direct API call cannot create a `ready` media row or change a recorded size.
+**Table writes go through functions only.** The owner has **no** direct insert, update or delete on `media`, `media_variants` or `upload_reservations`. Changes go through `owner_upload_begin/complete/cancel`, `owner_item_save(..., alts)` (alt text, written under the item's version, 2026-11-20; position has no route yet) and `owner_media_delete` (enqueues the files). So a direct API call cannot create a `ready` media row or change a recorded size.
 
 ### 3.5 Guestbook
 
