@@ -79,8 +79,9 @@ const list = (props: Partial<Parameters<typeof Content>[0]> = {}) => {
 const editor = (props: Partial<Parameters<typeof Item>[0]> = {}) => {
   const onBack = vi.fn();
   const onSignedOut = vi.fn();
-  mount(createElement(Item, { id: A, kind: "memory", lang: "vi", onBack, onSignedOut, ...props }));
-  return { onBack, onSignedOut };
+  const onUpload = vi.fn();
+  mount(createElement(Item, { id: A, kind: "memory", lang: "vi", onBack, onSignedOut, onUpload, ...props }));
+  return { onBack, onSignedOut, onUpload };
 };
 
 // O4
@@ -675,4 +676,24 @@ test("Keep mine does not send alt text for a photo the saved version no longer h
   await userEvent.click(button("Save draft"));
   await expect.poll(() => region("status")).toContain("Draft saved.");
   expect(calls.at(-1)?.body).toMatchObject({ expected_version: 7, title: "Mine", alts: null });
+});
+
+test("a saved item opens O6 with Add photos or video, asking first when there are unsaved changes; a new item cannot yet", async () => {
+  serve({ "/api/owner/item/get": [ok({ item: ITEM })] });
+  const { onUpload } = editor();
+  await expect.poll(() => button("Add photos or video")).toBeTruthy();
+  await userEvent.click(button("Add photos or video"));
+  expect(onUpload).toHaveBeenCalledTimes(1);
+  await userEvent.fill(byId("title"), "Unsaved");
+  await userEvent.click(button("Add photos or video"));
+  expect(host.querySelector("dialog[open]")?.textContent).toContain("Leave without saving?");
+  await userEvent.click(button("Discard"));
+  expect(onUpload).toHaveBeenCalledTimes(2);
+  root?.unmount();
+  host.remove();
+
+  serve({});
+  editor({ id: null });
+  await expect.poll(() => host.querySelector("#title")).toBeTruthy();
+  expect(button("Add photos or video")).toBeUndefined();
 });

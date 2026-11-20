@@ -3,12 +3,14 @@ import { SECTIONS } from "@/lib/setup";
 import { COPY, type CopyKey } from "./copy";
 import s from "./owner.module.css";
 
-// Inline text: the English part in lang="en", then the Vietnamese (the document is lang="vi"; Q118).
-export function T({ k }: { k: CopyKey }) {
+// Inline text: the English part in lang="en", then the Vietnamese (the document is lang="vi"; Q118). vars fill the
+// copy's {name} slots, such as server numbers.
+export function T({ k, vars }: { k: CopyKey; vars?: Record<string, string | number> }) {
+  const fill = (text: string) => (vars ? text.replace(/\{(\w+)\}/g, (_, name: string) => String(vars[name])) : text);
   const [en, vi] = COPY[k];
   return (
     <>
-      <span lang="en">{en}</span> / {vi}
+      <span lang="en">{fill(en)}</span> / {fill(vi)}
     </>
   );
 }
