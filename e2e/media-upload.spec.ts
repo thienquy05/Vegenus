@@ -49,7 +49,9 @@ test("upload URLs obey the reservation, write once, and respect the bucket limit
     expect(wrongType.error).not.toBeNull();
     expect((await browser.from(thumb.bucket).uploadToSignedUrl(thumb.path, thumb.token, webp(1000), { contentType: "image/webp" })).error).toBeNull();
     expect((await post("/api/owner/upload/complete", { media_id: upload.media_id, width: 400, height: 300, duration_ms: null })).status()).toBe(409);
-    expect((await browser.from(display.bucket).uploadToSignedUrl(display.path, display.token, webp(5000), { contentType: "image/webp" })).error).toBeNull();
+    // As the O6 screen sends it: a plain PUT of the file to the URL Begin returned, with no Supabase client or key.
+    const put = await request.put(display.url, { data: Buffer.alloc(5000), headers: { "content-type": "image/webp", "x-upsert": "false" } });
+    expect(put.status()).toBe(200);
     const done = await post("/api/owner/upload/complete", { media_id: upload.media_id, width: 1600, height: 1200, duration_ms: null });
     expect(done.status()).toBe(200);
 

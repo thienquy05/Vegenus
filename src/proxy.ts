@@ -7,16 +7,18 @@ import { supabaseAuth } from "./lib/auth";
 
 // Inline style attributes stay allowed (the 44 px targets use them); scripts and <style> need the nonce.
 // upgrade-insecure-requests only over https: on the local http server it would break every script.
-// Owner pages also show preview images signed by Supabase Storage (O5), so only they name its origin.
-const policy = (nonce: string, https: boolean, owner: boolean) =>
+// Owner pages also show preview images signed by Supabase Storage (O5) and send files to its signed upload URLs (O6),
+// so only they name it: any image there, but connections only to the upload path (a trailing / matches as a prefix).
+const supabaseOrigin = () => (process.env.SUPABASE_URL ? ` ${new URL(process.env.SUPABASE_URL).origin}` : "");
+const policy = (nonce: string, https: boolean, owner: boolean, supabase = owner ? supabaseOrigin() : "") =>
   [
     "default-src 'self'",
     `script-src 'self' 'nonce-${nonce}' 'strict-dynamic'${process.env.NODE_ENV === "development" ? " 'unsafe-eval'" : ""}`,
     `style-src 'self' 'nonce-${nonce}'`,
     "style-src-attr 'unsafe-inline'",
-    `img-src 'self' blob: data:${owner && process.env.SUPABASE_URL ? ` ${new URL(process.env.SUPABASE_URL).origin}` : ""}`,
+    `img-src 'self' blob: data:${supabase}`,
     "font-src 'self'",
-    "connect-src 'self'",
+    `connect-src 'self'${supabase && `${supabase}/storage/v1/object/upload/sign/`}`,
     "object-src 'none'",
     "base-uri 'self'",
     "form-action 'self'",

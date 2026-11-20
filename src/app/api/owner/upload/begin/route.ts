@@ -38,7 +38,8 @@ export async function POST(request: NextRequest) {
       await auth.rpc("owner_upload_cancel", { media_id: admitted.media_id });
       return answer(null, 503);
     }
-    files.push({ ...f, token: signed.data.token });
+    // The URL too, so the browser can PUT with XMLHttpRequest for progress (O6) without knowing the Supabase address.
+    files.push({ ...f, token: signed.data.token, url: signed.data.signedUrl });
   }
   return answer({ media_id: admitted.media_id, write_until: admitted.write_until, files }, 200);
 }

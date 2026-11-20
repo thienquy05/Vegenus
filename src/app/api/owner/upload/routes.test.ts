@@ -41,10 +41,12 @@ beforeEach(() => {
   getUser.mockReset().mockResolvedValue({ data: { user: { id: "00000000-0000-0000-0000-0000000000e1" } } });
   rpc.mockReset().mockResolvedValue({ data: ADMITTED, error: null });
   from.mockClear();
-  createSignedUploadUrl.mockReset().mockImplementation(async (path: string) => ({ data: { path, token: `token-${path}` }, error: null }));
+  createSignedUploadUrl
+    .mockReset()
+    .mockImplementation(async (path: string) => ({ data: { path, token: `token-${path}`, signedUrl: `https://storage.example/${path}?token=token-${path}` }, error: null }));
 });
 
-test("begin admits the files and returns one upload token per file, minted with upsert off", async () => {
+test("begin admits the files and returns one upload token and URL per file, minted with upsert off", async () => {
   const res = await call(begin, "upload/begin", { item_id: ITEM, kind: "photo", variants: ["thumb", "display"] });
   expect(res.status).toBe(200);
   expect(res.headers.get("cache-control")).toBe("no-store");
@@ -54,7 +56,8 @@ test("begin admits the files and returns one upload token per file, minted with 
   expect(await res.json()).toEqual({
     media_id: MEDIA,
     write_until: ADMITTED.write_until,
-    files: ADMITTED.files.map((f) => ({ ...f, token: `token-${f.path}` })),
+    // The URL lets the browser upload with XMLHttpRequest, which reports progress (O6), without knowing the Supabase address.
+    files: ADMITTED.files.map((f) => ({ ...f, token: `token-${f.path}`, url: `https://storage.example/${f.path}?token=token-${f.path}` })),
   });
 });
 
