@@ -1,5 +1,5 @@
 import { NextRequest } from "next/server";
-import { beforeEach, expect, test, vi } from "vitest";
+import { afterEach, beforeEach, expect, test, vi } from "vitest";
 
 const getUser = vi.fn();
 vi.mock("./lib/auth", () => ({ supabaseAuth: vi.fn(() => ({ auth: { getUser } })) }));
@@ -45,4 +45,16 @@ test("only owner routes refresh the session", async () => {
   expect(supabaseAuth).not.toHaveBeenCalled();
   await proxy(new NextRequest("http://localhost:3000/app"));
   expect(getUser).toHaveBeenCalledOnce();
+});
+
+afterEach(() => vi.unstubAllEnvs()); // also after a failed assertion
+
+// O5 previews (owner UI "O4 Content list and O5 Item editor"): owner pages show images signed by Supabase Storage, so
+// their img-src names the Supabase origin; no other page does, and nothing else is loosened.
+test("owner pages may show images from the Supabase origin; other pages may not", async () => {
+  vi.stubEnv("SUPABASE_URL", "https://project.supabase.example/");
+  const img = (policy: string) => policy.split(";").find((d) => d.trim().startsWith("img-src"))?.trim();
+  expect(img(await csp("/app"))).toBe("img-src 'self' blob: data: https://project.supabase.example");
+  for (const path of ["/", "/login", "/g", "/g/home"]) expect(img(await csp(path)), path).toBe("img-src 'self' blob: data:");
+  expect(await csp("/app")).toContain("connect-src 'self';");
 });

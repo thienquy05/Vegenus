@@ -1,8 +1,7 @@
-import AxeBuilder from "@axe-core/playwright";
 import { expect, test, type Page } from "@playwright/test";
 import { randomUUID } from "node:crypto";
 import postgres from "postgres";
-import { MIN_TARGET_PX } from "../src/lib/ui";
+import { checkSizes } from "./owner-checks";
 
 // T2.1b: the dashboard (O2) and setup wizard (O3) against the local Supabase stack (E55; owner UI "O2 and O3
 // revision for T2.1b"; Q114, Q121, Q124-Q126). Each browser project has its own owner, owner-setup-<project>,
@@ -14,7 +13,6 @@ const email = (project: string) => `owner-setup-${project}@example.test`;
 const ownerPage = async (project: string) =>
   (await sql`select p.* from public.pages p join public.memberships m on m.page_id = p.id
     join auth.users u on u.id = m.user_id where u.email = ${email(project)} and m.role = 'owner'`)[0];
-const AXE_TAGS = ["wcag2a", "wcag2aa", "wcag21a", "wcag21aa", "wcag22aa"];
 
 test.beforeEach(async ({}, info) => {
   await sql`delete from public.pages where id in (select m.page_id from public.memberships m
@@ -254,51 +252,10 @@ test("offline blocks saving with the reason; Leave asks before discarding, and E
   await expect(page.getByRole("button", { name: /Leave setup/ })).toBeFocused();
 });
 
-// Accessibility lives in this spec, not a *.a11y.ts file, because the a11y CI job runs no Supabase.
-const SIZES = [
-  { width: 390, height: 844 },
-  { width: 820, height: 1180 },
-  { width: 1440, height: 900 },
-];
-
-async function axe(page: Page, where: string) {
-  // Messages fade in (120 ms): measure the settled colours, not a frame of the fade.
-  await page.waitForFunction(() => document.getAnimations().every((animation) => animation.playState !== "running"));
-  const { violations } = await new AxeBuilder({ page }).withTags(AXE_TAGS).analyze();
-  expect(violations.flatMap((v) => v.nodes.map((n) => `${v.id} ${n.target}: ${n.failureSummary}`)), where).toEqual([]);
-}
-
-// WCAG 1.4.10 and 1.4.4: 320 px wide with text at 200 %, no page scroll and every control still 44 px.
-async function reflow(page: Page, where: string) {
-  const problems = await page.evaluate((min) => {
-    const out: string[] = [];
-    if (document.documentElement.scrollWidth > innerWidth) out.push(`page scrolls: ${document.documentElement.scrollWidth}`);
-    for (const el of document.querySelectorAll<HTMLElement>("main button, main a, main input, main select")) {
-      const box = el.getBoundingClientRect();
-      if (!box.width || el.closest("[inert], dialog:not([open])") || el.matches("[type=checkbox], [type=radio]")) continue;
-      if (box.height < min || box.width < min) out.push(`small target: ${el.outerHTML.slice(0, 60)}`);
-      if (box.right > innerWidth + 0.5) out.push(`off screen: ${el.outerHTML.slice(0, 60)}`);
-    }
-    return out;
-  }, MIN_TARGET_PX);
-  expect(problems, where).toEqual([]);
-}
-
 test("every dashboard state and wizard step passes axe at phone, tablet and laptop, and reflows at 320 px with 200 % text", async ({ page }, info) => {
   test.slow();
   await signIn(page, info.project.name);
-  const check = async (where: string) => {
-    for (const size of SIZES) {
-      await page.setViewportSize(size);
-      await axe(page, `${where} ${size.width}`);
-    }
-    await page.setViewportSize({ width: 320, height: 640 });
-    // Through the CSSOM: the page CSP refuses an injected <style>.
-    await page.evaluate(() => (document.documentElement.style.fontSize = "200%"));
-    expect(await page.evaluate(() => getComputedStyle(document.documentElement).fontSize)).toBe("32px");
-    await reflow(page, `${where} 320 @ 200%`);
-    await page.evaluate(() => (document.documentElement.style.fontSize = ""));
-  };
+  const check = (where: string) => checkSizes(page, where);
   await expect(heading(page, /Make room/)).toBeVisible();
   await check("O2 empty");
   await page.getByRole("button", { name: /Set up your page/ }).click();

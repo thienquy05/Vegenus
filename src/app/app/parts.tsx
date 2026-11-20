@@ -72,3 +72,13 @@ const subscribe = (change: () => void) => {
 };
 // navigator.onLine, kept current (design ruling R4); the server render assumes online.
 export const useOnline = () => useSyncExternalStore(subscribe, () => navigator.onLine, () => true);
+
+// POST JSON to an owner route: its status and parsed body (null when there is none); status 0 when the network failed.
+export async function post<T>(url: string, body: object): Promise<{ status: number; body: T | null }> {
+  try {
+    const res = await fetch(url, { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify(body) });
+    return { status: res.status, body: await res.json().catch(() => null) };
+  } catch {
+    return { status: 0, body: null };
+  }
+}

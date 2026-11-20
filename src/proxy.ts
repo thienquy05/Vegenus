@@ -7,13 +7,14 @@ import { supabaseAuth } from "./lib/auth";
 
 // Inline style attributes stay allowed (the 44 px targets use them); scripts and <style> need the nonce.
 // upgrade-insecure-requests only over https: on the local http server it would break every script.
-const policy = (nonce: string, https: boolean) =>
+// Owner pages also show preview images signed by Supabase Storage (O5), so only they name its origin.
+const policy = (nonce: string, https: boolean, owner: boolean) =>
   [
     "default-src 'self'",
     `script-src 'self' 'nonce-${nonce}' 'strict-dynamic'${process.env.NODE_ENV === "development" ? " 'unsafe-eval'" : ""}`,
     `style-src 'self' 'nonce-${nonce}'`,
     "style-src-attr 'unsafe-inline'",
-    "img-src 'self' blob: data:",
+    `img-src 'self' blob: data:${owner && process.env.SUPABASE_URL ? ` ${new URL(process.env.SUPABASE_URL).origin}` : ""}`,
     "font-src 'self'",
     "connect-src 'self'",
     "object-src 'none'",
@@ -25,7 +26,9 @@ const policy = (nonce: string, https: boolean) =>
 
 export async function proxy(request: NextRequest) {
   const https = request.nextUrl.protocol === "https:";
-  const csp = policy(Buffer.from(crypto.randomUUID()).toString("base64"), https);
+  const { pathname } = request.nextUrl;
+  const owner = pathname === "/app" || pathname.startsWith("/app/");
+  const csp = policy(Buffer.from(crypto.randomUUID()).toString("base64"), https, owner);
   // Built after any cookie refresh, so the forwarded request carries both the CSP and the new cookies.
   const next = () => {
     const headers = new Headers(request.headers);
@@ -35,8 +38,7 @@ export async function proxy(request: NextRequest) {
     return response;
   };
   let response = next();
-  const { pathname } = request.nextUrl;
-  if (pathname !== "/app" && !pathname.startsWith("/app/")) return response;
+  if (!owner) return response;
   const supabase = supabaseAuth(
     {
       getAll: () => request.cookies.getAll(),
