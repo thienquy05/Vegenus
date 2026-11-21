@@ -38,9 +38,9 @@ insert into public.guestbook_entries (page_id, display_name, body, lang, status,
   ('00000000-0000-0000-0000-00000000000d', '[GUEST]', 'D approved', 'en', 'approved', gen_random_uuid(), 'visitor', null);
 
 -- Table rules (design 3 §3.1, §3.3; E12-E14, PRD §4.1).
-select lives_ok($$insert into public.items (page_id, kind, status, lang, title) values ('00000000-0000-0000-0000-00000000000a', 'home', 'draft', 'en', 'Home')$$,
+select lives_ok($$insert into public.items (page_id, kind, status, lang) values ('00000000-0000-0000-0000-00000000000a', 'home', 'draft', 'en')$$,
   'a home item without start_date is accepted (E53)');
-select throws_ok($$insert into public.items (page_id, kind, status, lang, title) values ('00000000-0000-0000-0000-00000000000a', 'home', 'draft', 'en', 'Home two')$$,
+select throws_ok($$insert into public.items (page_id, kind, status, lang) values ('00000000-0000-0000-0000-00000000000a', 'home', 'draft', 'en')$$,
   '23505', null, 'a second home item on one page is rejected');
 select throws_ok($$insert into public.items (page_id, kind, lang, title, event_date, date_precision) values ('00000000-0000-0000-0000-00000000000a', 'anniversary', 'en', 'Anniversary', '2020-01-01', 'month')$$,
   '23514', null, 'an anniversary without day precision is rejected');
