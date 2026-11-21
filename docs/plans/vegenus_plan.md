@@ -216,7 +216,7 @@ Hardening rules for the workflow:
 
 - `permissions: contents: read` at the top; raise per job only if needed.
 - Third-party actions pinned to a full commit SHA, not a tag. Each action is a download, so the list is approved under rule 1 before the file is written.
-- No `pull_request_target`; no secrets in CI at all. Tests use a local throw-away database with fake seed data, never the real Supabase project.
+- No `pull_request_target`; no secrets in CI at all (this includes the scheduled `health.yml` from T2.5, which reads only a public route whose URL is a repository variable, Q145). Tests use a local throw-away database with fake seed data, never the real Supabase project.
 - `concurrency` cancels older runs of the same branch to save minutes.
 - Caches for the package manager and Playwright browsers.
 

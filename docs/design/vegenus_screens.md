@@ -67,7 +67,7 @@ Rules for every screen: phone-first, one-hand use, touch targets ≥ 44 px, all 
 | O7 | Guestbook queue | Pending entries | Approve; reject | Both |
 | O8 | Share | Link and QR (shown **once** after creation/rotation: Q34a decided), optional QR download with a "this is a live credential" warning, tag-writing steps, "link not shown yet" state with Rotate again, note that rotation keeps guest accounts | Copy; download QR; rotate token | Owner |
 | O9 | Visibility and sections | Private / Token-only / Published; section toggles | Change (with a confirm for Private and Published) | Owner |
-| O10 | Usage | Storage and egress against free limits; warnings at 60% and 80% | — | Owner |
+| O10 | Usage | Page storage against its budget (notice 60 %, warning 80 %, full); egress as the free quota with a link to the Supabase usage page (not measured, Q145); the daily job's last run (ok, failed, missed) | — | Owner |
 | O11 | Shared account | The one shared owner account (Q35). No co-editor screen until a second account is wanted | Change password; link Google | Owner |
 | O13 | First-run tour | 3 steps on the empty dashboard: set up the page, add the first memory, create the guest link | Next, Skip, replay from O12 | Owner (and partner) |
 | O14 | Email settings | Reminder lead time, wish digest on/off, last sends and failures | Save; send test to own address | Owner |
