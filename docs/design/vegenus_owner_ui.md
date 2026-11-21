@@ -2,7 +2,7 @@
 
 **Status:** v1.0, **Approved by the owner 2026-10-28 (Phase 0 sign-off).** Documentation only; no application code. Lead design by Codex, edited by Claude. Placeholders only (rule 3).
 **Look:** one plain look for every theme (PRD Q56), system fonts, no themed backgrounds, one shared account for both partners (Q35). Guest previews inside the owner area use the guest composition in a neutral shell. Related: [screens](vegenus_screens.md) (O1-O15 and the responsive matrix), [guest UI](vegenus_guest_ui.md) (shared shell and state contract in §6), [guest motion](vegenus_guest_motion.md) (owner micro-motions in §10.2).
-**Canvas:** page 10, boards OwnerDash, OwnerQueue, OwnerSetup, OwnerLogin at phone, tablet and laptop (plus the older DashNeutral, DashThemed, EditA, EditLapA). DashThemed is obsolete after Q56. Not yet built as boards: O4 content list, O5 item editor, O6 upload, O10 usage, O14 email, O15 guest accounts (modules inside OwnerDash only).
+**Canvas:** page 10, boards OwnerDash, OwnerQueue, OwnerSetup, OwnerLogin at phone, tablet and laptop (plus the older DashNeutral, DashThemed, EditA, EditLapA). DashThemed is obsolete after Q56. Not yet built as boards: O14 email, O15 guest accounts (modules inside OwnerDash only).
 
 ## 1. Owner area — O1–O16 in scope (O18 in §2)
 
@@ -32,7 +32,7 @@ The common loading/error/offline/rate-limit contract applies to every server-bac
 | **O5 — Item editor** | Phone: title/date/language fields, album-page list, selected layout and slots, media, preview, save actions. Tablet/laptop use the frame above. “Save draft / Lưu bản nháp”, “Publish / Đăng”, separate destructive Delete. Preserve approved album layouts and + slots. Layout changes that would drop content are blocked with explanation. Missing translation is allowed with guest fallback. Conflict: “This item changed elsewhere / Nội dung đã được sửa ở nơi khác”; show comparison and retain local input, never overwrite silently. |
 | **O6 — Upload** | Picker plus file queue; each row shows name, type, measured size, preparation/upload status, Retry/Cancel. Phone rows stack; larger screens may show a details column. States: queued, processing, uploading, complete, failed, canceled, storage full. Show “Location data removed / Đã xóa dữ liệu vị trí” only after successful processing. Corrupt/unsupported files explain recovery. Session loss pauses further writes; cancellation does not claim server cleanup or reclaimed capacity immediately. |
 | **O7 — Wish moderation** | Pending queue, approved/rejected history views where supported; full plain-text message, display name, language and submitted metadata. Phone one record at a time; tablet/laptop list plus reading panel. “Approve / Duyệt” and “Reject / Từ chối” are explicit buttons; no swipe-only moderation. Empty: “All caught up / Đã xử lý hết lời chúc.” Move an entry only after confirmation; failure retains it. After removal, focus next entry or the empty heading. Never rewrite the guest’s words. |
-| **O10 — Usage** | Storage and egress panels with numeric used/limit values and labelled meters; warnings at 60% and 80% per inventory/plan. Phone stacks; tablet/laptop compare side by side. Include storage held by uploads or pending deletion where available. “Usage unavailable / Chưa tải được mức sử dụng” is distinct from zero. Show last successful refresh, not invented live precision. Link full storage to O4/O6; no automatic deletion or purchase. |
+| **O10 — Usage** | (Egress and the job panel: see the T2.5 section below, Q145.) Storage and egress panels with numeric used/limit values and labelled meters; warnings at 60% and 80% per inventory/plan. Phone stacks; tablet/laptop compare side by side. Include storage held by uploads or pending deletion where available. “Usage unavailable / Chưa tải được mức sử dụng” is distinct from zero. Show last successful refresh, not invented live precision. Link full storage to O4/O6; no automatic deletion or purchase. |
 | **O12/O11 — Account** | O12 contains account language, replay O13 and Log out. O11 is a subsection, “Shared account / Tài khoản dùng chung”: password change and Google linking, not an invitation screen. Phone one column; larger screens max 640 px. Changes use verified server flows; errors preserve nonsecret form context. Logout clears protected UI and prevents Back from revealing it. No partner-role toggle. |
 | **O14 — Email settings** | Reminder lead time, wish digest toggle, Save, last sends/failures and explicit “Send test to my address / Gửi thử đến email của tôi”. Empty history is not an error. Delivery states: queued, sent, failed, suppressed. When Q37 readiness is unresolved, explain unavailability and disable sending; never claim owner-only mail works. Proposed 7-day lead remains a proposal, not an approved limit. Adds a switch “Notify subscribers about new memories / Thông báo cho người đăng ký khi có kỷ niệm mới” (default off, Q81), the active subscriber count against the cap and the last digest time; owner mail is always sent before subscriber mail when the daily limit is short. Disabled with an explanation while Q37 is unresolved. |
 | **O15 — Registered guests and subscribers** | Cap counter `[N]/50` counts accounts plus open and reserved codes (Q38, Q79). List with account identity (display name, signed-up date, updates on/off) and explicit Remove; separate Remove all with confirmation. A second list, “Email subscribers / Người đăng ký email”, shows count against its cap, confirmed date and Remove; addresses are shown only here and never copied into docs, logs or Codex (rule 3). Phone labelled records; laptop table. Empty: “No registered guests yet / Chưa có khách đăng ký.” Removing accounts does not rotate the guest link; rotating the link does not remove accounts. State these consequences in the confirmation. Before email is available (Q37), explain availability rather than offering a broken flow. |
@@ -350,6 +350,77 @@ Copy approved by the owner on 2026-11-20 (EN and VI as drawn; shipped strings re
 | `home.created` | Home was created elsewhere | Trang chủ đã được tạo ở nơi khác |
 | `home.unpublished` | Unpublished | Đã gỡ đăng |
 | `home.position` | Photo {position} of {total} | Ảnh {position} trên {total} |
+
+### O10 Usage and the O2 attention line for T2.5 (2026-11-21, approved by the owner 2026-11-21, Q145)
+
+Boards: OwnerUsage, OwnerUsageTab and OwnerUsageLap (O10, 25 review states each), OwnerDashUsage, OwnerDashUsageTab and OwnerDashUsageLap (the O2 boards with the Home card plus an attention line and a Usage entry) on canvas page 10 "Owner area" (Theme Preview version 119). Codex lead design, Claude review and render; working copies, brief, checks and reviews in the git-ignored `.design/usage/`. Owner decision (2026-11-21): alerts appear in the owner area, plus a scheduled GitHub check that emails the owner; no email vendor (Q37 parked). Claude's defaults: Q145 1-19.
+
+- **Supersedes the O10 row above:** egress is not measured in the app (Supabase shows it only on its organisation usage page). O10 shows the free monthly quota (5 GB, whole Supabase organisation) and an "Open Supabase usage" link (new tab), never a meter or a percentage.
+- **One owner read for O2 and O10** returns a snapshot: total, budget, uploading and waiting-to-be-deleted bytes (both included in the total), the server's read time, the page creation time, the page time zone, the last attempt's time and result (200, 200 with a failed deletion, 503), the last success's time and its correction count (orphans plus resized), and whether any run exists. Loading, network failure, 401 and 403 are read outcomes outside the snapshot. The full contract and the derivation rules are in `.design/usage/CHECKS.md`; the boards' `deriveUsage(snapshot)` can be lifted.
+- **Storage (O10):** MB as O6 shows them (MiB, the unit of the 900 MiB budget); levels on raw bytes: normal under 60 %, notice at 60 %, warning at 80 %, full at 100 % or more (meter capped); the used figure rounds down; a non-zero amount under 1 MB reads "<1 MB"; a zero budget has its own message and no Content or Add links. The meter fill is neutral below 60 % and has a distinct treatment per level (3:1 against the track); the level is always also stated in text.
+- **Daily job (O10):** missed = no successful run in the last 26 hours, measured from the last success (the same rule as the health route), outranking failed; a missed job whose last attempt failed also shows that attempt's time; no run at all is "has not run yet" while the page is under 26 hours old, then missed; failed = the last attempt answered 503 or failed a deletion while a success is under 26 hours old; corrections from the last success are neutral. Missed shows "What to do" (the Vercel cron log); the help line names the GitHub check.
+- **O2:** one persistent attention line above the cards, only the highest of job missed, job failed, storage full or no allowance, storage at 80 %, each with View usage; 60 % and corrections show only on O10. A Usage entry shows "Storage [used] of [budget]" and View usage, with its own loading, read failure with Try again (never a zero) and offline states, independent of the Home card's retry.
+- **Refresh, cache and recovery:** O2 and O10 share the last accepted snapshot and the last read outcome within the tab; Back (button or browser) shows them; offline and after reconnect the figures stay labelled with their time; cached attention says "Last known"; a read cut short by going offline or by a newer read is dropped; a first read interrupted by going offline restarts on reconnect; a read failure survives offline, reconnect and navigation until a read succeeds; after a 401 or 403 no figures or attention return until a fresh authorized read. 401 opens sign-in in a new tab and Try again resumes; 403 offers Log out, which ends on sign-in with focus on its heading.
+- **Accessibility:** 44 px targets; one mounted polite status region announces each accepted refresh once (with "cleared", lower or higher attention) and each read failure; the attention line is static on load; focus stays on a surviving control after a redraw, else goes to Try again (described by the error) or the heading; controls that a connection change disables stay focusable with `aria-disabled` and an action-specific reason, and a press only repeats the reason; Back returns focus to the O2 control that opened O10; reflow at 320 px with 200 % text; reduced motion.
+- **Build needs found in the design:** a `job_runs` table and the cron writing one row per run (and purging rows older than 30 days, Q45); the owner usage read above (uploading and deleting bytes are not returned by `owner_page()` today); `usageLevel` gains the 60 % notice and the zero-budget case; the health route and the scheduled workflow (Q145 6-7).
+- **Checks (2026-11-21):** board logic checks 823 assertions across the six boards (each fix's check seen failing first; `.design/usage/check-usage.cjs`); rendered in Chromium for every review state at the board's own size and at 320 px with a 200 % root font: 342 cases, no sideways scroll, no clipped box, no target under 44 px, no axe violation (WCAG 2.2 AA), no console error; real-browser focus probes (O2 focus kept after a retry; O10 Refresh kept focusable when the connection drops). WebKit not run locally (missing system libraries). Codex design review: 6 rounds, round 6 approve.
+
+Copy approved by the owner on 2026-11-21 (EN and VI as drawn; [TIME] is a date and time in the page time zone; shipped strings reused: `upload.usage`, `upload.viewUsage`, `upload.title`, `content.content`, `navigation.back`, `content.signin`, `dashboard.logout`, `common.accessLost`, `common.offline`, `common.loading`, `common.tryAgain`):
+
+| Key | English | Tiếng Việt |
+| --- | --- | --- |
+| `usage.title` | Usage | Mức sử dụng |
+| `usage.refresh` | Refresh | Làm mới |
+| `usage.updated` | Updated [TIME] | Đã cập nhật lúc [TIME] |
+| `usage.announced` | Usage updated | Đã cập nhật mức sử dụng |
+| `usage.readError` | Usage unavailable | Chưa tải được mức sử dụng |
+| `usage.offline` | Offline, numbers from [TIME] | Ngoại tuyến, số liệu lúc [TIME] |
+| `usage.refreshOffline` | Reconnect to refresh. | Kết nối lại để làm mới. |
+| `usage.storageSummary` | Storage [used] of [budget] | Dung lượng đã dùng [used] trên [budget] |
+| `usage.storageUsed` | [used] of [budget] used | Đã dùng [used] trên [budget] |
+| `usage.empty` | No files yet. | Chưa có tệp nào. |
+| `usage.notice` | Storage has reached 60%. | Dung lượng đã đạt 60%. |
+| `usage.over80` | Storage is over 80%. Check page usage before adding more. | Đã dùng hơn 80% dung lượng. Kiểm tra dung lượng trang trước khi thêm tệp. |
+| `usage.full` | Storage is full. Remove photos or videos in Content before adding more. Removed files still count until the daily job deletes them. | Dung lượng đã đầy. Hãy xóa ảnh hoặc video trong Nội dung trước khi thêm tệp. Tệp đã gỡ vẫn chiếm dung lượng cho đến khi tác vụ hằng ngày xóa chúng. |
+| `usage.zeroBudget` | This page has no storage allowance. Uploads are unavailable. | Trang này không có hạn mức lưu trữ. Không thể tải tệp lên. |
+| `usage.uploading` | Uploading: [size] | Đang tải lên: [size] |
+| `usage.deleting` | Waiting to be deleted: [size] | Đang chờ xóa: [size] |
+| `usage.heldIncluded` | included in the total above | đã tính trong tổng ở trên |
+| `usage.egress` | Egress | Dữ liệu truyền ra |
+| `usage.quota` | Free monthly quota: 5 GB (whole Supabase organisation) | Hạn mức miễn phí hằng tháng: 5 GB (toàn bộ tổ chức Supabase) |
+| `usage.egressHelp` | See egress usage in Supabase. | Xem mức sử dụng dữ liệu truyền ra trên Supabase. |
+| `usage.openSupabase` | Open Supabase usage | Mở mức sử dụng trên Supabase |
+| `usage.newTab` | opens in a new tab | mở trong thẻ mới |
+| `usage.job` | Daily job | Tác vụ hằng ngày |
+| `usage.lastSuccess` | Last successful run: [TIME] (page time zone) | Lần chạy thành công gần nhất: [TIME] (múi giờ của trang) |
+| `usage.noSuccess` | No successful run yet. | Chưa có lần chạy thành công. |
+| `usage.jobOk` | Completed successfully. | Đã chạy thành công. |
+| `usage.jobCorrected` | The check corrected [N] files. | Tác vụ kiểm tra đã điều chỉnh [N] tệp. |
+| `usage.jobFailed` | The last daily job failed. Files may wait longer to be deleted. Next run around 03:00 UTC. | Lần chạy tác vụ hằng ngày gần nhất thất bại. Tệp có thể phải chờ lâu hơn mới được xóa. Lần chạy tiếp theo vào khoảng 03:00 UTC. |
+| `usage.jobMissed` | No successful daily job in the last 26 hours. | Tác vụ hằng ngày chưa chạy thành công trong 26 giờ qua. |
+| `usage.jobNever` | The daily job has not run yet. | Tác vụ hằng ngày chưa từng chạy. |
+| `usage.jobSchedule` | Runs daily around 03:00 UTC (±1 hour). It keeps the database awake, expires stale uploads, checks stored files against their records and deletes removed files. | Tác vụ chạy mỗi ngày vào khoảng 03:00 UTC (±1 giờ) để giữ cơ sở dữ liệu hoạt động, kết thúc các lượt tải lên quá hạn, đối chiếu tệp đã lưu với bản ghi và xóa các tệp đã được gỡ bỏ. |
+| `usage.whatToDo` | What to do | Việc cần làm |
+| `usage.cron` | Open your Vercel project’s cron log. | Mở nhật ký tác vụ định kỳ của dự án trên Vercel. |
+| `usage.github` | A scheduled GitHub check also emails you when no successful run has happened in 26 hours. | Một lượt kiểm tra định kỳ trên GitHub cũng gửi email cho bạn khi chưa có lần chạy thành công trong 26 giờ. |
+| `usage.session` | Your session expired. Sign in again in a new tab, then try again here. | Phiên đăng nhập đã hết hạn. Hãy đăng nhập lại trong thẻ mới, rồi quay lại đây để thử lại. |
+| `attention.missed` | No successful daily job in the last 26 hours. | Tác vụ hằng ngày chưa chạy thành công trong 26 giờ qua. |
+| `attention.failed` | The last daily job failed. | Lần chạy tác vụ hằng ngày gần nhất thất bại. |
+| `attention.zeroBudget` | This page has no storage allowance. Uploads are unavailable. | Trang này không có hạn mức lưu trữ. Không thể tải tệp lên. |
+| `attention.full` | Storage is full. | Dung lượng đã đầy. |
+| `attention.warning` | Storage has reached 80%. | Dung lượng đã đạt 80%. |
+| `usage.lastAttempt` | Last attempt: [TIME] (page time zone) | Lần thử gần nhất: [TIME] (múi giờ của trang) |
+| `usage.lastAttemptFailed` | The last attempt failed: [TIME] (page time zone) | Lần thử gần nhất thất bại: [TIME] (múi giờ của trang) |
+| `usage.priorCorrections` | The last successful run corrected [N] files. | Lần chạy thành công gần nhất đã điều chỉnh [N] tệp. |
+| `usage.connected` | Connection restored. | Đã kết nối lại. |
+| `usage.cached` | Last known numbers from [TIME] | Số liệu gần nhất đã biết lúc [TIME] |
+| `usage.lastKnown` | Last known: [attention] | Thông tin gần nhất: [attention] |
+| `usage.attentionCleared` | Attention cleared. | Đã hết cảnh báo. |
+| `usage.attentionLower` | Lower-priority attention: [attention] | Cảnh báo có mức ưu tiên thấp hơn: [attention] |
+| `usage.attentionHigher` | Higher-priority attention: [attention] | Cảnh báo có mức ưu tiên cao hơn: [attention] |
+| `usage.retryOffline` | Reconnect to try again. | Kết nối lại để thử lại. |
+| `usage.signInOffline` | Reconnect to sign in. | Kết nối lại để đăng nhập. |
+| `usage.logoutOffline` | Reconnect to log out. | Kết nối lại để đăng xuất. |
 
 ### Limits and owner preview behavior
 
