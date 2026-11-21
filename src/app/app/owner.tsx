@@ -2,11 +2,13 @@
 import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useRef, useState, type RefObject } from "react";
 import type { Kind, Lang, Section } from "@/lib/content";
+import { cardState, counter, type Home, type HomeRead } from "@/lib/home";
 import { dashState, resumeStep, type Drafts, type Page } from "@/lib/setup";
 import { Content } from "./content";
 import type { CopyKey } from "./copy";
+import { HomeEditor } from "./home";
 import { Item } from "./item";
-import { Announcers, L, LogOut, SectionList, T, useOnline } from "./parts";
+import { Announcers, L, LogOut, SectionList, T, post, useOnline } from "./parts";
 import { Upload } from "./upload";
 import { Wizard } from "./wizard";
 import s from "./owner.module.css";
@@ -42,9 +44,14 @@ type Props = {
   headingRef?: RefObject<HTMLElement | null>;
   // The read was the owner's: focus reads the message, so the alert region stays empty (announced once).
   focused?: boolean;
+  // The Home card (owner UI O17 and the O2 Home card): its own read, the time its counter is computed at, its actions.
+  home?: HomeRead;
+  now?: Date;
+  onHome?: () => void;
+  onHomeRetry?: () => void;
 };
 
-export function Dashboard({ state, page, offline, onSetup, onRetry, onContent, status, headingRef, focused = false }: Props) {
+export function Dashboard({ state, page, offline, onSetup, onRetry, onContent, status, headingRef, focused = false, home, now, onHome, onHomeRetry }: Props) {
   const h2 = headingRef as RefObject<HTMLHeadingElement | null> | undefined;
   const message = headingRef as RefObject<HTMLParagraphElement | null> | undefined;
   const reason = offline ? "offline-reason" : undefined;
@@ -155,11 +162,69 @@ export function Dashboard({ state, page, offline, onSetup, onRetry, onContent, s
               </h3>
               <SectionList sections={page.sections} />
             </section>
+            {home && <HomeCard home={home} now={now} offline={offline} onHome={onHome} onRetry={onHomeRetry} />}
           </div>
         )}
         <LogOut />
       </main>
     </div>
+  );
+}
+
+const CARD_STATUS = { new: "home.new", draft: "home.cardDraft", published: "content.published", changes: "home.cardChanged" } as const;
+
+// O2 Home card (PRD Q144 defaults 1, 8 and 11): read before any status or counter is shown; the counter is the
+// published Home's, in the page time zone; a failed read has its own Try again and never reads as "No Home yet".
+function HomeCard({ home, now, offline, onHome, onRetry }: { home: HomeRead; now?: Date; offline: boolean; onHome?: () => void; onRetry?: () => void }) {
+  const reason = offline ? "offline-reason" : undefined;
+  const ready = home.state === "ready" ? home.home : undefined;
+  const start = ready?.published ? counter(ready.published.start_date, ready.timezone, now) : null;
+  return (
+    <section className={s.surface}>
+      <h3 id="home-card-title" tabIndex={-1}>
+        <T k="sections.home" />
+      </h3>
+      {home.state === "loading" && (
+        <p role="status">
+          <T k="common.loading" />
+        </p>
+      )}
+      {home.state === "error" && (
+        <>
+          <p className={s.error} role="alert">
+            <T k="common.readError" />
+          </p>
+          <button id="home-retry" type="button" className={s.secondary} disabled={offline} aria-describedby={reason} onClick={onRetry}>
+            <L k="common.tryAgain" />
+          </button>
+        </>
+      )}
+      {ready !== undefined && (
+        <>
+          <p className={s.badge}>
+            <T k={CARD_STATUS[cardState(ready)]} />
+          </p>
+          {start?.kind === "none" && (
+            <p>
+              <T k="home.noDate" />
+            </p>
+          )}
+          {start?.kind === "future" && (
+            <p>
+              <T k="home.future" vars={{ date: start.date }} />
+            </p>
+          )}
+          {start?.kind === "day" && (
+            <p>
+              <T k="home.day" vars={{ days: start.days }} />
+            </p>
+          )}
+          <button id="home-action" type="button" className={s.secondary} disabled={offline} aria-describedby={reason} onClick={onHome}>
+            <L k={ready ? "home.edit" : "home.setup"} />
+          </button>
+        </>
+      )}
+    </section>
   );
 }
 
@@ -175,7 +240,13 @@ export default function Owner() {
     | { name: "content"; section: Section; status?: CopyKey }
     | { name: "item"; id: string | null; kind: Kind; section: Section }
     | { name: "upload"; id: string; kind: Kind; section: Section }
+    | { name: "home" }
   >({ name: "dashboard" });
+  // The Home card's own read (owner UI O2 Home card): on the dashboard once the page is set up, again on each return
+  // to it and on reconnecting; until it answers the card claims nothing.
+  const [home, setHome] = useState<HomeRead>({ state: "loading" });
+  const focusHome = useRef(false);
+  const homeRead = useRef(0); // the latest Home read; an older answer is ignored
   const [status, setStatus] = useState<CopyKey | null>(null);
   // A Finish whose outcome is unknown keeps its retry through Leave and resume (owner UI O3 states).
   const [uncertain, setUncertain] = useState(false);
@@ -199,6 +270,35 @@ export default function Owner() {
     [router],
   );
   const signedOut = useCallback(() => router.push("/login?next=%2Fapp"), [router]);
+  // announce: the owner asked (Try again), so the result is announced; a failure is the card's alert.
+  const readHome = useCallback(
+    (announce = false) => {
+      const n = ++homeRead.current;
+      void post<{ home: Home | null }>("/api/owner/home/get", {}).then((r) => {
+        if (n !== homeRead.current) return;
+        if (r.status === 401) return signedOut();
+        const ok = r.status === 200 && r.body;
+        setHome(ok ? { state: "ready", home: r.body!.home } : { state: "error" });
+        if (announce && ok) setStatus("home.cardLoaded");
+      });
+    },
+    [signedOut],
+  );
+  const onDashboard = state === "done" && view.name === "dashboard" && !wizard;
+  useEffect(() => {
+    if (onDashboard && online) readHome();
+  }, [onDashboard, online, readHome]);
+  useEffect(() => {
+    if (focusHome.current && view.name === "dashboard") {
+      focusHome.current = false;
+      document.getElementById("home-card-title")?.focus();
+    }
+  }, [view]);
+  const leave = (next: typeof view) => {
+    homeRead.current++; // a read still in flight belongs to the dashboard just left
+    setHome({ state: "loading" });
+    setView(next);
+  };
   const read = () => {
     setState("loading");
     void fetchPage().then(apply);
@@ -261,6 +361,21 @@ export default function Owner() {
       />
     );
   }
+  if (view.name === "home" && data.page) {
+    return (
+      <HomeEditor
+        page={data.page}
+        drafts={data.drafts}
+        onSignedOut={signedOut}
+        onContent={() => setView({ name: "content", section: "memories" })}
+        onBack={() => {
+          focusHome.current = true;
+          setStatus(null);
+          setView({ name: "dashboard" });
+        }}
+      />
+    );
+  }
   if (view.name === "upload") {
     return <Upload id={view.id} onSignedOut={signedOut} onBack={() => setView({ name: "item", id: view.id, kind: view.kind, section: view.section })} />;
   }
@@ -276,7 +391,16 @@ export default function Owner() {
         setStatus(null);
         setWizard(true);
       }}
-      onContent={() => setView({ name: "content", section: "memories" })}
+      onContent={() => leave({ name: "content", section: "memories" })}
+      home={home}
+      onHome={() => leave({ name: "home" })}
+      onHomeRetry={() => {
+        // Try again leaves with the error, so focus goes to the card's title first, never to the page.
+        document.getElementById("home-card-title")?.focus();
+        setStatus(null);
+        setHome({ state: "loading" });
+        readHome(true);
+      }}
       onRetry={() => {
         focusResult.current = true;
         setAsked(true);

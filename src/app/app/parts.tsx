@@ -28,11 +28,11 @@ export function L({ k }: { k: CopyKey }) {
 }
 
 // The persistent live regions: they stay in the tree, so a message is announced once when it appears.
-export function Announcers({ status, alert }: { status?: CopyKey | null; alert?: CopyKey | null }) {
+export function Announcers({ status, alert, vars }: { status?: CopyKey | null; alert?: CopyKey | null; vars?: Record<string, string | number> }) {
   return (
     <>
       <p className={s.announcer} role="status" aria-live="polite" aria-atomic="true">
-        {status && <T k={status} />}
+        {status && <T k={status} vars={vars} />}
       </p>
       <p className={s.announcer} role="alert" aria-atomic="true">
         {alert && <T k={alert} />}
