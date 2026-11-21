@@ -26,7 +26,27 @@ export async function ownerAuth(request: NextRequest) {
   return auth;
 }
 
-export const isUuid = (value: unknown) => typeof value === "string" && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(value);
+// Puts a preview URL, signed with the owner's session, in place of each media's {bucket, path} (the storage read
+// policy admits only their own page's files), one Storage call per bucket. A file Storage cannot sign gets null, so
+// the rest still loads; null for the whole list means Storage is down (the route answers 503).
+const PREVIEW_SECONDS = 3600;
+type Client = Exclude<Awaited<ReturnType<typeof ownerAuth>>, Response>;
+type Preview = { bucket: string; path: string } | null;
+export async function signPreviews<T extends { preview: Preview }>(auth: Client, media: T[]) {
+  const urls = new Map<string, string | null>();
+  for (const bucket of new Set(media.flatMap((m) => (m.preview ? [m.preview.bucket] : [])))) {
+    const paths = media.flatMap((m) => (m.preview?.bucket === bucket ? [m.preview.path] : []));
+    const signed = await auth.storage.from(bucket).createSignedUrls(paths, PREVIEW_SECONDS);
+    if (signed.error || !signed.data) return null;
+    for (const s of signed.data) if (s.path) urls.set(`${bucket}/${s.path}`, s.signedUrl);
+  }
+  return media.map(({ preview, ...m }) => ({
+    ...m,
+    preview_url: preview ? (urls.get(`${preview.bucket}/${preview.path}`) ?? null) : null,
+  }));
+}
+
+export const isUuid =(value: unknown) => typeof value === "string" && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(value);
 
 // What the database's refusals mean to an owner route: 42501 not the page's owner, and these codes bad input
 // (22023 rule, 23514 check, 22P02 enum text, 22P05 NUL, 22007 and 22008 date). Anything else is an outage.

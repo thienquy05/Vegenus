@@ -97,15 +97,14 @@ A trigger refuses a user who already has a `guest_accounts` row, and the `guest_
 | `status` | enum `pub_status` (`draft`, `published`) | default `draft` |
 | `published_at` | tstz null | set when first published |
 | `lang` | `lang` | language of the main text |
-| `title` | text | 1–120 chars, NFC |
-| `body` | text null | ≤ 5,000 chars, NFC, plain text |
+| `title` | text null | 1–120 chars, NFC; required for every kind but `home`, which has none (the couple title is the partner names, Q144) |
+| `body` | text null | ≤ 5,000 chars, NFC, plain text; `home`: the welcome note, ≤ 600 chars per language (`body`, `body_alt`; Q64, Q144) |
 | `lang_alt`, `title_alt`, `body_alt` | null | optional second language (S12). Check: all null, or `lang_alt` set and different from `lang`. Missing alt falls back to the main text (E13) |
 | `event_date` | date null | |
 | `date_precision` | enum (`day`, `month`, `year`) null | design 2: memories may know only a month or a year. Stored as the first day of the period |
 | `recurs_yearly` | bool default false | anniversaries only |
 | `remind_owner` | bool default false | anniversaries only; feeds the reminder mail (S18) |
 | `start_date` | date null | home only: the "together since" date for the counter |
-| `cover_media_id` | uuid null | home only; composite FK `(cover_media_id, page_id)` → `media` |
 | `zodiac_system`, `zodiac_key` | enum (`western`, `vietnamese`), text null | `zodiac_sign` items only: which sign this art is for (a Western sign or a Vietnamese animal); unique `(page_id, zodiac_system, zodiac_key)` |
 | `sort_order` | numeric | owner reorder (O4); fractional so a move updates one row |
 | `version`, `updated_at`, `created_by`, `updated_by` | | §1.6 |
@@ -113,13 +112,15 @@ A trigger refuses a user who already has a `guest_accounts` row, and the `guest_
 Per-kind check constraints:
 | Kind | Required | Must be null |
 |---|---|---|
-| `home` | `start_date` (optional) | `event_date`, `recurs_yearly = false`, `zodiac_system`, `zodiac_key` |
-| `memory` | `event_date`, `date_precision` | `start_date`, `zodiac_system`, `zodiac_key`, `cover_media_id` |
-| `milestone` | `event_date`, `date_precision` | `start_date`, `zodiac_system`, `zodiac_key`, `cover_media_id` |
-| `anniversary` | `event_date`, `date_precision = day` | `start_date`, `zodiac_system`, `zodiac_key`, `cover_media_id` |
-| `zodiac_sign` | `zodiac_system`, `zodiac_key` | dates, `cover_media_id` |
+| `home` | `start_date` (optional) | `title`, `title_alt`, `event_date`, `recurs_yearly = false`, `zodiac_system`, `zodiac_key` |
+| `memory` | `event_date`, `date_precision` | `start_date`, `zodiac_system`, `zodiac_key` |
+| `milestone` | `event_date`, `date_precision` | `start_date`, `zodiac_system`, `zodiac_key` |
+| `anniversary` | `event_date`, `date_precision = day` | `start_date`, `zodiac_system`, `zodiac_key` |
+| `zodiac_sign` | `zodiac_system`, `zodiac_key` | dates |
 
 Partial unique index: one `home` item per page.
+
+**Home photos (T2.4, Q144).** Home stores no media of its own and has no `cover_media_id`: its 3-7 photos are picks of ready photos from the page's memories, in `home_picks` (`item_id`, `page_id`, `media_id`, `position` 0-6 in the draft, `published_position` 0-6 in what guests see; composite FKs to `items` and `media` on delete cascade, so a deleted photo drops out of both). At most seven picks; only a ready photo of one of the page's memories can be picked. A pick whose memory is unpublished stays in the owner's stack (hidden) and guests skip it. Publish copies the draft positions into `published_position`; Unpublish clears them. The cover is the first guest-visible pick. Owner functions: `owner_home_save`, `owner_home_get`, `owner_home_photos`; Publish and Unpublish through `owner_item_set_status`; `owner_item_delete` refuses Home (no Delete). The guest read of the picks comes with G1 (T3.1).
 
 **Counting and calendar rules** (E14), computed in the page's `timezone`, never the server's or the guest's:
 - The start date is **day 1** (Q44). Counter = (today in `pages.timezone` − `start_date`) + 1.
@@ -498,6 +499,7 @@ Deleting a page cascades to its page rows only after enqueuing storage keys and 
 | `guest_tokens` | fn (hash lookup inside) | — | create, rotate through `owner_rotate_token`; never read `token_hash` | — | |
 | `items` | fn (published, enabled) | fn | full CRUD | full CRUD (Q15) | |
 | `media`, `media_variants` | fn (ready media of published items) | fn | read; writes through `owner_upload_*` / `owner_media_*` only (§3.4) | same as owner | deletion worker |
+| `home_picks` | fn (published picks whose memory is published; with G1, T3.1) | fn | through `owner_home_save`, `owner_home_get` and `owner_item_set_status` only (§3.3) | | |
 | `guestbook_entries` | fn (approved list). Posting goes through our server only (`vegenus_server`, §3.9), never directly and never through `public_*` | fn (approved list; post) | read, moderate, delete | read, moderate | |
 | `guest_accounts` | — | fn (own row) | read; deletion through the trusted owner removal function only (§3.8) | — | verification function and cleanup worker |
 | `email_prefs` | — | fn (own row) | — | — | |
