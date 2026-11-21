@@ -273,6 +273,84 @@ Copy approved by the owner on 2026-11-20 (EN and VI as drawn; source `.design/o4
 | `unchanged` | No saved version yet. | Chưa có bản đã lưu. |
 | `statusLabel` | Status | Trạng thái |
 
+### O17 Home editor and the O2 Home card for T2.4 (2026-11-20, approved by the owner 2026-11-20, Q144)
+
+Boards: OwnerHome, OwnerHomeTab and OwnerHomeLap (O17, 46 review states each), OwnerDashHome, OwnerDashHomeTab and OwnerDashHomeLap (the approved O2 boards plus a Home card with 8 states) on canvas page 10 "Owner area", and HomeStates A-D at phone, tablet and laptop (the approved G1 boards with the Home states) on the Home page (Theme Preview version 117). Codex lead design, Claude review and render; working copies, brief, checks and reviews in the git-ignored `.design/home/`. Owner decision (2026-11-20, Q144): Home photos are picked from the ready photos of published memories; no upload on Home. The defaults Claude drew (Q144 1-23) were approved by the owner with the boards and copy on 2026-11-20.
+
+- **Entry (O2):** a Home card beside Content. Its states: no Home yet ("Set up Home"), draft not published yet (no counter claim), published, published with unpublished changes, no start date, "Counter starts on [DATE]", "Day [N] together", and read failure with its own Try again (never a misleading zero). O2 reads Home before it shows a status or counter; the card shows the published Home.
+- **Editor (O17):** its own view, Back to O2. No title field (the couple title comes from the partner names). Together since (optional date; the page time zone shown read-only beside it, Q115). Welcome note, optional, up to 600 characters per language, main language plus an optional second language (a missing second note falls back to the main one). Photo stack: 3-7 picks recommended (fewer allowed with the hint "Pick 3 to 7 photos."), each with Move up, Move down and Remove from stack; the first guest-visible pick is labelled Cover. Save draft, Publish and Unpublish as O5 (Publish saves first, then publishes, with a status for each step); no Delete. A guest preview column uses the working copy and the published Wording strings (greeting and days line, marked as placeholders); after Unpublish it switches to "What guests see now".
+- **Photo picker:** a dialog listing only ready photos of published memories, grouped by memory (title and date); each tile is a real checkbox named by the memory's alt text, or "No description yet" with the hint that descriptions are edited on the memory. Choices are staged until "Use these photos"; Close and Esc discard them and return focus to Choose photos. At 7 the remaining tiles are disabled with the reason; hidden picks use a slot, and the picker says to remove one from the stack. States: default, empty (with a link to Content, behind the unsaved-changes check), limit reached, loading, read failure (Try again reads fresh before announcing success).
+- **Hidden and deleted picks:** a pick whose memory is unpublished stays in the owner's stack as "Hidden: its memory is unpublished" and guests skip it; a photo that no longer exists drops out on the next read with one notice giving the count. A failed read keeps the picks and is never treated as deletion. One ordered list of eligible picks gives the guest cover, stack and position total.
+- **Guest Home states (HomeStates A-D, 20 review states):** default, no photos, no note, neither (the fixed notices `preview.photos` and `preview.note`), two photos, seven photos, a hidden pick, no start date, future start (no counter), start today (Day 1), unpublished or never published (the couple title and greeting only; the menu and enabled sections stay), all picks hidden, a description in the other language only, a repeated days token, reduced motion, long Vietnamese. Photo alt text uses the shown language, then the other language with its own `lang`, then empty alt; "No description yet" is owner-only.
+- **Errors and recovery:** validation (each over-long note marked on its control, one summary, focus to the first), 400 generic, 401 (sign in in a new tab, input kept, Try again resumes), 403 (Log out), 404, 409 (the complete saved Home is re-read; the panel says which of date, note, language, photos and status changed; Reload saved or Keep mine, both disabled until the re-read succeeds), a second session's first create (the existing Home with the 409 panel, review state "Created elsewhere"), 503 and no answer (the operation, its payload and revision are kept; Try again re-reads first and shows Saved, Published or Unpublished if the attempt landed, otherwise resends the original payload; later edits stay unsaved and are never sent with the retry), offline (input kept, actions paused; reconnecting keeps any unresolved failure and its recovery action), leave with unsaved changes, unpublish confirmation (Home will show the couple title and greeting).
+- **Accessibility:** as O5 and O6: 44 px targets, visible focus, Esc closes dialogs and returns focus to the opener, focus never drops to the page after a list redraw (a moved pick keeps focus on the same Move button, or its row when that button is now disabled; Remove moves focus to the next pick's Remove, else the previous one's), one polite status region and one alert region, bilingual names through `aria-labelledby` on `lang`-marked text, a focusable scroll region in the picker, reduced motion.
+- **Build needs found in the design:** a table for the picks and their order (replacing `cover_media_id`); `owner_item_save` must accept kind `home`; the item status and delete routes do not check the kind (Home has no Delete); the 600-character note cap per language; the Home read must return each pick's photo state and its memory's publication status; design 3 §3.3 and screens G1 to be updated.
+- **Checks (2026-11-20):** board logic checks 1,166 assertions on the three O17 boards (each fix's check seen failing first; `.design/home/check-home.cjs`); rendered in Chromium for every review state at the board's own size and, for owner boards, at 320 px with a 200 % root font: OwnerHome 276 cases, OwnerDashHome and guest boards 612 cases, no sideways scroll, no clipped box, no target under 44 px, no axe violation (WCAG 2.2 AA), no console error. WebKit not run locally (missing system libraries); the guest boards are fixed artboards, so their 320 px reflow belongs to the guest build. Codex adversarial review: five rounds plus a confirmation (round 6: approve), every valid finding fixed. Carried to the Phase 3 guest build (behaviours of the approved G1 this design does not change): guest menu focus and Esc, the reduced-motion preference, and guest loading, read failure and offline.
+
+Copy approved by the owner on 2026-11-20 (EN and VI as drawn; shipped strings reused as listed in `.design/home/COPY.md`; braces are interpolation tokens):
+
+| Key | English | Vietnamese |
+|---|---|---|
+| `home.start` | Together since | Bên nhau từ |
+| `home.noDate` | No start date | Chưa có ngày bắt đầu |
+| `home.future` | Counter starts on {date} | Bộ đếm bắt đầu vào {date} |
+| `home.day` | Day {days} together | Ngày thứ {days} bên nhau |
+| `home.note` | Welcome note | Lời nhắn chào mừng |
+| `home.noteHint` | Optional · up to 600 characters per language | Không bắt buộc · tối đa 600 ký tự mỗi ngôn ngữ |
+| `home.noteError` | Use no more than 600 characters. | Nhập tối đa 600 ký tự. |
+| `home.fallback` | Optional · up to 600 characters. If blank, guests see the main-language note. | Không bắt buộc · tối đa 600 ký tự. Nếu bỏ trống, khách thấy lời nhắn bằng ngôn ngữ chính. |
+| `home.secondRule` | Choose a different language or remove the second language. | Chọn ngôn ngữ khác hoặc bỏ ngôn ngữ thứ hai. |
+| `home.photos` | Photo stack | Chồng ảnh |
+| `home.pickHint` | Pick 3 to 7 photos. | Chọn từ 3 đến 7 ảnh. |
+| `home.choose` | Choose photos | Chọn ảnh |
+| `home.altHint` | Edit photo descriptions on the memory. | Sửa mô tả ảnh trong kỷ niệm. |
+| `home.cover` | Cover | Ảnh bìa |
+| `home.hidden` | Hidden: its memory is unpublished | Bị ẩn: kỷ niệm chứa ảnh đã gỡ đăng |
+| `home.up` | Move up | Đưa lên |
+| `home.down` | Move down | Đưa xuống |
+| `home.remove` | Remove from stack | Bỏ khỏi chồng ảnh |
+| `home.noDescription` | No description yet | Chưa có mô tả |
+| `home.next` | Show next photo | Xem ảnh tiếp theo |
+| `home.stackUpdated` | Photo stack updated. | Đã cập nhật chồng ảnh. |
+| `home.selected` | {count} of 7 photos selected | Đã chọn {count} trên 7 ảnh |
+| `home.limit` | Limit reached. Remove a selected photo to choose another. | Đã đạt giới hạn. Bỏ một ảnh đã chọn để chọn ảnh khác. |
+| `home.pickerEmpty` | No published photos yet. Publish a memory with photos first. | Chưa có ảnh đã đăng. Hãy đăng một kỷ niệm có ảnh trước. |
+| `home.unpublishing` | Unpublishing… | Đang gỡ đăng… |
+| `home.new` | No Home yet | Chưa thiết lập Trang chủ |
+| `home.edit` | Edit Home | Sửa Trang chủ |
+| `home.setup` | Set up Home | Thiết lập Trang chủ |
+| `home.reconnect` | Reconnect | Kết nối lại |
+| `home.usePhotos` | Use these photos | Dùng những ảnh này |
+| `home.saveUnconfirmed` | Save outcome could not be confirmed. Try again to check. | Chưa thể xác nhận kết quả lưu. Chọn Thử lại để kiểm tra. |
+| `home.publishUnconfirmed` | Publish outcome could not be confirmed. Try again to check. | Chưa thể xác nhận kết quả đăng. Chọn Thử lại để kiểm tra. |
+| `home.unpublishUnconfirmed` | Unpublish outcome could not be confirmed. Try again to check. | Chưa thể xác nhận kết quả gỡ đăng. Chọn Thử lại để kiểm tra. |
+| `home.unpublishFailed` | Home was not unpublished. | Trang chủ chưa được gỡ đăng. |
+| `home.previewWorking` | Preview switched to Working copy. | Bản xem trước đã chuyển sang bản đang sửa. |
+| `home.publishFailed` | Your draft is saved, but Home was not published. | Bản nháp đã được lưu, nhưng Trang chủ chưa được đăng. |
+| `home.unpublishBody` | On Home, guests will see the couple title and greeting. Photos, the welcome note and the counter will be hidden. The menu and enabled sections stay available. | Trên Trang chủ, khách thấy tên hai bạn và lời chào. Ảnh, lời nhắn chào mừng và bộ đếm sẽ được ẩn. Menu và các mục đã bật vẫn khả dụng. |
+| `home.unpublishOffline` | Reconnect before confirming Unpublish. | Kết nối lại trước khi xác nhận gỡ đăng. |
+| `home.hiddenLimit` | Limit reached. Close the picker and remove a hidden photo from the stack to free a slot. | Đã đạt giới hạn. Đóng bộ chọn rồi bỏ một ảnh ẩn khỏi chồng ảnh để có thêm chỗ. |
+| `home.deleted` | Deleted photos removed from the stack: {count}. | Số ảnh đã xóa được bỏ khỏi chồng ảnh: {count}. |
+| `home.photoMoved` | Moved to position {position}. | Đã chuyển đến vị trí {position}. |
+| `home.photoRemoved` | Removed from the stack. | Đã bỏ khỏi chồng ảnh. |
+| `home.photoShown` | Showing photo {position}. | Đang xem ảnh {position}. |
+| `home.removeSecondHint` | Saving will remove the second-language note. | Khi lưu, lời nhắn bằng ngôn ngữ thứ hai sẽ bị xóa. |
+| `home.statusLabel` | Publication status | Trạng thái đăng |
+| `home.afterUnpublish` | What guests see now | Nội dung khách đang thấy |
+| `home.photosReady` | Published photos loaded. | Đã tải ảnh đã đăng. |
+| `home.connected` | Connection restored. | Đã kết nối lại. |
+| `home.loaded` | Saved Home loaded. | Đã tải Trang chủ đã lưu. |
+| `home.kept` | Your input is kept. | Phần bạn nhập vẫn được giữ. |
+| `home.wordingPointer` | The published greeting and days line shown here are Wording placeholders. | Lời chào và dòng đếm ngày đã đăng ở đây là nội dung minh họa cho Lời văn. |
+| `home.sessionReady` | Signed in for this preview. Return to Home and choose Try again. | Đã đăng nhập cho bản xem trước này. Quay lại Trang chủ và chọn Thử lại. |
+| `home.photoNumber` | Photo {number} | Ảnh {number} |
+| O2 draft status | Draft · not published yet | Bản nháp · chưa đăng |
+| O2 changed status | Published · Unpublished changes | Đã đăng · Thay đổi chưa đăng |
+| O2 Home read result | Home loaded. | Đã tải Trang chủ. |
+| `home.created` | Home was created elsewhere | Trang chủ đã được tạo ở nơi khác |
+| `home.unpublished` | Unpublished | Đã gỡ đăng |
+| `home.position` | Photo {position} of {total} | Ảnh {position} trên {total} |
+
 ### Limits and owner preview behavior
 
 - **Confirmed:** wishes 40/500, Q34c; pending hidden, Q34d; wish limits, Q75 and Q78 (per-IP limit 20); guest-account cap 50, Q38; video ≤50 MB and approximately 25 MB target, Q27.
