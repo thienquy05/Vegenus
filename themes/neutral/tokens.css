@@ -21,6 +21,8 @@
   --warning-text: #704700;
   --warning-line: #956000;
   --warning-bg: #f8edce;
+  /* O10 storage meter at 60 % (owner UI O10 boards): 3:1 against the track. */
+  --meter-notice: #796023;
   --menu-button-bg: #1a1a1a;
   --menu-button-fg: #f4f1ec;
   --menu-item-bg: #f4f1ec;

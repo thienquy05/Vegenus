@@ -1,16 +1,18 @@
-import { useSyncExternalStore } from "react";
+import { useSyncExternalStore, type ReactNode } from "react";
 import { SECTIONS } from "@/lib/setup";
 import { COPY, type CopyKey } from "./copy";
 import s from "./owner.module.css";
 
 // Inline text: the English part in lang="en", then the Vietnamese (the document is lang="vi"; Q118). vars fill the
-// copy's {name} slots, such as server numbers.
-export function T({ k, vars }: { k: CopyKey; vars?: Record<string, string | number> }) {
-  const fill = (text: string) => (vars ? text.replace(/\{(\w+)\}/g, (_, name: string) => String(vars[name])) : text);
+// copy's {name} slots, such as server numbers; a pair fills each language with its own (a date, a nested string).
+export type Vars = Record<string, string | number | readonly [string, string]>;
+export function T({ k, vars }: { k: CopyKey; vars?: Vars }) {
+  const fill = (text: string, i: 0 | 1) =>
+    vars ? text.replace(/\{(\w+)\}/g, (_, name: string) => { const v = vars[name]; return String(Array.isArray(v) ? v[i] : v); }) : text;
   const [en, vi] = COPY[k];
   return (
     <>
-      <span lang="en">{fill(en)}</span> / {fill(vi)}
+      <span lang="en">{fill(en, 0)}</span> / {fill(vi, 1)}
     </>
   );
 }
@@ -28,11 +30,13 @@ export function L({ k }: { k: CopyKey }) {
 }
 
 // The persistent live regions: they stay in the tree, so a message is announced once when it appears.
-export function Announcers({ status, alert, vars }: { status?: CopyKey | null; alert?: CopyKey | null; vars?: Record<string, string | number> }) {
+// children: a status built from several strings (O10 and the O2 Usage card, "Usage updated" with an attention change).
+export function Announcers({ status, alert, vars, children }: { status?: CopyKey | null; alert?: CopyKey | null; vars?: Vars; children?: ReactNode }) {
   return (
     <>
       <p className={s.announcer} role="status" aria-live="polite" aria-atomic="true">
         {status && <T k={status} vars={vars} />}
+        {children}
       </p>
       <p className={s.announcer} role="alert" aria-atomic="true">
         {alert && <T k={alert} />}
