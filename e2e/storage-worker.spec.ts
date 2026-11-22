@@ -28,6 +28,10 @@ test("the storage cron deletes queued and stray files, and frees their charge on
     const res = await request.get("/api/cron/storage", { headers: { authorization: `Bearer ${CRON_SECRET}` } });
     expect(res.status()).toBe(200);
     // No count check: the other project's concurrent run may be the one that reconciles this stray file.
+    // T2.5a (Q145 3, 6): the run is recorded, so the public health route now answers 200 with no body.
+    const health = await request.get("/api/health");
+    expect(health.status()).toBe(200);
+    expect(await health.text()).toBe("");
 
     const left = await sql`select name from storage.objects where bucket_id = 'media-thumb' and name in (${queued}, ${stray})`;
     expect(left).toHaveLength(0);

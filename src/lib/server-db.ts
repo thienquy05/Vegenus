@@ -46,3 +46,17 @@ export async function deletionDone(id: string): Promise<boolean> {
   const [row] = await sql`select public.worker_deletion_done(${id}::bigint) as ok`;
   return row.ok;
 }
+
+// T2.5a (Q145 3, 4): one row per daily run, no personal data. counts is null for a run that failed before it finished.
+type JobResult = "200" | "200-deletion-failed" | "503";
+type JobCounts = { expired: number; orphans: number; resized: number; deleted: number; failed: number };
+export async function jobRecord(started: Date, result: JobResult, counts: JobCounts | null): Promise<void> {
+  const c = counts ?? { expired: null, orphans: null, resized: null, deleted: null, failed: null };
+  await sql`select public.worker_job_record(${started}, ${result}, ${c.expired}, ${c.orphans}, ${c.resized}, ${c.deleted}, ${c.failed})`;
+}
+
+// Q145 5, 6: a successful daily run in the last 26 hours.
+export async function healthOk(): Promise<boolean> {
+  const [row] = await sql`select public.health_ok() as ok`;
+  return row.ok;
+}

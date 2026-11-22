@@ -33,6 +33,9 @@ export const ROUTES: Record<string, RouteClass> = {
   "/api/owner/upload/complete": "owner",
   "/api/owner/upload/cancel": "owner",
   "/api/owner/upload/delete": "owner",
+  "/api/owner/usage": "owner",
+  // No credentials by design: 200 or 503 with an empty body for the scheduled GitHub check (Q145 6).
+  "/api/health": "public",
   // Daily Vercel cron: the CRON_SECRET bearer (requireMachine: src/lib/machine.ts).
   "/api/cron/storage": "machine",
 };
@@ -60,6 +63,8 @@ export const HANDLER_METHODS: Record<string, string[]> = {
   "/api/owner/upload/complete": ["POST"],
   "/api/owner/upload/cancel": ["POST"],
   "/api/owner/upload/delete": ["POST"],
+  "/api/owner/usage": ["POST"],
+  "/api/health": ["GET"],
   "/api/cron/storage": ["GET"],
 };
 

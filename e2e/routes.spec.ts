@@ -6,6 +6,18 @@ import { HANDLER_METHODS, ROUTES } from "../src/lib/routes";
 // The build refuses dynamic routes until this file gets concrete URLs for them (src/lib/routes.ts).
 for (const [path, routeClass] of Object.entries(ROUTES)) {
   const methods = HANDLER_METHODS[path];
+  if (path === "/api/health") {
+    // The one public handler without credentials by design (Q145 6): 200 or 503 by the daily job's last success,
+    // never a body, never cached.
+    test(`public handler ${path} answers no data`, async ({ request }) => {
+      const res = await request.get(path, { maxRedirects: 0 });
+      expect([200, 503]).toContain(res.status());
+      expect(await res.text()).toBe("");
+      expect(res.headers()["cache-control"]).toBe("no-store");
+      expect((await request.fetch(path, { method: "PUT", maxRedirects: 0 })).status()).toBe(405);
+    });
+    continue;
+  }
   if (methods) {
     test(`${routeClass} handler ${path} without credentials`, async ({ request }) => {
       // No Origin and no session: login and logout refuse before doing anything.
