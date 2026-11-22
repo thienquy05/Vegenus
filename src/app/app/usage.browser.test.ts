@@ -86,10 +86,11 @@ test("O2 shows Storage used of budget and no attention line; View usage opens O1
   expect(has("usage-attention")).toBe(false);
   await openUsage();
   expect(document.activeElement).toBe(byId("usage-title"));
-  await expect.poll(text).toContain("120 MB of 900 MB used");
+  // O2's kept figures show (as last known) before O10's own read: wait for that read, not just the figures.
+  await expect.poll(text).toContain(`Updated ${usageDate(READ_AT, "UTC", "en")}`);
+  expect(text()).toContain("120 MB of 900 MB used");
   expect(byId("storage-amount").textContent).toMatch(/\(13%\)$/);
   expect(byId("usage-meter").getAttribute("aria-valuenow")).toBe("13");
-  expect(text()).toContain(`Updated ${usageDate(READ_AT, "UTC", "en")}`);
   expect(text()).toContain("Completed successfully.");
   expect(text()).toContain(`Last successful run: ${usageDate(ago(9), "UTC", "en")} (page time zone)`);
   // Egress is never measured: the quota and a link out (Q145 1, 17).
