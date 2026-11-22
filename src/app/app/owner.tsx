@@ -1,6 +1,6 @@
 "use client";
 import { useRouter } from "next/navigation";
-import { useCallback, useEffect, useRef, useState, type RefObject } from "react";
+import { useCallback, useEffect, useRef, useState, type ReactNode, type RefObject } from "react";
 import type { Kind, Lang, Section } from "@/lib/content";
 import { cardState, counter, type Home, type HomeRead } from "@/lib/home";
 import { dashState, resumeStep, type Drafts, type Page } from "@/lib/setup";
@@ -10,6 +10,7 @@ import { HomeEditor } from "./home";
 import { Item } from "./item";
 import { Announcers, L, LogOut, SectionList, T, post, useOnline } from "./parts";
 import { Upload } from "./upload";
+import { AttentionLine, Spoken, UsageCard, UsageView, useUsage } from "./usage";
 import { Wizard } from "./wizard";
 import s from "./owner.module.css";
 
@@ -49,9 +50,13 @@ type Props = {
   now?: Date;
   onHome?: () => void;
   onHomeRetry?: () => void;
+  // O10's entries on O2 (T2.5b): the attention line above the cards, the Usage card, and what their reads announce.
+  attention?: ReactNode;
+  usageCard?: ReactNode;
+  said?: ReactNode;
 };
 
-export function Dashboard({ state, page, offline, onSetup, onRetry, onContent, status, headingRef, focused = false, home, now, onHome, onHomeRetry }: Props) {
+export function Dashboard({ state, page, offline, onSetup, onRetry, onContent, status, headingRef, focused = false, home, now, onHome, onHomeRetry, attention, usageCard, said }: Props) {
   const h2 = headingRef as RefObject<HTMLHeadingElement | null> | undefined;
   const message = headingRef as RefObject<HTMLParagraphElement | null> | undefined;
   const reason = offline ? "offline-reason" : undefined;
@@ -64,7 +69,9 @@ export function Dashboard({ state, page, offline, onSetup, onRetry, onContent, s
         </h1>
       </header>
       <main className={s.main}>
-        <Announcers status={offline ? "common.offline" : status} alert={alert} />
+        <Announcers status={offline ? "common.offline" : status} alert={alert}>
+          {state === "done" && said}
+        </Announcers>
         {offline && (
           <p id="offline-reason" className={s.notice}>
             <T k="common.offline" />
@@ -138,6 +145,7 @@ export function Dashboard({ state, page, offline, onSetup, onRetry, onContent, s
             <T k={status} />
           </p>
         )}
+        {state === "done" && page && attention}
         {state === "done" && page && (
           <div className={s.dashboard}>
             <section className={`${s.surface} ${s.summary}`}>
@@ -163,6 +171,7 @@ export function Dashboard({ state, page, offline, onSetup, onRetry, onContent, s
               <SectionList sections={page.sections} />
             </section>
             {home && <HomeCard home={home} now={now} offline={offline} onHome={onHome} onRetry={onHomeRetry} />}
+            {usageCard}
           </div>
         )}
         <LogOut />
@@ -241,7 +250,12 @@ export default function Owner() {
     | { name: "item"; id: string | null; kind: Kind; section: Section }
     | { name: "upload"; id: string; kind: Kind; section: Section }
     | { name: "home" }
+    | { name: "usage" }
   >({ name: "dashboard" });
+  // The usage snapshot O2 and O10 share (owner UI O10): read on the dashboard like the Home card, and by O10 itself.
+  const usage = useUsage(online);
+  const usageOpener = useRef<string | null>(null); // the O2 control that opened O10, focused again on Back
+  const usageRetry = useRef(false);
   // The Home card's own read (owner UI O2 Home card): on the dashboard once the page is set up, again on each return
   // to it and on reconnecting; until it answers the card claims nothing.
   const [home, setHome] = useState<HomeRead>({ state: "loading" });
@@ -288,14 +302,45 @@ export default function Owner() {
   useEffect(() => {
     if (onDashboard && online) readHome();
   }, [onDashboard, online, readHome]);
+  // On each arrival at the dashboard; on reconnecting only while nothing has been read yet (the boards' rule), so a
+  // kept error and its Try again are not swapped out under the owner.
+  useEffect(() => {
+    if (onDashboard) usage.load(false);
+  }, [onDashboard]); // eslint-disable-line react-hooks/exhaustive-deps
+  useEffect(() => {
+    if (onDashboard && online && !usage.read.snapshot && usage.read.outcome === "loading") usage.load(false);
+  }, [online]); // eslint-disable-line react-hooks/exhaustive-deps
+  // Focus inside the Usage card or the attention line, kept when a redraw removes the focused control (no focusin then).
+  const usageFocus = useRef(false);
+  useEffect(() => {
+    const seen = (e: FocusEvent) => (usageFocus.current = !!(e.target as Element).closest?.("#usage-card, #usage-attention"));
+    document.addEventListener("focusin", seen);
+    return () => document.removeEventListener("focusin", seen);
+  }, []);
+  useEffect(() => {
+    if (view.name !== "dashboard" || !usageFocus.current || document.activeElement !== document.body) return;
+    (document.getElementById("usage-retry") ?? document.getElementById("usage-entry-link") ?? document.getElementById("usage-card-title"))?.focus();
+  }, [usage.read, view.name]);
+  // A failed Try again on the card focuses its Try again again (owner UI O10 accessibility).
+  useEffect(() => {
+    if (usageRetry.current && usage.read.outcome !== "loading") {
+      usageRetry.current = false;
+      if (usage.read.outcome === "error") document.getElementById("usage-retry")?.focus();
+    }
+  }, [usage.read.outcome]);
   useEffect(() => {
     if (focusHome.current && view.name === "dashboard") {
       focusHome.current = false;
       document.getElementById("home-card-title")?.focus();
     }
+    if (usageOpener.current && view.name === "dashboard") {
+      (document.getElementById(usageOpener.current) ?? document.getElementById("usage-card-title"))?.focus();
+      usageOpener.current = null;
+    }
   }, [view]);
   const leave = (next: typeof view) => {
     homeRead.current++; // a read still in flight belongs to the dashboard just left
+    usage.leave();
     setHome({ state: "loading" });
     setView(next);
   };
@@ -376,6 +421,26 @@ export default function Owner() {
       />
     );
   }
+  if (view.name === "usage") {
+    return (
+      <UsageView
+        read={usage.read}
+        said={usage.said}
+        offline={!online}
+        onLoad={usage.load}
+        onSay={usage.say}
+        onContent={() => {
+          usage.leave();
+          setView({ name: "content", section: "memories" });
+        }}
+        onBack={() => {
+          usage.leave();
+          setStatus(null);
+          setView({ name: "dashboard" });
+        }}
+      />
+    );
+  }
   if (view.name === "upload") {
     return <Upload id={view.id} onSignedOut={signedOut} onBack={() => setView({ name: "item", id: view.id, kind: view.kind, section: view.section })} />;
   }
@@ -394,9 +459,38 @@ export default function Owner() {
       onContent={() => leave({ name: "content", section: "memories" })}
       home={home}
       onHome={() => leave({ name: "home" })}
+      said={<Spoken said={usage.said} />}
+      attention={
+        <AttentionLine
+          read={usage.read}
+          offline={!online}
+          onOpen={() => {
+            usageOpener.current = "usage-attention-link";
+            leave({ name: "usage" });
+          }}
+        />
+      }
+      usageCard={
+        <UsageCard
+          read={usage.read}
+          offline={!online}
+          onBlocked={usage.say}
+          onOpen={() => {
+            usageOpener.current = "usage-entry-link";
+            leave({ name: "usage" });
+          }}
+          onRetry={() => {
+            setStatus(null);
+            document.getElementById("usage-card-title")?.focus();
+            usageRetry.current = true;
+            usage.load(true);
+          }}
+        />
+      }
       onHomeRetry={() => {
         // Try again leaves with the error, so focus goes to the card's title first, never to the page.
         document.getElementById("home-card-title")?.focus();
+        usage.clear(); // the status region is shared: an older usage message is not read again with Home's
         setStatus(null);
         setHome({ state: "loading" });
         readHome(true);

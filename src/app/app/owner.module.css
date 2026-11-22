@@ -201,6 +201,7 @@
 }
 .page button:disabled:not(.guestAction),
 .page button[aria-disabled="true"],
+.page a[aria-disabled="true"],
 .page input:disabled,
 .page select:disabled {
   opacity: 0.55;
@@ -909,5 +910,151 @@ a.secondary {
   .uploadContext {
     grid-column: auto;
     grid-row: span 2;
+  }
+}
+
+/* O10 Usage and the O2 attention line (owner UI "O10 Usage and the O2 attention line for T2.5"): phone one column;
+   tablet two with the daily job full width; laptop storage beside the daily job, egress full width below; a missed or
+   failed job comes first and spans the row. The meter's level is also stated in text, never colour alone. */
+.attention {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-2) var(--space-4);
+  border-inline-start: 3px solid var(--danger);
+  color: var(--danger);
+}
+.attention > *,
+.usageHeading > * {
+  min-width: 0;
+}
+.usageTop {
+  border-bottom: 1px solid var(--line);
+  padding: var(--space-4) 0;
+}
+.usageHeading {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 24px 0;
+}
+.usageHeading p {
+  margin-top: 6px;
+}
+.usageBody {
+  display: grid;
+  gap: var(--space-4);
+  grid-template-columns: minmax(0, 1fr);
+  align-items: start;
+}
+.panel {
+  border: 1px solid var(--line);
+  padding: var(--space-4);
+  display: grid;
+  gap: 12px;
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+.panel > * {
+  min-width: 0;
+}
+.panel .secondary,
+.usageActions .secondary {
+  justify-self: start;
+  width: fit-content;
+  max-width: 100%;
+}
+.usageActions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 12px;
+}
+.band {
+  border-inline-start: 3px solid var(--line);
+  padding-inline-start: 12px;
+}
+.bandAlert {
+  border-color: var(--danger);
+  color: var(--danger);
+}
+.meterRow {
+  display: grid;
+  gap: 8px 16px;
+  align-items: center;
+}
+.meter {
+  min-width: 0;
+  height: 12px;
+  border: 1px solid var(--line);
+  background: var(--bg);
+}
+.meter > span {
+  display: block;
+  height: 100%;
+  background: var(--text);
+  transform-origin: left;
+  animation: usageFill var(--dur-owner-feedback) ease-out both;
+}
+.meter[data-level="notice"] > span {
+  background: var(--meter-notice);
+}
+.meter[data-level="warning"] > span {
+  background: var(--accent);
+}
+.meter[data-level="full"] > span,
+.meter[data-level="zero"] > span {
+  background: var(--danger);
+}
+@keyframes usageFill {
+  from {
+    transform: scaleX(0);
+  }
+}
+.newTab,
+.newTab > span {
+  display: block;
+}
+.newTab > span:last-child {
+  font-weight: 400;
+}
+@media (min-width: 23rem) {
+  .meterRow {
+    grid-template-columns: minmax(64px, 1fr) minmax(0, 1.25fr);
+  }
+}
+@media (min-width: 701px) {
+  .usageBody {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 20px;
+  }
+  .panel {
+    padding: var(--space-5);
+  }
+  .jobFirst,
+  .jobLast,
+  .wideRow {
+    grid-column: 1 / -1;
+  }
+}
+@media (min-width: 1101px) {
+  .usageBody {
+    align-items: stretch;
+  }
+  .panel {
+    align-content: start;
+  }
+  .jobLast {
+    grid-column: auto;
+  }
+  .egressPanel {
+    grid-column: 1 / -1;
+    order: 1;
+  }
+  .jobFirst ~ .egressPanel {
+    grid-column: auto;
   }
 }
