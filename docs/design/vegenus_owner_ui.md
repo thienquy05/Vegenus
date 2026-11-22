@@ -423,6 +423,100 @@ Copy approved by the owner on 2026-11-21 (EN and VI as drawn; [TIME] is a date a
 | `usage.signInOffline` | Reconnect to sign in. | Kết nối lại để đăng nhập. |
 | `usage.logoutOffline` | Reconnect to log out. | Kết nối lại để đăng xuất. |
 
+### O8 Share and O9 Visibility for T2.6 (2026-11-21, approved by the owner 2026-11-21, Q146)
+
+Boards: OwnerShare, OwnerShareTab and OwnerShareLap (O8, 25 review states each), OwnerVisibility, OwnerVisibilityTab and OwnerVisibilityLap (O9, 21 review states each), OwnerDashShare, OwnerDashShareTab and OwnerDashShareLap (the approved O2 boards plus a Share entry and a Visibility row with Change, 37 review states each) on canvas page 10 "Owner area" (Theme Preview version 122). Codex lead design, Claude review and render; working copies, brief, checks and reviews in the git-ignored `.design/share/`. Owner decisions (2026-11-21, Q146): QR by `qrcode.react`; T2.6 is O8 and O9 only (Settings, Q115, is its own unit); Published is listed but cannot be chosen until the Phase 3 public guest route. Claude's defaults: Q146 1-44.
+
+- **Show once (design 1 §3.2, Q34a):** the link and its QR appear only in the answer to Create or Rotate. Afterwards O8 says when the link was created and shown, never the link. States: no link yet (Create guest link); link shown (Rotate link); "display not confirmed" (`shown_at` empty: Rotate again); the reveal (selectable link that wraps, Copy link with a select-and-copy fallback, QR with Download QR as `guest-link-qr.png`, the QR warning, the tag steps, "This is the only time this link is shown."). Leaving the reveal always asks "Have you saved the link or the QR?" (Yes, leave / Stay, focus on Stay); `beforeunload` is armed while it shows.
+- **Credential handling:** the link lives only in the reveal's memory: never in the URL, history, storage, form fields, logs, analytics or status messages; `no-store`; any exit, a replacing read or access loss clears the text, QR, selection and download object URL; a back-forward cache restore reads metadata and never shows a reveal. The reveal stays only while a read's active version equals the revealed one; a replacement says "This link was replaced in another tab and no longer works."
+- **Create and Rotate (server contract):** Create expects no active link; Rotate sends the version the owner confirmed. In one transaction the server locks the page, looks up the request id (answers "already rotated" without a credential if that request committed), then checks the expected version ("changed" if it differs), then mutates; the one-time answer carries the new version. A timeout, 5xx or lost connection is "Outcome unknown" (Try again repeats the same request id, also after signing in again); only a confirmed rejection says nothing changed. One idempotent acknowledgement after the reveal renders sets `shown_at` on that version only while it is active; if it fails, the next read shows "display not confirmed".
+- **Rotate confirm:** "The current link, the tag and any printed QR stop opening the page…" (Rotate link destructive / Cancel, focus on Cancel). O8 notes a Private page and links to O9; with no link, O9's Token-only help links to O8 ("Create a guest link in Share first.").
+- **O9:** two independent panels, each with its own draft, Save and status. Who can open the page: Private (confirm "Make the page private?", focus on Cancel), Token-only, Published shown disabled with "Available once the page can open without a link (coming later)" (readable, 4.5:1). Sections guests see: Home always on; Memories, Together and Wishes switchable; Zodiac hidden until T3.9; turning a section off hides it once saved and deletes nothing.
+- **O9 saves (server contract):** visibility saves unconditionally; sections send the flags the draft was based on plus the new flags, and the server answers "conflict" only if the saved flags differ from that base (no page version). Each save carries a request id, recorded under the page lock: a retry of a committed save returns the snapshot without applying twice ("We couldn't confirm the save. Try again to finish it; it won't be applied twice."). Every read and save returns the whole snapshot `{setup_completed, visibility, sections, timezone, link: null | {version, created_at, shown_at}}` (ISO UTC; O8 formats in the page time zone). One save at a time (the other Save says "Wait for the other save to finish."); a dirty panel shows "Changes not saved" plus its saved values; a superseded save says "Your save went through, but these settings were changed again in another tab or session."; Back or the Share shortcut with unsaved changes asks "Discard unsaved changes?". Sections Reload clears only section edits and keeps the checkboxes `aria-disabled` with "Reloading the saved sections…" until the read arrives. "Finish setup first." with a setup link before Finish.
+- **O2:** Share entry ("Guest link: not created yet", a strong call to action on a Token-only page; "Guest link created [DATE]"; "New link: display not confirmed. Open Share to rotate again.") and the Visibility row with Change and the enabled sections, all from the one `owner_page()` read (offline values marked "Last known"); the Usage attention line stays independent.
+- **Offline, 401, 403:** offline blocks writes, not edits (Save, Create, Rotate, Reload and Try again stay focusable with `aria-disabled` and the reason); losing the connection during Create or Rotate is "Outcome unknown"; 401 signs in in a new tab and keeps drafts; 403 clears drafts and offers Log out, as O10.
+- **Accessibility:** 44 px targets; focus to the view heading on entry and back to the O2 opener; pressed controls keep focus while busy; after any redraw focus returns to the same element id, else a fallback written per transition (`.design/share/CHECKS.md` focus table); dialogs trap focus, Escape = Cancel or Stay, focus returns to the opener; one polite status region, each completed action announced once (a repeated Copy again); QR and dialog names use `aria-labelledby` on visible bilingual text; the QR never replaces the text link; reflow at 320 px with 200 % text (only the link breaks mid-word).
+- **Build needs found in the design:** `owner_page()` gains `timezone` and the link metadata (never the token); a mark-shown call per version; `owner_rotate_token` gains the expected-version precondition and returns the version; a sections save that a finished page accepts (base flags, request-id idempotency, snapshot return); the visibility save gains request-id idempotency and the snapshot return; install `qrcode.react` (rule 1, exact version and integrity hash).
+- **Checks (2026-11-21):** board logic checks 721 assertions across the nine boards (each fix's check seen failing first; `.design/share/check-share.cjs`); rendered in Chromium for every review state at the board's own size and at 320 px with a 200 % root font: 498 cases, no sideways scroll, no clipped box, no target under 44 px, no mid-word break outside the link, no axe violation (WCAG 2.2 AA), no console error. WebKit not run locally. Codex design review: 11 rounds; round 11's single low finding fixed and not re-reviewed.
+
+Copy approved by the owner on 2026-11-21 (EN and VI as drawn; [DATE] [TIME] in the page time zone; shipped strings reused: `dashboard.visibility`, `dashboard.logout`, `visibility.private`, `visibility.token`, `visibility.explain`, `common.loading`, `common.readError`, `common.tryAgain`, `common.offline`, `common.accessLost`, `state.write`, `sections.*`, `save.busy`, `navigation.back`, `content.cancel`, `content.signin`, `upload.done`, `usage.session`, `usage.retryOffline`, `usage.logoutOffline`, `review.change`; review-control labels are tooling and not listed):
+
+| Key | English | Tiếng Việt |
+| --- | --- | --- |
+| `common.lastKnown` | Last known | Gần nhất đã biết |
+| `visibility.createFirst` | Create a guest link in Share first. | Trước tiên, hãy tạo liên kết dành cho khách trong mục Chia sẻ. |
+| `visibility.discard` | Discard | Bỏ thay đổi |
+| `visibility.discardQuestion` | Discard unsaved changes? | Bỏ các thay đổi chưa lưu? |
+| `visibility.setupLink` | Open setup | Mở thiết lập |
+| `visibility.setup` | Finish setup first. | Hãy hoàn tất thiết lập trước. |
+| `visibility.unconfirmed` | We couldn't confirm the save. Try again to finish it; it won't be applied twice. | Chưa xác nhận được lần lưu. Hãy thử lại để hoàn tất; thay đổi sẽ không được áp dụng hai lần. |
+| `visibility.reloadSections` | Reload (clears your unsaved section changes) | Tải lại (xóa thay đổi chưa lưu trong các mục) |
+| `visibility.reloadingSections` | Reloading the saved sections… | Đang tải lại các mục đã lưu… |
+| `share.replaced` | This link was replaced in another tab and no longer works. | Liên kết này đã được thay thế trong thẻ khác và không còn dùng được. |
+| `share.changed` | The guest link changed in another tab or session. Nothing was created here. | Liên kết cho khách đã thay đổi trong thẻ hoặc phiên khác. Không có liên kết nào được tạo ở đây. |
+| `share.unknown` | We couldn't confirm whether a new link was made. | Chưa xác nhận được liệu liên kết mới đã được tạo hay chưa. |
+| `share.title` | Share | Chia sẻ |
+| `share.intro` | Create a guest link. | Tạo liên kết cho khách. |
+| `share.create` | Create guest link | Tạo liên kết cho khách |
+| `share.creating` | Creating guest link… | Đang tạo liên kết cho khách… |
+| `share.shown` | Guest link created [DATE] [TIME], shown on this screen once. It isn't stored, so it can't be shown again. | Liên kết được tạo lúc [TIME] ngày [DATE] và đã hiện một lần trên màn hình này. Liên kết không được lưu nên không thể hiện lại. |
+| `share.rotate` | Rotate link | Đổi liên kết |
+| `share.again` | Rotate again | Đổi liên kết lần nữa |
+| `share.unshown` | A new guest link was made, but this screen couldn't confirm it was shown. If you didn't save it, rotate again. | Liên kết mới đã được tạo, nhưng màn hình này không xác nhận được rằng liên kết đã hiển thị. Nếu chưa lưu, hãy đổi liên kết lần nữa. |
+| `share.recover` | If the tag still works, you can read the link with an NFC app. | Nếu thẻ vẫn hoạt động, bạn có thể dùng ứng dụng NFC để đọc lại liên kết. |
+| `share.justCreated` | Guest link created | Đã tạo liên kết cho khách |
+| `share.justRotated` | Guest link rotated | Đã đổi liên kết cho khách |
+| `share.once` | This is the only time this link is shown. | Liên kết này chỉ hiện một lần duy nhất. |
+| `share.copy` | Copy link | Sao chép liên kết |
+| `share.copied` | Link copied | Đã sao chép liên kết |
+| `share.selectAction` | Select link | Chọn liên kết |
+| `share.select` | Select the link and copy it | Chọn liên kết rồi sao chép |
+| `share.qr` | QR code for your guest link | Mã QR cho liên kết của khách |
+| `share.fake` | Illustration only · not scannable | Hình minh họa · không thể quét |
+| `share.download` | Download QR | Tải mã QR |
+| `share.downloaded` | Placeholder PNG downloaded | Đã tải ảnh PNG minh họa |
+| `share.downloadError` | The QR couldn't be saved. Copy the link instead. | Không lưu được mã QR. Hãy sao chép liên kết. |
+| `share.warning` | This QR opens your page the same way the link does. Keep it private and delete copies after you rotate. | Mã QR này mở trang giống như liên kết. Hãy giữ kín mã và xóa các bản sao sau khi đổi liên kết. |
+| `share.tag` | Write the NFC tag | Ghi vào thẻ NFC |
+| `share.write` | Write the link to the tag as a web address with an NFC writing app. | Dùng ứng dụng ghi NFC để ghi liên kết vào thẻ dưới dạng địa chỉ web. |
+| `share.test` | Test it on one iPhone and one Android phone. | Thử thẻ trên một iPhone và một điện thoại Android. |
+| `share.lock` | Don't lock the tag. | Không khóa thẻ. |
+| `share.leaveQuestion` | Have you saved the link or the QR? | Bạn đã lưu liên kết hoặc mã QR chưa? |
+| `share.leaveBody` | It won't be shown again. | Liên kết sẽ không hiện lại. |
+| `share.leave` | Yes, leave | Có, rời đi |
+| `share.stay` | Stay | Ở lại |
+| `share.rotateQuestion` | Rotate the guest link? | Đổi liên kết cho khách? |
+| `share.rotateBody` | The current link, the tag and any printed QR stop opening the page. You'll need to rewrite the tag and reprint the QR. Wishes already sent are kept. | Liên kết hiện tại, thẻ và mọi mã QR đã in sẽ không còn mở được trang. Bạn cần ghi lại thẻ và in lại mã QR. Các lời chúc đã gửi vẫn được giữ. |
+| `share.rotating` | Rotating guest link… | Đang đổi liên kết cho khách… |
+| `share.failed` | The request was rejected. Nothing changed. | Yêu cầu bị từ chối. Mọi thứ vẫn như cũ. |
+| `share.private` | Your page is Private. | Trang đang ở chế độ Riêng tư. |
+| `share.offline` | Reconnect to create or rotate a guest link. | Kết nối lại để tạo hoặc đổi liên kết cho khách. |
+| `visibility.title` | Visibility and sections | Quyền xem và các mục |
+| `visibility.who` | Who can open the page | Ai có thể mở trang |
+| `visibility.privateHelp` | Guests can't open the page, even with a link. Any guest link you made stays the same. | Khách không thể mở trang, kể cả khi có liên kết. Mọi liên kết dành cho khách bạn đã tạo vẫn giữ nguyên. |
+| `visibility.published` | Published | Công khai |
+| `visibility.publishedHelp` | Available once the page can open without a link (coming later) | Sẽ khả dụng khi có thể mở trang mà không cần liên kết (sắp có) |
+| `visibility.sections` | Sections guests see | Các mục khách nhìn thấy |
+| `visibility.homeHelp` | Always on: every guest starts here | Luôn bật: mọi khách đều bắt đầu ở đây |
+| `visibility.publishedItems` | Guests see only published items. | Khách chỉ thấy nội dung đã đăng. |
+| `visibility.sectionHelp` | A section you turn off is hidden from guests once you save; nothing is deleted. | Mục đã tắt sẽ ẩn với khách sau khi bạn lưu; không có nội dung nào bị xóa. |
+| `visibility.save` | Save | Lưu |
+| `visibility.saved` | Saved | Đã lưu |
+| `visibility.saveSuperseded` | Your save went through, but these settings were changed again in another tab or session. | Đã lưu, nhưng các cài đặt này đã được thay đổi lại trong một thẻ hoặc phiên khác. |
+| `visibility.waitForSave` | Wait for the other save to finish. | Đợi lần lưu kia xong. |
+| `visibility.unsaved` | Changes not saved | Thay đổi chưa lưu |
+| `visibility.savedSections` | Saved sections: [sections] | Mục đã lưu: [sections] |
+| `visibility.savedVisibility` | Saved: [visibility] | Đã lưu: [visibility] |
+| `visibility.privateQuestion` | Make the page private? | Chuyển trang sang Riêng tư? |
+| `visibility.privateBody` | Guests can't open the page, even with a link. Any guest link you made stays the same. | Khách không thể mở trang, kể cả khi có liên kết. Mọi liên kết dành cho khách bạn đã tạo vẫn giữ nguyên. |
+| `visibility.makePrivate` | Make private | Chuyển sang Riêng tư |
+| `visibility.conflict` | This page changed in another tab or session. | Trang đã thay đổi trong thẻ hoặc phiên khác. |
+| `visibility.reload` | Reload | Tải lại |
+| `visibility.offline` | Reconnect to save changes. | Kết nối lại để lưu thay đổi. |
+| `dashboard.shareEmpty` | Guest link: not created yet | Liên kết cho khách: chưa tạo |
+| `dashboard.shareCreated` | Guest link created [DATE] | Liên kết cho khách đã tạo ngày [DATE] |
+| `dashboard.shareUnshown` | New link: display not confirmed. Open Share to rotate again. | Liên kết mới: chưa xác nhận hiển thị. Mở Chia sẻ để đổi liên kết lần nữa. |
+
 ### Limits and owner preview behavior
 
 - **Confirmed:** wishes 40/500, Q34c; pending hidden, Q34d; wish limits, Q75 and Q78 (per-IP limit 20); guest-account cap 50, Q38; video ≤50 MB and approximately 25 MB target, Q27.
