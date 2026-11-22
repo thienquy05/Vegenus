@@ -12,6 +12,8 @@ const HOME_PAGE_CHROMIUM = "00000000-0000-0000-0000-0000000000e8";
 const HOME_PAGE_WEBKIT = "00000000-0000-0000-0000-0000000000e9";
 const USAGE_PAGE_CHROMIUM = "00000000-0000-0000-0000-0000000000ea";
 const USAGE_PAGE_WEBKIT = "00000000-0000-0000-0000-0000000000eb";
+const SHARE_PAGE_CHROMIUM = "00000000-0000-0000-0000-0000000000ec";
+const SHARE_PAGE_WEBKIT = "00000000-0000-0000-0000-0000000000ed";
 
 // Local Supabase only (playwright.config.ts): synthetic owner accounts, a clean login limiter, and a
 // per-run password for vegenus_server, which the migration creates without login (design 3 §3.9).
@@ -44,7 +46,7 @@ export default async function globalSetup() {
 
   // Closed registration: accounts exist only because the owner (here: this setup) creates them.
   const admin = createClient(SUPABASE_URL!, SUPABASE_SECRET_KEY!).auth.admin;
-  for (const name of ["chromium", "webkit", "chromium-limited", "webkit-limited", "visibility-chromium", "visibility-webkit", "setup-chromium", "setup-webkit", "home-chromium", "home-webkit", "usage-chromium", "usage-webkit"]) {
+  for (const name of ["chromium", "webkit", "chromium-limited", "webkit-limited", "visibility-chromium", "visibility-webkit", "setup-chromium", "setup-webkit", "home-chromium", "home-webkit", "usage-chromium", "usage-webkit", "share-chromium", "share-webkit"]) {
     const { error } = await admin.createUser({
       email: `owner-${name}@example.test`,
       password: "placeholder-password-1",
@@ -57,7 +59,8 @@ export default async function globalSetup() {
   // yet; e2e/token-rotation.spec.ts creates and rotates its tokens. T1.5c: a second set for
   // e2e/page-visibility.spec.ts, with its own owners, so making a page Private never breaks a rotation test.
   // T2.4: a third set for e2e/owner-home.spec.ts, since a page has one Home. T2.5b: a fourth for
-  // e2e/owner-usage.spec.ts, whose storage budget it changes.
+  // e2e/owner-usage.spec.ts, whose storage budget it changes. T2.6b: a fifth for e2e/owner-share.spec.ts, whose links,
+  // visibility and sections the O8 and O9 screens change.
   for (const [id, name] of [
     [ROTATION_PAGE_CHROMIUM, "chromium"],
     [ROTATION_PAGE_WEBKIT, "webkit"],
@@ -67,6 +70,8 @@ export default async function globalSetup() {
     [HOME_PAGE_WEBKIT, "home-webkit"],
     [USAGE_PAGE_CHROMIUM, "usage-chromium"],
     [USAGE_PAGE_WEBKIT, "usage-webkit"],
+    [SHARE_PAGE_CHROMIUM, "share-chromium"],
+    [SHARE_PAGE_WEBKIT, "share-webkit"],
   ]) {
     await sql`delete from public.pages where id = ${id}`;
     await sql`insert into public.pages (id, theme, default_lang, visibility, timezone, copy_published_at, setup_completed_at, label_a, label_b)

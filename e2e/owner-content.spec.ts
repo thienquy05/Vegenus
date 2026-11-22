@@ -114,7 +114,9 @@ test("a photo's signed preview shows under the owner CSP, and its alt text saves
 test("the list and the editor pass axe at phone, tablet and laptop, and reflow at 320 px with 200 % text", async ({ page }, info) => {
   test.slow();
   const project = info.project.name as keyof typeof PAGES;
-  const seeded = await seedPhoto(project, `Những kỷ niệm ấm áp giữa chiều dịu dàng ${randomUUID().slice(0, 8)}`);
+  // Its own title: owner-upload.spec seeds the same prefix on this page and may run at the same time.
+  const title = `Những kỷ niệm ấm áp giữa chiều dịu dàng ${randomUUID().slice(0, 8)}`;
+  const seeded = await seedPhoto(project, title);
   try {
     await signIn(page, project);
     await expect(page.locator("article").first()).toBeVisible();
@@ -131,7 +133,7 @@ test("the list and the editor pass axe at phone, tablet and laptop, and reflow a
     await page.getByRole("button", { name: /^Back/ }).click();
     await page.getByRole("dialog").getByRole("button", { name: /^Discard/ }).click();
     await page.getByRole("button", { name: /^Memories/ }).click();
-    await page.locator("article").filter({ hasText: "Những kỷ niệm" }).getByRole("button", { name: /^Open/ }).click();
+    await page.locator("article").filter({ hasText: title }).getByRole("button", { name: /^Open/ }).click();
     await expect(page.locator("main img")).toBeVisible();
     await checkSizes(page, "O5 saved with a photo");
   } finally {

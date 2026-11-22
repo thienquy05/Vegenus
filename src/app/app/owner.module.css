@@ -1058,3 +1058,47 @@ a.secondary {
     grid-column: auto;
   }
 }
+
+/* O8 Share (owner UI "O8 Share and O9 Visibility for T2.6"): phone stacks link, QR, tag steps and Done; tablet puts
+   the link beside the QR with the tag steps across; laptop keeps the link and tag steps left of the QR. The link
+   is the only text that may break mid-word. */
+.reveal {
+  display: grid;
+  gap: var(--space-4);
+  grid-template-columns: minmax(0, 1fr);
+  align-items: start;
+}
+.linkBox {
+  border: 1px solid var(--line);
+  padding: 12px;
+  font-size: var(--fs-sm);
+  overflow-wrap: anywhere;
+  user-select: all;
+}
+.qr {
+  display: block;
+  width: 192px;
+  height: 192px;
+}
+@media (min-width: 701px) {
+  .reveal {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 20px;
+  }
+  .revealTag,
+  .revealDone {
+    grid-column: 1 / -1;
+  }
+}
+@media (min-width: 1101px) {
+  .reveal {
+    grid-template-columns: minmax(0, 2fr) minmax(0, 1.2fr);
+  }
+  .revealQr {
+    grid-column: 2;
+    grid-row: 1 / span 2;
+  }
+  .revealTag {
+    grid-column: 1;
+  }
+}

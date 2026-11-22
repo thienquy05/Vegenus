@@ -10,6 +10,8 @@ import { HomeEditor } from "./home";
 import { Item } from "./item";
 import { Announcers, L, LogOut, SectionList, T, post, useOnline } from "./parts";
 import { Upload } from "./upload";
+import { ShareCard, ShareView } from "./share";
+import { VisibilityView } from "./visibility";
 import { AttentionLine, Spoken, UsageCard, UsageView, useUsage } from "./usage";
 import { Wizard } from "./wizard";
 import s from "./owner.module.css";
@@ -33,6 +35,17 @@ async function fetchPage(): Promise<Read> {
   }
 }
 
+// O8 and O9 open each other (the Share shortcut, the Private notice); from is where Back goes, focus what it focuses there.
+type View =
+  | { name: "dashboard" }
+  | { name: "content"; section: Section; status?: CopyKey }
+  | { name: "item"; id: string | null; kind: Kind; section: Section }
+  | { name: "upload"; id: string; kind: Kind; section: Section }
+  | { name: "home" }
+  | { name: "usage" }
+  | { name: "share"; from: View | null; back?: boolean }
+  | { name: "visibility"; from: View | null; back?: boolean };
+
 type Props = {
   state: State;
   page: Page | null;
@@ -54,9 +67,11 @@ type Props = {
   attention?: ReactNode;
   usageCard?: ReactNode;
   said?: ReactNode;
+  onShare?: (opener: string) => void;
+  onVisibility?: () => void;
 };
 
-export function Dashboard({ state, page, offline, onSetup, onRetry, onContent, status, headingRef, focused = false, home, now, onHome, onHomeRetry, attention, usageCard, said }: Props) {
+export function Dashboard({ state, page, offline, onSetup, onRetry, onContent, status, headingRef, focused = false, home, now, onHome, onHomeRetry, attention, usageCard, said, onShare, onVisibility }: Props) {
   const h2 = headingRef as RefObject<HTMLHeadingElement | null> | undefined;
   const message = headingRef as RefObject<HTMLParagraphElement | null> | undefined;
   const reason = offline ? "offline-reason" : undefined;
@@ -156,13 +171,31 @@ export function Dashboard({ state, page, offline, onSetup, onRetry, onContent, s
                 <L k="content.content" />
               </button>
             </section>
-            <section className={s.surface}>
-              <h3>
+            <section id="visibility-card" className={s.surface} aria-labelledby="visibility-card-title">
+              <h3 id="visibility-card-title" tabIndex={-1}>
                 <T k="dashboard.visibility" />
               </h3>
               <p className={s.badge}>
+                {offline && (
+                  <>
+                    <T k="common.lastKnown" />
+                    {" · "}
+                  </>
+                )}
                 <T k={page.visibility === "private" ? "visibility.private" : "visibility.token"} />
               </p>
+              {onVisibility && (
+                <button
+                  id="visibility-change"
+                  type="button"
+                  className={s.secondary}
+                  disabled={offline}
+                  aria-describedby={["visibility-card-title", reason].filter(Boolean).join(" ")}
+                  onClick={onVisibility}
+                >
+                  <L k="review.change" />
+                </button>
+              )}
             </section>
             <section className={`${s.surface} ${s.sectionsPanel}`}>
               <h3>
@@ -170,6 +203,7 @@ export function Dashboard({ state, page, offline, onSetup, onRetry, onContent, s
               </h3>
               <SectionList sections={page.sections} />
             </section>
+            {onShare && <ShareCard page={page} offline={offline} onOpen={onShare} />}
             {home && <HomeCard home={home} now={now} offline={offline} onHome={onHome} onRetry={onHomeRetry} />}
             {usageCard}
           </div>
@@ -244,14 +278,11 @@ export default function Owner() {
   const [data, setData] = useState<{ page: Page | null; drafts: Drafts | null }>({ page: null, drafts: null });
   const [wizard, setWizard] = useState(false);
   // O4, O5 and O6 are views of /app, not routes (dynamic routes are refused, src/lib/routes.ts).
-  const [view, setView] = useState<
-    | { name: "dashboard" }
-    | { name: "content"; section: Section; status?: CopyKey }
-    | { name: "item"; id: string | null; kind: Kind; section: Section }
-    | { name: "upload"; id: string; kind: Kind; section: Section }
-    | { name: "home" }
-    | { name: "usage" }
-  >({ name: "dashboard" });
+  const [view, setView] = useState<View>({ name: "dashboard" });
+  // The O2 control that opened O8 or O9 and its fallback, focused again once the return read has drawn the latest
+  // snapshot (Q146 18).
+  const opener = useRef<[string, string] | null>(null);
+  const returning = useRef(false);
   // The usage snapshot O2 and O10 share (owner UI O10): read on the dashboard like the Home card, and by O10 itself.
   const usage = useUsage(online);
   const usageOpener = useRef<string | null>(null); // the O2 control that opened O10, focused again on Back
@@ -333,11 +364,15 @@ export default function Owner() {
       focusHome.current = false;
       document.getElementById("home-card-title")?.focus();
     }
+    if (opener.current && view.name === "dashboard" && !returning.current) {
+      (document.getElementById(opener.current[0]) ?? document.getElementById(opener.current[1]))?.focus();
+      opener.current = null;
+    }
     if (usageOpener.current && view.name === "dashboard") {
       (document.getElementById(usageOpener.current) ?? document.getElementById("usage-card-title"))?.focus();
       usageOpener.current = null;
     }
-  }, [view]);
+  }, [view, state, data]);
   const leave = (next: typeof view) => {
     homeRead.current++; // a read still in flight belongs to the dashboard just left
     usage.leave();
@@ -441,6 +476,43 @@ export default function Owner() {
       />
     );
   }
+  // Back from O8 or O9: to the view that opened it, or to O2, whose return read draws what O8 or O9 changed before focus
+  // goes back to the opener; a failure is O2's own.
+  const back = (from: View | null) => {
+    if (from) return setView({ ...from, back: true } as View);
+    setStatus(null);
+    setView({ name: "dashboard" });
+    returning.current = true;
+    void fetchPage().then((r) => {
+      returning.current = false;
+      apply(r);
+    });
+  };
+  if (view.name === "share") {
+    return (
+      <ShareView
+        offline={!online}
+        returnFocus={view.back ? "share-visibility" : undefined}
+        onBack={() => back(view.from)}
+        onVisibility={() => setView({ name: "visibility", from: view })}
+      />
+    );
+  }
+  if (view.name === "visibility") {
+    return (
+      <VisibilityView
+        offline={!online}
+        returnFocus={view.back}
+        onBack={() => back(view.from)}
+        onShare={() => setView({ name: "share", from: view })}
+        onSetup={() => {
+          setStatus(null);
+          setView({ name: "dashboard" });
+          setWizard(true);
+        }}
+      />
+    );
+  }
   if (view.name === "upload") {
     return <Upload id={view.id} onSignedOut={signedOut} onBack={() => setView({ name: "item", id: view.id, kind: view.kind, section: view.section })} />;
   }
@@ -459,6 +531,14 @@ export default function Owner() {
       onContent={() => leave({ name: "content", section: "memories" })}
       home={home}
       onHome={() => leave({ name: "home" })}
+      onShare={(id) => {
+        opener.current = [id, "share-card-title"];
+        leave({ name: "share", from: null });
+      }}
+      onVisibility={() => {
+        opener.current = ["visibility-change", "visibility-card-title"];
+        leave({ name: "visibility", from: null });
+      }}
       said={<Spoken said={usage.said} />}
       attention={
         <AttentionLine

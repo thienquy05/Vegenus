@@ -17,7 +17,10 @@ export type Page = {
   visibility: string;
   setup_completed: boolean;
   sections: readonly string[];
+  // The active guest link's metadata (T2.6a; never the token): null before Create; shown_at null until O8 confirms.
+  link?: Link | null;
 };
+export type Link = { version: number; created_at: string; shown_at: string | null };
 // What owner_copy_drafts() returns: key -> language -> text.
 export type Drafts = Record<string, Record<string, string>>;
 // The wizard's unsaved choices; names as typed.
