@@ -1,8 +1,9 @@
 -- Guest token create and rotation (T1.5b; design 1 §3.1, §3.2, §6; design 3 §3.2, §5). E3, E28, E33.
 -- The owner is the caller's auth.uid(); the raw token is returned once and only its hash is stored.
+-- T2.6 (Q146 10, 21): Create expects no active link, Rotate names the active version; the answer carries the version.
 -- Concurrent rotations need two connections: e2e/token-rotation.spec.ts. Placeholder data only.
 begin;
-select plan(22);
+select plan(29);
 
 insert into auth.users (id, email) values
   ('00000000-0000-0000-0000-0000000000f1', 'owner@example.test'),
@@ -21,27 +22,29 @@ create function pg_temp.act_as(id uuid) returns void language sql as $$
 $$;
 
 -- Who may call it.
-select throws_ok($$ set local role anon; select public.owner_rotate_token(gen_random_uuid()) $$,
+select throws_ok($$ set local role anon; select public.owner_rotate_token(gen_random_uuid(), null) $$,
   '42501', null, 'anon cannot call owner_rotate_token');
 reset role;
-select ok(has_function_privilege('authenticated', 'public.owner_rotate_token(uuid)', 'execute'),
+select ok(has_function_privilege('authenticated', 'public.owner_rotate_token(uuid, integer)', 'execute'),
   'authenticated can call owner_rotate_token');
-select ok(not has_function_privilege('vegenus_server', 'public.owner_rotate_token(uuid)', 'execute'),
+select ok(not has_function_privilege('vegenus_server', 'public.owner_rotate_token(uuid, integer)', 'execute'),
   'vegenus_server cannot call owner_rotate_token');
 
-select throws_ok($$ select public.owner_rotate_token(gen_random_uuid()) $$,
+select throws_ok($$ select public.owner_rotate_token(gen_random_uuid(), null) $$,
   '42501', null, 'no signed-in user is refused');
 select pg_temp.act_as('00000000-0000-0000-0000-0000000000f3');
-select throws_ok($$ select public.owner_rotate_token(gen_random_uuid()) $$,
+select throws_ok($$ select public.owner_rotate_token(gen_random_uuid(), null) $$,
   '42501', null, 'a user without a membership is refused (E33)');
 select pg_temp.act_as('00000000-0000-0000-0000-0000000000f2');
-select throws_ok($$ select public.owner_rotate_token(gen_random_uuid()) $$,
+select throws_ok($$ select public.owner_rotate_token(gen_random_uuid(), null) $$,
   '42501', null, 'a co-editor cannot rotate (design 3 §5, E33)');
 select is((select count(*) from public.guest_tokens where page_id = '00000000-0000-0000-0000-00000000000a'), 0::bigint, 'refused calls create no token');
 
 -- Create: the first token of the page.
 select pg_temp.act_as('00000000-0000-0000-0000-0000000000f1');
-create temp table t1 as select public.owner_rotate_token('00000000-0000-0000-0000-000000000001') as token;
+create temp table r1 as select public.owner_rotate_token('00000000-0000-0000-0000-000000000001', null) as r;
+create temp table t1 as select r ->> 'token' as token from r1;
+select is((select r - 'token' from r1), '{"version": 1}'::jsonb, 'Create answers the token and version 1, nothing else');
 select matches((select token from t1), '^[A-Za-z0-9_-]{43}$', 'the token is 32 random bytes in base64url (design 1 §3)');
 select is(public.token_page((select token from t1)), '00000000-0000-0000-0000-00000000000a'::uuid, 'the new token opens the page');
 select results_eq($$ select version, active, created_by, shown_at, token_hash from public.guest_tokens where page_id = '00000000-0000-0000-0000-00000000000a' $$,
@@ -52,8 +55,16 @@ select results_eq($$ select version, active, created_by, shown_at, token_hash fr
 insert into public.guestbook_entries (page_id, display_name, body, lang, submission_id, author_kind, token_version) values
   ('00000000-0000-0000-0000-00000000000a', '[GUEST]', 'Pending before rotation', 'en', gen_random_uuid(), 'token', 1);
 
+-- Create again, or Rotate naming a version that is not the active one: "changed", nothing happens (Q146 10).
+select is(public.owner_rotate_token(gen_random_uuid(), null), '{"error": "changed"}'::jsonb, 'Create with a link already active is "changed"');
+select is(public.owner_rotate_token(gen_random_uuid(), 2), '{"error": "changed"}'::jsonb, 'Rotate naming a version that is not active is "changed"');
+select is((select count(*) from public.guest_tokens where page_id = '00000000-0000-0000-0000-00000000000a'), 1::bigint, '"changed" creates no token');
+select is(public.token_page((select token from t1)), '00000000-0000-0000-0000-00000000000a'::uuid, '"changed" keeps the active token');
+
 -- Rotate (E3).
-create temp table t2 as select public.owner_rotate_token('00000000-0000-0000-0000-000000000002') as token;
+create temp table r2 as select public.owner_rotate_token('00000000-0000-0000-0000-000000000002', 1) as r;
+create temp table t2 as select r ->> 'token' as token from r2;
+select is((select (r -> 'version')::int from r2), 2, 'Rotate answers the new version');
 select isnt((select token from t2), (select token from t1), 'rotation returns a new token');
 select is(public.token_page((select token from t1)), null, 'the old token no longer opens the page');
 select is(public.guest_open((select token from t1)), null, 'guest_open with the old token returns nothing');
@@ -65,17 +76,20 @@ select results_eq($$ select status::text, token_version from public.guestbook_en
   $$ values ('pending', 1) $$, 'the pending wish stays in the queue with the old version label');
 
 -- Retry with the same request id: "already rotated", never a second token or the link again (Q34a).
-select is(public.owner_rotate_token('00000000-0000-0000-0000-000000000002'), null, 'a repeated request id returns nothing');
+select is(public.owner_rotate_token('00000000-0000-0000-0000-000000000002', 1), '{"error": "already_rotated"}'::jsonb, 'a repeated request id is "already rotated", without a token');
 select is((select count(*) from public.guest_tokens where page_id = '00000000-0000-0000-0000-00000000000a'), 2::bigint, 'a repeated request id creates no token');
 select is(public.token_page((select token from t2)), '00000000-0000-0000-0000-00000000000a'::uuid, 'the current token still works after a retry');
 
 -- One more rotation: still exactly one active token, versions keep counting.
-select isnt(public.owner_rotate_token('00000000-0000-0000-0000-000000000003'), null, 'a new request id rotates again');
+select is((public.owner_rotate_token('00000000-0000-0000-0000-000000000003', 2) -> 'version')::int, 3, 'a new request id rotates again');
+-- A committed request stays "already rotated" even after another rotation moved the version on (Q146 21).
+select is(public.owner_rotate_token('00000000-0000-0000-0000-000000000002', 1), '{"error": "already_rotated"}'::jsonb,
+  'a retry of a committed request is "already rotated", not "changed", after a later rotation');
 select results_eq($$ select array_agg(version order by version), count(*) filter (where active) from public.guest_tokens where page_id = '00000000-0000-0000-0000-00000000000a' $$,
   $$ values (array[1, 2, 3], 1::bigint) $$, 'three versions, one active');
 
 -- The function rejects a request id it cannot use.
-select throws_ok($$ select public.owner_rotate_token(null) $$, '22023', null, 'a missing request id is refused');
+select throws_ok($$ select public.owner_rotate_token(null, null) $$, '22023', null, 'a missing request id is refused');
 
 select * from finish();
 rollback;

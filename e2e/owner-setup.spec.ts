@@ -84,7 +84,11 @@ test("E55: no page, then setup step by step, Finish, and the done dashboard; a g
   await expect(page.getByRole("main")).toContainText("Your page is set up.");
   expect(await ownerPage(info.project.name)).toMatchObject({ visibility: "token_only", setup_completed_at: expect.any(Date) });
 
-  const res = await page.request.post("/api/owner/token", { data: { request_id: randomUUID() }, headers: { origin: ORIGIN } });
+  // A finished page has no link yet: Create expects none (Q146 10).
+  const res = await page.request.post("/api/owner/token", {
+    data: { request_id: randomUUID(), expected_version: null },
+    headers: { origin: ORIGIN },
+  });
   expect(res.status()).toBe(200);
   const guest = await (await browser.newContext()).newPage();
   await guest.setExtraHTTPHeaders({ "x-forwarded-for": randomIp("203.0.113") });
