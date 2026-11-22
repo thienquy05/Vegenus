@@ -11,6 +11,7 @@ const db = vi.hoisted(() => ({
   reconcile: vi.fn(),
   dueDeletions: vi.fn(),
   deletionDone: vi.fn(),
+  jobRecord: vi.fn(),
 }));
 const storage = vi.hoisted(() => ({ removeObjects: vi.fn() }));
 vi.mock("@/lib/server-db", () => db);
@@ -31,12 +32,14 @@ beforeEach(() => {
   ]);
   db.deletionDone.mockReset().mockResolvedValue(true);
   storage.removeObjects.mockReset().mockResolvedValue(true);
+  db.jobRecord.mockReset().mockResolvedValue(undefined);
 });
 
 const noWork = () => {
   expect(db.expireUploads).not.toHaveBeenCalled();
   expect(db.dueDeletions).not.toHaveBeenCalled();
   expect(storage.removeObjects).not.toHaveBeenCalled();
+  expect(db.jobRecord).not.toHaveBeenCalled();
 };
 
 test("without the secret, with a wrong one, or with no secret configured, it refuses and does nothing", async () => {
@@ -121,6 +124,48 @@ test("a database outage answers 503", async () => {
   const alert = vi.spyOn(console, "error").mockImplementation(() => {});
   db.expireUploads.mockRejectedValue(new Error("connection refused"));
   expect((await run("Bearer cron-test-secret")).status).toBe(503);
+  alert.mockRestore();
+});
+
+// T2.5a (Q145 3, 4, 12): every run the cron makes is recorded once, with its start time, result and counts (no
+// personal data); the health route and O10 read these rows. A refused call records nothing (noWork above).
+test("a successful run is recorded as 200 with its counts and its start time", async () => {
+  const before = Date.now();
+  expect((await run("Bearer cron-test-secret")).status).toBe(200);
+  expect(db.jobRecord).toHaveBeenCalledOnce();
+  const [started, result, counts] = db.jobRecord.mock.calls[0];
+  expect(result).toBe("200");
+  expect(counts).toEqual({ expired: 1, orphans: 0, resized: 0, deleted: 3, failed: 0 });
+  expect(started).toBeInstanceOf(Date);
+  expect(started.getTime()).toBeGreaterThanOrEqual(before);
+  expect(started.getTime()).toBeLessThanOrEqual(Date.now());
+  // Recorded after the work, so a success means the deletions were really checked.
+  expect(db.jobRecord.mock.invocationCallOrder[0]).toBeGreaterThan(Math.max(...db.deletionDone.mock.invocationCallOrder));
+});
+
+test("a run with a failed deletion is recorded as a failure even though it answers 200", async () => {
+  const alert = vi.spyOn(console, "error").mockImplementation(() => {});
+  db.deletionDone.mockResolvedValueOnce(false);
+  expect((await run("Bearer cron-test-secret")).status).toBe(200);
+  expect(db.jobRecord).toHaveBeenCalledExactlyOnceWith(expect.any(Date), "200-deletion-failed", expect.objectContaining({ deleted: 2, failed: 1 }));
+  alert.mockRestore();
+});
+
+test("a run that fails is recorded as 503 with no counts, and still answers 503 when that record fails too", async () => {
+  const alert = vi.spyOn(console, "error").mockImplementation(() => {});
+  db.reconcile.mockRejectedValue(new Error("connection reset"));
+  expect((await run("Bearer cron-test-secret")).status).toBe(503);
+  expect(db.jobRecord).toHaveBeenCalledExactlyOnceWith(expect.any(Date), "503", null);
+  db.jobRecord.mockRejectedValue(new Error("connection refused"));
+  expect((await run("Bearer cron-test-secret")).status).toBe(503);
+  alert.mockRestore();
+});
+
+test("a run whose success cannot be recorded answers 503, so the cron log shows it, and tries to record the failure", async () => {
+  const alert = vi.spyOn(console, "error").mockImplementation(() => {});
+  db.jobRecord.mockRejectedValueOnce(new Error("connection reset"));
+  expect((await run("Bearer cron-test-secret")).status).toBe(503);
+  expect(db.jobRecord.mock.calls.map((c) => c[1])).toEqual(["200", "503"]);
   alert.mockRestore();
 });
 

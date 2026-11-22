@@ -1,0 +1,27 @@
+# Daily health check (T2.5a; PRD Q145 7). Calls the public health route, which answers 200 while the daily job
+# succeeded in the last 26 hours and 503 otherwise, with no body. A failed run makes GitHub email the owner.
+# No secrets, no checkout, not part of the `gate` check. The site URL is the repository variable SITE_URL;
+# while it is unset (nothing deployed yet) the job skips with a notice.
+name: health
+
+on:
+  schedule:
+    - cron: "17 6 * * *"
+  workflow_dispatch:
+
+permissions: {}
+
+jobs:
+  health:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - env:
+          SITE_URL: ${{ vars.SITE_URL }}
+        shell: bash
+        run: |
+          if [ -z "$SITE_URL" ]; then echo "::notice::SITE_URL is not set: skipped"; exit 0; fi
+          # Exactly 200: a redirect (3xx) is not healthy either. Retries cover a cold start.
+          code=$(curl -sS -o /dev/null -w '%{http_code}' --max-time 30 --retry 2 --retry-all-errors "${SITE_URL%/}/api/health") || code=000
+          echo "health answered $code"
+          [ "$code" = 200 ] || { echo "::error::Daily job missed or failed (health answered $code). Check the Vercel cron log and O10 Usage."; exit 1; }

@@ -1,11 +1,12 @@
 import { NextResponse } from "next/server";
 import { machineAllowed } from "@/lib/machine";
-import { deletionDone, dueDeletions, expireUploads, reconcile } from "@/lib/server-db";
+import { deletionDone, dueDeletions, expireUploads, jobRecord, reconcile } from "@/lib/server-db";
 import { removeObjects } from "@/lib/storage-admin";
 
 // The daily storage job (T2.3c; design 3 §3.4; Q134), called by Vercel cron (vercel.json). Order: expire overdue
 // uploads, reconcile the buckets (queues orphans, corrects sizes), then delete the due files through the Storage API
 // and mark each deletion done only when the database confirms the object is gone, so a failure keeps the bytes charged.
+// It is also the keep-alive, and each run is recorded (T2.5a; Q145 3, 4): the health route and O10 read those rows.
 const answer = (body: object | null, status: number) => {
   const res = body ? NextResponse.json(body, { status }) : new NextResponse(null, { status });
   res.headers.set("Cache-Control", "no-store");
@@ -19,6 +20,7 @@ const STORAGE_WAIT_MS = 5_000;
 
 export async function GET(request: Request) {
   if (!machineAllowed(request)) return answer(null, 403);
+  const started = new Date();
   try {
     const expired = await expireUploads();
     const { orphans, resized } = await reconcile();
@@ -45,11 +47,16 @@ export async function GET(request: Request) {
         else failed++;
       }
     }
-    // shortcut: the alert is a log line until T2.5 adds the alert channel
+    // The log line is for the Vercel cron log; O10 and the health check read the recorded run.
     if (orphans || resized || failed) console.error("storage job needs attention", { orphans, resized, failed });
-    return answer({ expired, orphans, resized, deleted, failed }, 200);
+    const counts = { expired, orphans, resized, deleted, failed };
+    // A success that cannot be recorded throws to the catch below: without its row the run looks missed, so say 503.
+    // shortcut: a reply lost after the row committed records a 503 too (O10 shows failed while health stays 200); accept, it heals on the next run
+    await jobRecord(started, failed ? "200-deletion-failed" : "200", counts);
+    return answer(counts, 200);
   } catch (error) {
     console.error("storage job failed", error);
+    await jobRecord(started, "503", null).catch((recordError) => console.error("storage job record failed", recordError));
     return answer(null, 503);
   }
 }
