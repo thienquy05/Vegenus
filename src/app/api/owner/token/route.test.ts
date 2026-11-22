@@ -4,6 +4,7 @@ import { beforeEach, expect, test, vi } from "vitest";
 
 // T1.5b: the owner's create-or-rotate call (design 1 §3.1, §3.2). The link leaves only in this one
 // answer (Q34a), so every answer is no-store; a retry with the same request id never shows it again.
+// T2.6 (Q146 10, 21): Create sends expected_version null, Rotate the active version; the answer names the new version.
 const getUser = vi.fn();
 const rpc = vi.fn();
 vi.mock("@/lib/auth", async (original) => ({
@@ -14,7 +15,7 @@ const { POST } = await import("./route");
 
 const REQUEST_ID = "00000000-0000-4000-8000-000000000001";
 const TOKEN = "A".repeat(43);
-const rotate = (body: unknown = { request_id: REQUEST_ID }, origin = "http://localhost:3000") =>
+const rotate = (body: unknown = { request_id: REQUEST_ID, expected_version: 1 }, origin = "http://localhost:3000") =>
   POST(
     new NextRequest("http://localhost:3000/api/owner/token", {
       method: "POST",
@@ -25,22 +26,29 @@ const rotate = (body: unknown = { request_id: REQUEST_ID }, origin = "http://loc
 
 beforeEach(() => {
   getUser.mockReset().mockResolvedValue({ data: { user: { id: "00000000-0000-0000-0000-0000000000f1" } } });
-  rpc.mockReset().mockResolvedValue({ data: TOKEN, error: null });
+  rpc.mockReset().mockResolvedValue({ data: { token: TOKEN, version: 2 }, error: null });
 });
 
-test("the new link is returned once, with no-store", async () => {
+test("the new link and its version are returned once, with no-store", async () => {
   const res = await rotate();
   expect(res.status).toBe(200);
-  expect(await res.json()).toEqual({ link: `http://localhost:3000/g#${TOKEN}` });
+  expect(await res.json()).toEqual({ link: `http://localhost:3000/g#${TOKEN}`, version: 2 });
   expect(res.headers.get("cache-control")).toBe("no-store");
-  expect(rpc).toHaveBeenCalledWith("owner_rotate_token", { request_id: REQUEST_ID });
+  expect(rpc).toHaveBeenCalledWith("owner_rotate_token", { request_id: REQUEST_ID, expected_version: 1 });
 });
 
-test("a repeated request id is 'already rotated' and carries no link", async () => {
-  rpc.mockResolvedValue({ data: null, error: null });
+test("Create sends expected_version null (no active link expected)", async () => {
+  rpc.mockResolvedValue({ data: { token: TOKEN, version: 1 }, error: null });
+  expect((await rotate({ request_id: REQUEST_ID, expected_version: null })).status).toBe(200);
+  expect(rpc).toHaveBeenCalledWith("owner_rotate_token", { request_id: REQUEST_ID, expected_version: null });
+});
+
+test.each(["already_rotated", "changed"])("'%s' is a 409 that carries no link", async (error) => {
+  rpc.mockResolvedValue({ data: { error }, error: null });
   const res = await rotate();
   expect(res.status).toBe(409);
-  expect(await res.json()).toEqual({ error: "already_rotated" });
+  expect(await res.json()).toEqual({ error });
+  expect(res.headers.get("cache-control")).toBe("no-store");
 });
 
 test("a foreign origin is refused before anything else", async () => {
@@ -73,8 +81,18 @@ test("an Auth outage is a retryable 503, not 401, and rotates nothing", async ()
   expect(rpc).not.toHaveBeenCalled();
 });
 
-test("a missing or malformed request id is refused", async () => {
-  for (const body of [{}, { request_id: "not-a-uuid" }, { request_id: 1 }, null]) {
+test("a missing or malformed request id or expected version is refused", async () => {
+  for (const body of [
+    {},
+    { request_id: "not-a-uuid", expected_version: 1 },
+    { request_id: 1, expected_version: 1 },
+    null,
+    // The precondition is required: a missing one would rotate whatever link is active (Q146 10).
+    { request_id: REQUEST_ID },
+    { request_id: REQUEST_ID, expected_version: 0 },
+    { request_id: REQUEST_ID, expected_version: "1" },
+    { request_id: REQUEST_ID, expected_version: 1.5 },
+  ]) {
     expect((await rotate(body)).status, JSON.stringify(body)).toBe(400);
   }
   expect(rpc).not.toHaveBeenCalled();

@@ -3,7 +3,8 @@ import { randomUUID } from "node:crypto";
 
 // T1.5c visibility (design 1 §6, §10.1; E4, E21, E47) against the local Supabase stack. e2e/global-setup.ts
 // gives each browser project its own live page owned by owner-visibility-<project>; the test creates its
-// token and first sets Token-only, so a retry starts from a known state.
+// token and first sets Token-only, so a retry starts from a known state. T2.6 (Q146 20, 35): saves carry a request id
+// and answer the owner_page() snapshot.
 const ORIGIN = "http://localhost:3000";
 const TAP = "Tap the tag or scan the QR code to see this page.";
 const randomIp = (prefix: string) => `${prefix}.${Math.floor(Math.random() * 250) + 1}`;
@@ -18,12 +19,17 @@ async function signIn(page: Page, project: string) {
 }
 
 const setVisibility = (owner: Page, data: object) =>
-  owner.request.post("/api/owner/visibility", { data, headers: { origin: ORIGIN } });
+  owner.request.post("/api/owner/visibility", { data: { request_id: randomUUID(), ...data }, headers: { origin: ORIGIN } });
+const snapshot = async (owner: Page) =>
+  (await (await owner.request.post("/api/owner/page", { headers: { origin: ORIGIN } })).json()).page;
 
-test("Private stops an open guest on the next request; Token-only and Published let the token back in (E4, E47)", async ({ page, browser }, info) => {
+test("Private stops an open guest on the next request; Token-only lets the token back in, Published waits for Phase 3 (E4, E47, Q146)", async ({ page, browser }, info) => {
   await signIn(page, info.project.name);
   expect((await setVisibility(page, { visibility: "token_only" })).status()).toBe(200);
-  const res = await page.request.post("/api/owner/token", { data: { request_id: randomUUID() }, headers: { origin: ORIGIN } });
+  const res = await page.request.post("/api/owner/token", {
+    data: { request_id: randomUUID(), expected_version: (await snapshot(page)).link?.version ?? null },
+    headers: { origin: ORIGIN },
+  });
   expect(res.status()).toBe(200);
   const { link } = await res.json();
 
@@ -39,9 +45,11 @@ test("Private stops an open guest on the next request; Token-only and Published 
   await expect(guest).toHaveURL("/g/home");
 
   // Private while the guest has the page open: the next request shows only the tap notice.
-  const priv = await setVisibility(page, { visibility: "private", confirm: true });
+  const privateId = randomUUID();
+  const priv = await setVisibility(page, { visibility: "private", confirm: true, request_id: privateId });
   expect(priv.status()).toBe(200);
   expect(priv.headers()["cache-control"]).toBe("no-store");
+  expect((await priv.json()).page).toEqual(await snapshot(page));
   await guest.reload();
   await expect(guest).toHaveURL("/g");
   await expect(guest.getByRole("main")).toHaveText(TAP);
@@ -54,13 +62,47 @@ test("Private stops an open guest on the next request; Token-only and Published 
   expect((await setVisibility(page, { visibility: "token_only" })).status()).toBe(200);
   await guest.goto(link);
   await expect(guest).toHaveURL("/g/home");
+  // A retry of the committed Private save (its answer lost) answers the snapshot and does not apply again (Q146 35).
+  const retry = await setVisibility(page, { visibility: "private", confirm: true, request_id: privateId });
+  expect((await retry.json()).page.visibility).toBe("token_only");
+  await guest.reload();
+  await expect(guest).toHaveURL("/g/home");
 
-  expect((await setVisibility(page, { visibility: "published", confirm: true })).status()).toBe(200);
+  // Published waits for the Phase 3 public route (Q146): refused, nothing changes, the token keeps working.
+  const published = await setVisibility(page, { visibility: "published", confirm: true });
+  expect(published.status()).toBe(409);
+  expect(await published.json()).toEqual({ error: "not_available" });
+  expect((await snapshot(page)).visibility).toBe("token_only");
   await guest.reload();
   await expect(guest).toHaveURL("/g/home");
 
   expect((await setVisibility(page, { visibility: "token_only" })).status()).toBe(200);
   await guest.context().close();
+});
+
+// O9 sections (Q146 20, 21): the draft's base flags are the precondition; a stale base is a conflict.
+test("a sections save answers the snapshot; a stale base is a conflict", async ({ page }, info) => {
+  await signIn(page, info.project.name);
+  const save = (base: string[], sections: string[]) =>
+    page.request.post("/api/owner/sections", {
+      data: { base_sections: base, sections, request_id: randomUUID() },
+      headers: { origin: ORIGIN },
+    });
+  // A known start, so a retry after a failure midway does not begin from the test's own saves (review T2.6a).
+  const before = ["home", "memories"];
+  expect((await save((await snapshot(page)).sections, before)).status()).toBe(200);
+
+  const saved = await save(before, ["home", "together"]);
+  expect(saved.status()).toBe(200);
+  expect((await saved.json()).page.sections).toEqual(["home", "together"]);
+  expect((await snapshot(page)).sections).toEqual(["home", "together"]);
+
+  const stale = await save(before, ["home"]);
+  expect(stale.status()).toBe(409);
+  expect(await stale.json()).toEqual({ error: "conflict" });
+  expect((await snapshot(page)).sections).toEqual(["home", "together"]);
+
+  expect((await save(["home", "together"], before)).status()).toBe(200);
 });
 
 // E21: no sitemap lists any page (only Published pages may be indexed, and their route comes in Phase 3).
