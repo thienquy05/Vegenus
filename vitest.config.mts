@@ -17,7 +17,7 @@ export default defineConfig({
           name: "browser",
           include: ["src/**/*.browser.test.ts"],
           // Optimized up front: discovering them mid-run reloads the page and can fail a test on a cold cache (CI).
-          deps: { optimizer: { client: { include: ["react", "react-dom", "react-dom/client", "react/jsx-dev-runtime"] } } },
+          deps: { optimizer: { client: { include: ["react", "react-dom", "react-dom/client", "react/jsx-dev-runtime", "qrcode.react"] } } },
           browser: { enabled: true, headless: true, provider: playwright(), instances: [{ browser: "chromium" }] },
         },
       },
