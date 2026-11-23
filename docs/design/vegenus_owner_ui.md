@@ -517,6 +517,54 @@ Copy approved by the owner on 2026-11-21 (EN and VI as drawn; [DATE] [TIME] in t
 | `dashboard.shareCreated` | Guest link created [DATE] | Liên kết cho khách đã tạo ngày [DATE] |
 | `dashboard.shareUnshown` | New link: display not confirmed. Open Share to rotate again. | Liên kết mới: chưa xác nhận hiển thị. Mở Chia sẻ để đổi liên kết lần nữa. |
 
+### O19 Page settings and the O2 Settings card for T2.8 (2026-11-22, boards drawn; awaiting owner approval, Q115)
+
+Boards: OwnerSettings, OwnerSettingsTab and OwnerSettingsLap (O19, 58 review states each), OwnerDashSettings, OwnerDashSettingsTab and OwnerDashSettingsLap (the approved O2 boards plus a Settings card, 50 review states each) on canvas page 10 "Owner area" (Theme Preview version 123, with a "settings" note). Codex lead design, Claude review and render; working copies, brief, checks (with the full build contract and focus table) and reviews in the git-ignored `.design/settings/`. Owner decisions (2026-11-22, Q115): one Settings view opened from O2 with one panel per group, each saved on its own and live once its save succeeds; the suggested theme is included, A-D side by side plus No suggestion.
+
+- **Panels:** (1) names and default language: both names required, the O3 rules (trim, NFC, 1-40 code points, no control or bidirectional characters; the build adds U+0000 to the shared rule in `src/lib/setup.ts`, test-first), `dir="auto"` inputs and the wrapped echo; the names are the couple title, the language is where a guest's first visit starts. (2) Time zone: the O3 list (browser zones plus UTC); a saved spelling the browser accepts but does not list stays selected; a rejected one shows "Saved: [ZONE] (not available)", the empty Choose option and the error; the note says shown dates and times and the days-together counter follow it, entered dates stay as entered. (3) Suggested theme: four static swatch cards in their own tokens plus No suggestion (stored as null), a radio group with arrow keys and a visible check; the suggestion is highlighted on a guest's first theme choice and never overrides a guest's choice.
+- **Saves (server contract):** one call per panel that a finished page accepts, sending only the touched fields with the saved values they were edited against, plus a request id recorded under the page lock (looked up before the base check; names and language commit together). Answers: `200 {page}` (the full `owner_page()` snapshot; Saved or Superseded from the sent fields); `409 conflict` (no snapshot; Reload); `409 setup_not_finished`; `400` with `invalid_name` (+ `fields`), `invalid_timezone` or `wording_incomplete` (the default language's published wording is incomplete, `pages_wording_guard`: an error on the radios and a link to O18 on that language, opening in a new tab); status-only 401 and 403; anything else is "We couldn't confirm the save", and Try again repeats the same request. O9's statuses and rules otherwise: one save at a time, Changes not saved plus the saved values, Reload clears only its panel, the leave dialog (with a pending-save variant that warns the sent save may still take effect), Finish setup first.
+- **Reads:** the shipped O9 read counter (a newer read or any save makes older replies stale); "Last known" is the snapshot this tab accepted, in memory only, and Back hands it to O2. A null page after an accepted one in the same session is access lost (403 path).
+- **O2:** a Settings card with the names, default language, time zone and suggested theme (or No suggestion) and Change ("Change / Đổi" plus the card title as its name), from the same snapshot as the couple heading, Share and Visibility; loading, read failure with Try again, offline Last known, 401 and 403 on the return read. The Home card's counter uses Home's own read and re-reads on return after a zone change.
+- **Build needs found in the design:** the per-panel settings save above (extends `settings_saves`); one shared safe zone formatter for Share, Usage, Home and the counter (a rejected zone formats in UTC, labelled "(UTC)"); O18 accepts `lang=en|vi`; U+0000 in the shared name rule.
+- **Checks (2026-11-22):** board logic checks 798 assertions across the six boards (each fix's check seen failing first; `.design/settings/check-settings.cjs`); rendered in Chromium for every review state at the board's own size and at 320 px with a 200 % root font: 642 cases, no sideways scroll, no clipped box, no target under 44 px, no mid-word break outside user data, no axe violation (WCAG 2.2 AA), no console error. WebKit not run locally. Codex design review: 12 rounds (10, 10, 9, 6, 5, 4, 4, 5, 4, 3, 3, 3 findings); declined with reasons in CHECKS.md: the cross-folder preview round trip, removable owners (none exist, Q35), changes to the approved O18 board, and browser Back restoring an older O2 (one document in the build); round 12's two accepted findings fixed and not re-reviewed.
+
+Proposed copy (EN and VI; shipped strings reused as listed in `.design/settings/COPY.md`, including `step.names`, `step.zone`, `language.label`, `name.*`, `zone.*`, `theme.*`, the `visibility.*` save statuses, `common.*`, `share.stay`, `usage.session`, `content.signin`, `dashboard.logout`, `review.change`, `navigation.back`):
+
+| Key | English | Tiếng Việt |
+| --- | --- | --- |
+| `settings.title` | Page settings | Cài đặt trang |
+| `settings.entry` | Settings | Cài đặt |
+| `settings.live` | Each panel's changes take effect when its save succeeds. | Các thay đổi trong mỗi nhóm có hiệu lực khi lưu nhóm đó thành công. |
+| `settings.namesHelp` | The guest pages use these names as the couple title. | Các trang dành cho khách dùng hai tên này làm tiêu đề. |
+| `settings.languageHelp` | Guests start in this language on their first visit. They can switch languages. | Khách dùng ngôn ngữ này trong lần truy cập đầu tiên. Họ có thể đổi ngôn ngữ. |
+| `language.wordingIncomplete` | Complete and publish the wording in this language, then return here and save your draft. | Hãy hoàn tất và đăng lời nhắn bằng ngôn ngữ này, rồi quay lại đây để lưu bản nháp. |
+| `settings.wordingTab` | opens in a new tab | mở trong thẻ mới |
+| `settings.zoneNote` | With a different time zone, the dates and times shown on photos and messages can shift, and the days-together counter can move by a day. Dates you entered stay as entered. | Ngày và giờ hiển thị trên ảnh và lời nhắn có thể thay đổi theo múi giờ, và bộ đếm ngày bên nhau có thể lệch một ngày. Ngày bạn nhập được giữ nguyên. |
+| `zone.savedUnavailable` | Saved zone is unavailable. Choose a time zone. | Múi giờ đã lưu không khả dụng. Hãy chọn một múi giờ. |
+| `zone.savedLabel` | Saved: [ZONE] (not available) | Đã lưu: [ZONE] (không khả dụng) |
+| `zone.refused` | The server refused this time zone. Choose another time zone. | Máy chủ từ chối múi giờ này. Hãy chọn múi giờ khác. |
+| `settings.theme` | Suggested theme | Chủ đề gợi ý |
+| `settings.themeHelp` | Your suggestion is highlighted when guests pick a theme on their first visit. Guests who already chose keep their choice. Guests can change their theme any time. | Chủ đề gợi ý được làm nổi bật khi khách chọn chủ đề trong lần truy cập đầu tiên. Khách đã chọn vẫn giữ lựa chọn của mình. Khách có thể đổi chủ đề bất cứ lúc nào. |
+| `settings.none` | No suggestion | Không gợi ý |
+| `settings.savedValues` | Saved values | Giá trị đã lưu |
+| `settings.reloading` | Reloading the saved settings… | Đang tải lại cài đặt đã lưu… |
+| `settings.reloadHelp` | Reload clears unsaved changes in this panel. | Tải lại sẽ xóa các thay đổi chưa lưu trong nhóm này. |
+| `settings.reconcileHelp` | Reload reads the current saved values and keeps edits that still differ. | Tải lại sẽ đọc các giá trị đã lưu hiện tại và giữ những chỉnh sửa còn khác. |
+| `settings.retryReadHelp` | Try again reads the saved values again. | Thử lại sẽ đọc lại các giá trị đã lưu. |
+| `settings.reloaded` | Saved settings reloaded. | Đã tải lại cài đặt đã lưu. |
+| `settings.signInFirst` | Sign in again first. | Hãy đăng nhập lại trước. |
+| `settings.sessionExpired` | Your session expired. Sign in again to continue. | Phiên đăng nhập đã hết hạn. Hãy đăng nhập lại để tiếp tục. |
+| `settings.leaveTitle` | Leave while a save is pending? | Rời đi khi đang chờ kết quả lưu? |
+| `settings.leavePending` | Leaving discards the unsaved edits on this device. The save already sent may still take effect. | Nếu rời đi, các thay đổi chưa lưu trên thiết bị này sẽ bị bỏ. Yêu cầu lưu đã gửi vẫn có thể có hiệu lực. |
+| `settings.leaveSettledTitle` | Leave Settings? | Rời khỏi Cài đặt? |
+| `settings.leaveSaved` | Your changes were saved. | Các thay đổi của bạn đã được lưu. |
+| `settings.leaveNewer` | Leaving discards your newer edits. | Nếu rời đi, các thay đổi mới hơn của bạn sẽ bị bỏ. |
+| `settings.leaveFailed` | The save failed. | Không lưu được thay đổi. |
+| `settings.leaveUnconfirmed` | The save could not be confirmed. | Chưa xác nhận được kết quả lưu. |
+| `settings.leaveUnsaved` | Leaving discards your unsaved edits. | Nếu rời đi, các thay đổi chưa lưu của bạn sẽ bị bỏ. |
+| `settings.leave` | Leave | Rời đi |
+| `home.counterUtc` | Day [N] together (UTC) | Ngày thứ [N] bên nhau (UTC) |
+
 ### Limits and owner preview behavior
 
 - **Confirmed:** wishes 40/500, Q34c; pending hidden, Q34d; wish limits, Q75 and Q78 (per-IP limit 20); guest-account cap 50, Q38; video ≤50 MB and approximately 25 MB target, Q27.
