@@ -251,7 +251,7 @@ Evidence: in each task's evidence block above and the Phase 1 security-gate line
 
 ### Phase 2: Owner tools (weeks 5-7)
 
-Content: setup wizard, content CRUD with draft and publish, media pipeline, limits, keep-alive, usage meter. Exit criterion: the owner publishes an empty-to-live page. Gate: owner review. Status: In progress (2026-11-21: T2.1-T2.5 and T2.7 merged; T2.6 design merged as PR #72; 2026-11-22: T2.6a database and API built).
+Content: setup wizard, content CRUD with draft and publish, media pipeline, limits, keep-alive, usage meter. Exit criterion: the owner publishes an empty-to-live page. Gate: owner review. Status: In progress (2026-11-21: T2.1-T2.5 and T2.7 merged; T2.6 design merged as PR #72; 2026-11-22: T2.6a merged as PR #73, T2.6b as PR #74; Settings (Q115) design stage started).
 
 Security gate (design 7 §6, Q85): Not started. Pass criteria: no open critical or high finding, mediums fixed or accepted, every `needs_validation` resolved or explicitly accepted in PRD §12, Codex security review clean, audit run complete (`run_status` not incomplete, validators pass), all on one recorded `master` SHA.
 
@@ -267,7 +267,8 @@ Security gate (design 7 §6, Q85): Not started. Pass criteria: no open critical 
 | T2.4a Home database and API (`feature/home-db`): `home_picks`, Home without a title and with the 600-character note cap, `owner_home_save`, `owner_home_get`, `owner_home_photos`, Publish/Unpublish moving the picks, no Delete for Home, `POST /api/owner/home`, `/home/get`, `/home/picker`, the E14 counter (`src/lib/counter.ts`) | E14, E15, E33, E53, E56 | Done: merged as PR #68 (`71c0e72`) with T2.4b (see T2.4a evidence below) |
 | T2.4b O17 Home editor and the O2 Home card (`feature/home-editor`, stacked on `feature/home-db`; design approved by the owner on 2026-11-20; Q144) | E14, E53 | Done: merged as PR #68 (`71c0e72`) (see T2.4b evidence below) |
 | T2.5 Keep-alive, heartbeat, missed-run alert, usage meter and alerts; also the alert for the daily storage job (T2.3c logs only), a prerequisite for shipping uploads (Q136) | E23, E24 | Done: T2.5a merged as PR #70 (`d425f43`), T2.5b as PR #71 (`8590154`) |
-| T2.6 Share screen O8 (show-once link and QR), visibility O9 | E3 UI | Design merged as PR #72 (`7a99d35`). Two branches, as T2.5: T2.6a database and API (`feature/share-db`, built 2026-11-22, in review), then T2.6b the O8, O9 and O2 screens with the `qrcode.react` install (`feature/share-screens`, built 2026-11-22, in review) (see T2.6a and T2.6b evidence below) |
+| T2.6 Share screen O8 (show-once link and QR), visibility O9 | E3 UI | Design merged as PR #72 (`7a99d35`). Two branches, as T2.5: Done: T2.6a database and API merged as PR #73 (`c82a7de`), T2.6b the O8, O9 and O2 screens with the `qrcode.react` install merged as PR #74 (`320b3d5`) (see T2.6a and T2.6b evidence below) |
+| T2.8 Page settings view (Q115, owner 2026-11-22: one Settings view from O2 with three independently saved panels, names and default language, time zone, suggested theme A-D or No suggestion) | E15, E33 | Design drawn (`docs/settings-design`, 2026-11-22): O19 and the O2 Settings card at three sizes, 798 board logic assertions, Chromium 642 cases with 0 problems, 12 Codex design review rounds (all accepted findings fixed; round 12's two fixes not re-reviewed); published to the canvas (Theme Preview version 123) and recorded in `docs/design/vegenus_owner_ui.md` (O19 section) and `vegenus_screens.md`. Waiting for owner approval; then the build |
 
 | ID | Case | Expected | Level | Spec | Status |
 |---|---|---|---|---|---|
