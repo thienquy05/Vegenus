@@ -1,5 +1,6 @@
 // O10 Usage and the O2 attention line (owner UI "O10 Usage and the O2 attention line for T2.5"; PRD Q145). The
 // snapshot is what `owner_usage()` returns (T2.5a); the rules are the approved boards' deriveUsage.
+import { zoneFormat } from "./zone";
 export type Usage = {
   total_bytes: number;
   budget_bytes: number;
@@ -65,4 +66,4 @@ export const usageSize = (bytes: number, lang: "en" | "vi") =>
 
 // Q145 13: a time with its date, in the page time zone.
 export const usageDate = (iso: string, timeZone: string, lang: "en" | "vi") =>
-  new Intl.DateTimeFormat(lang, { timeZone, dateStyle: "medium", timeStyle: "short" }).format(new Date(iso));
+  zoneFormat(iso, timeZone, lang, { dateStyle: "medium", timeStyle: "short" });

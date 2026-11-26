@@ -98,4 +98,6 @@ test("a refresh announces the attention change once: cleared, lower, higher, or 
 test("times show with their date in the page time zone, per language", () => {
   expect(usageDate("2026-03-10T12:00:00.000Z", "Asia/Ho_Chi_Minh", "en")).toMatch(/Mar 10, 2026.*7:00\sPM/);
   expect(usageDate("2026-03-10T12:00:00.000Z", "UTC", "en")).toMatch(/12:00\sPM/);
+  // A saved zone the browser rejects: UTC, labelled (T2.8).
+  expect(usageDate("2026-03-10T12:00:00.000Z", "Not/A_Zone", "en")).toMatch(/12:00\sPM \(UTC\)$/);
 });

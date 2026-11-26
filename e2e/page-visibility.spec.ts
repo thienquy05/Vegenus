@@ -105,6 +105,39 @@ test("a sections save answers the snapshot; a stale base is a conflict", async (
   expect((await save(["home", "together"], before)).status()).toBe(200);
 });
 
+// O19 settings (T2.8, Q115): one save per panel with the saved values it was edited against, through PostgREST's
+// jsonb arguments. Bases come from a fresh snapshot, so a retry starts from a known state; the end restores them.
+test("a settings save answers the snapshot; a retry applies once; a stale base is a conflict", async ({ page }, info) => {
+  await signIn(page, info.project.name);
+  const save = (panel: string, base: object, fields: object, request_id = randomUUID()) =>
+    page.request.post("/api/owner/settings", { data: { panel, base, fields, request_id }, headers: { origin: ORIGIN } });
+  const start = await snapshot(page);
+
+  const id = randomUUID();
+  const none = await save("theme", { theme: start.theme }, { theme: null }, id);
+  expect(none.status()).toBe(200);
+  expect((await none.json()).page.theme).toBeNull();
+  // The same request again, its base now stale: answered as committed, not as a conflict.
+  const replay = await save("theme", { theme: start.theme }, { theme: null }, id);
+  expect(replay.status()).toBe(200);
+  expect((await replay.json()).page.theme).toBeNull();
+
+  const zone = await save("timezone", { timezone: start.timezone }, { timezone: "Europe/Paris" });
+  expect((await zone.json()).page.timezone).toBe("Europe/Paris");
+  const unknown = await save("timezone", { timezone: "Europe/Paris" }, { timezone: "Not/A_Zone" });
+  expect(unknown.status()).toBe(400);
+  expect(await unknown.json()).toEqual({ error: "invalid_timezone" });
+  const stale = await save("timezone", { timezone: "UTC" }, { timezone: "Asia/Tokyo" });
+  expect(stale.status()).toBe(409);
+  expect(await stale.json()).toEqual({ error: "conflict" });
+
+  const names = await save("names", { label_a: start.label_a }, { label_a: "   " });
+  expect(await names.json()).toEqual({ error: "invalid_name", fields: { label_a: "required" } });
+
+  expect((await save("theme", { theme: null }, { theme: start.theme })).status()).toBe(200);
+  expect((await save("timezone", { timezone: "Europe/Paris" }, { timezone: start.timezone })).status()).toBe(200);
+});
+
 // E21: no sitemap lists any page (only Published pages may be indexed, and their route comes in Phase 3).
 test("there is no sitemap", async ({ request }) => {
   expect((await request.get("/sitemap.xml")).status()).toBe(404);

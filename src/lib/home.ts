@@ -1,6 +1,7 @@
 // Home rules for O17 and the O2 Home card (owner UI "O17 Home editor and the O2 Home card"; PRD Q144; E14). Pure
 // functions, so the screens stay thin; the database checks the same limits (owner_home_save).
 import { daysTogether } from "./counter";
+import { safeZone } from "./zone";
 import type { Lang } from "./content";
 
 // One pick of POST /api/owner/home/get: hidden when its memory is unpublished (guests skip it).
@@ -37,11 +38,13 @@ export type HomeRead = { state: "loading" } | { state: "error" } | { state: "rea
 export const cardState = (home: Home | null) =>
   !home ? "new" : !home.published ? "draft" : home.unpublished_changes ? "changes" : "published";
 
-// The counter line for a start date in the page time zone (E14): none, starts later, or the day number.
+// The counter line for a start date in the page time zone (E14): none, starts later, or the day number. A saved zone
+// the browser rejects counts in UTC, flagged for the "(UTC)" label (T2.8); the entered date stays as entered.
 export function counter(start: string | null, timeZone: string, now = new Date()) {
   if (!start) return { kind: "none" } as const;
-  const days = daysTogether(start, timeZone, now);
-  return days === null ? ({ kind: "future", date: start } as const) : ({ kind: "day", days } as const);
+  const { zone, utc } = safeZone(timeZone);
+  const days = daysTogether(start, zone, now);
+  return days === null ? ({ kind: "future", date: start } as const) : ({ kind: "day", days, utc } as const);
 }
 
 // O17's working copy (Q144 defaults 2 and 6): the note per language, the start date as the date input's YYYY-MM-DD

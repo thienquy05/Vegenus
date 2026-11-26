@@ -17,6 +17,7 @@ async function start(page: Page, project: keyof typeof PAGES) {
   await sql`delete from public.guest_tokens where page_id = ${id}`;
   await sql`update public.pages set visibility = 'token_only' where id = ${id}`;
   await sql`update public.page_sections set enabled = section = 'home' where page_id = ${id}`;
+  await sql`update public.pages set label_a = 'Partner A', label_b = 'Partner B', default_lang = 'en', timezone = 'UTC', theme = 'a_dreamy' where id = ${id}`;
   await page.setExtraHTTPHeaders({ "x-forwarded-for": `198.51.104.${Math.floor(Math.random() * 250) + 1}` });
   await page.goto("/login");
   await page.getByLabel("Email").fill(`owner-share-${project}@example.test`);
@@ -102,4 +103,38 @@ test("the owner changes sections and visibility on O9, each panel saved on its o
   await expect(page.locator("#visibility-change")).toBeFocused();
   await expect(page.locator("#visibility-card")).toContainText("Private");
   expect((await sql`select visibility from public.pages where id = ${id}`)[0].visibility).toBe("private");
+});
+
+// O19 Page settings (owner UI "O19 Page settings"; PRD Q115): each panel saved on its own, O2's card shows the result.
+test("the owner changes names, time zone and suggested theme on O19, each panel saved on its own", async ({ page }, info) => {
+  const id = await start(page, info.project.name as keyof typeof PAGES);
+  const row = async () => (await sql`select label_a, label_b, timezone, theme from public.pages where id = ${id}`)[0];
+  await page.locator("#settings-change").click();
+  await expect(page.locator("#settings-title")).toBeFocused();
+  await expect(page.locator("#settings-theme-a_dreamy")).toBeChecked();
+  await checkSizes(page, "O19");
+
+  await page.locator("#settings-label_b").fill(" Partner C ");
+  await expect(page.locator("#names-status")).toContainText("Changes not saved");
+  await checkSizes(page, "O19 with unsaved names");
+  await page.locator("#save-names").click();
+  await expect(page.getByRole("status")).toContainText("Saved");
+  expect(await row()).toMatchObject({ label_a: "Partner A", label_b: "Partner C" });
+
+  await page.locator("#settings-timezone").selectOption("Asia/Tokyo");
+  await page.locator("#save-timezone").click();
+  await expect.poll(async () => (await row()).timezone).toBe("Asia/Tokyo");
+
+  await page.locator("#settings-theme-none").check();
+  await page.locator("#save-theme").click();
+  await expect.poll(async () => (await row()).theme).toBeNull();
+
+  await page.locator("#settings-theme-c_cozy").check();
+  await page.locator("#settings-back").click();
+  await expect(page.locator("#settings-dialog")).toContainText("Discard unsaved changes?");
+  await checkSizes(page, "O19 leave dialog");
+  await page.locator("#dialog-act").click();
+  await expect(page.locator("#settings-change")).toBeFocused();
+  for (const part of ["Partner C", "Asia/Tokyo", "No suggestion"]) await expect(page.locator("#settings-card")).toContainText(part);
+  expect((await row()).theme).toBeNull();
 });
