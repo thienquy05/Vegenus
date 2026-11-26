@@ -53,7 +53,7 @@ beforeEach(() => {
 
 // Complete reads every stored file before the database marks the media ready (security gate, Phase 2): a minimal
 // browser-made WebP passes the content check; zero bytes declared as WebP do not.
-const WEBP = new Uint8Array([82, 73, 70, 70, 22, 0, 0, 0, 87, 69, 66, 80, 86, 80, 56, 32, 10, 0, 0, 0, ...new Array(10).fill(0)]);
+const WEBP = new Uint8Array([82, 73, 70, 70, 22, 0, 0, 0, 87, 69, 66, 80, 86, 80, 56, 32, 10, 0, 0, 0, 0x50, 0x01, 0x00, 0x9d, 0x01, 0x2a, 4, 0, 3, 0]); // a 4x3 lossy key frame header
 const FILES = [
   { bucket: "media-thumb", path: `pages/p/media/${MEDIA}/thumb`, mime: "image/webp", present: true },
   { bucket: "media-video", path: `pages/p/media/${MEDIA}/video`, mime: "video/mp4", present: true },
