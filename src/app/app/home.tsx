@@ -621,7 +621,7 @@ export function HomeEditor({ page, drafts, now, onBack, onSignedOut, onContent }
                 <p id="home-counter">
                   {editorCount.kind === "none" && <T k="home.noDate" />}
                   {editorCount.kind === "future" && <T k="home.future" vars={{ date: editorCount.date }} />}
-                  {editorCount.kind === "day" && <T k="home.day" vars={{ days: editorCount.days }} />}
+                  {editorCount.kind === "day" && <T k={editorCount.utc ? "home.dayUtc" : "home.day"} vars={{ days: editorCount.days }} />}
                 </p>
               </div>
               {langSelect("home-lang", "content.mainLanguage", draft.lang, (l) => set({ lang: l }))}

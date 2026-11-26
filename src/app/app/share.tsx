@@ -2,6 +2,7 @@
 import { QRCodeCanvas } from "qrcode.react";
 import { useCallback, useEffect, useRef, useState } from "react";
 import type { Page } from "@/lib/setup";
+import { zoneFormat } from "@/lib/zone";
 import type { CopyKey } from "./copy";
 import { L, T, post } from "./parts";
 import s from "./owner.module.css";
@@ -12,8 +13,8 @@ import s from "./owner.module.css";
 
 const both = (f: (lang: "en" | "vi") => string) => [f("en"), f("vi")] as const;
 // Q146 29: medium date and short time in the page time zone, as O10.
-const day = (iso: string, timeZone: string) => both((lang) => new Intl.DateTimeFormat(lang, { timeZone, dateStyle: "medium" }).format(new Date(iso)));
-const clock = (iso: string, timeZone: string) => both((lang) => new Intl.DateTimeFormat(lang, { timeZone, timeStyle: "short" }).format(new Date(iso)));
+const day = (iso: string, timeZone: string) => both((lang) => zoneFormat(iso, timeZone, lang, { dateStyle: "medium" }));
+const clock = (iso: string, timeZone: string) => both((lang) => zoneFormat(iso, timeZone, lang, { timeStyle: "short" }));
 
 // O2: the link's state from the snapshot; a Token-only page without a link gets the strong call to action.
 export function ShareCard({ page, offline, onOpen }: { page: Page; offline: boolean; onOpen: (opener: string) => void }) {

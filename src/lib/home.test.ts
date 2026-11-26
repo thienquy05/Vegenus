@@ -33,8 +33,16 @@ test("the counter line: no start date, a future start, or the day number in the 
   const now = new Date("2026-11-21T20:00:00Z");
   expect(counter(null, "UTC", now)).toEqual({ kind: "none" });
   expect(counter("2026-11-22", "UTC", now)).toEqual({ kind: "future", date: "2026-11-22" });
-  expect(counter("2026-11-22", "Asia/Ho_Chi_Minh", now)).toEqual({ kind: "day", days: 1 });
-  expect(counter("2026-11-20", "UTC", now)).toEqual({ kind: "day", days: 2 });
+  expect(counter("2026-11-22", "Asia/Ho_Chi_Minh", now)).toEqual({ kind: "day", days: 1, utc: false });
+  expect(counter("2026-11-20", "UTC", now)).toEqual({ kind: "day", days: 2, utc: false });
+});
+
+// T2.8 (CHECKS "Build contract"): a saved zone the browser rejects counts in UTC, flagged for the "(UTC)" label; the
+// entered start date stays as entered.
+test("a rejected zone counts in UTC across a UTC day boundary, flagged", () => {
+  expect(counter("2026-11-21", "Not/A_Zone", new Date("2026-11-21T23:59:59Z"))).toEqual({ kind: "day", days: 1, utc: true });
+  expect(counter("2026-11-21", "Not/A_Zone", new Date("2026-11-22T00:00:00Z"))).toEqual({ kind: "day", days: 2, utc: true });
+  expect(counter("2026-11-23", "Not/A_Zone", new Date("2026-11-22T00:00:00Z"))).toEqual({ kind: "future", date: "2026-11-23" });
 });
 
 // O17 editor rules (owner UI O17; PRD Q144 defaults 2, 6, 10 and 23).

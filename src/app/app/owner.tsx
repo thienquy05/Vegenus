@@ -8,10 +8,11 @@ import { Content } from "./content";
 import type { CopyKey } from "./copy";
 import { HomeEditor } from "./home";
 import { Item } from "./item";
-import { Announcers, L, LogOut, SectionList, T, post, useOnline } from "./parts";
+import { Announcers, L, LANG_NAMES, LogOut, SectionList, T, post, useOnline } from "./parts";
 import { Upload } from "./upload";
 import { ShareCard, ShareView } from "./share";
 import { VisibilityView } from "./visibility";
+import { SettingsView } from "./settings";
 import { AttentionLine, Spoken, UsageCard, UsageView, useUsage } from "./usage";
 import { Wizard } from "./wizard";
 import s from "./owner.module.css";
@@ -44,7 +45,8 @@ type View =
   | { name: "home" }
   | { name: "usage" }
   | { name: "share"; from: View | null; back?: boolean }
-  | { name: "visibility"; from: View | null; back?: boolean };
+  | { name: "visibility"; from: View | null; back?: boolean }
+  | { name: "settings" };
 
 type Props = {
   state: State;
@@ -69,9 +71,10 @@ type Props = {
   said?: ReactNode;
   onShare?: (opener: string) => void;
   onVisibility?: () => void;
+  onSettings?: () => void;
 };
 
-export function Dashboard({ state, page, offline, onSetup, onRetry, onContent, status, headingRef, focused = false, home, now, onHome, onHomeRetry, attention, usageCard, said, onShare, onVisibility }: Props) {
+export function Dashboard({ state, page, offline, onSetup, onRetry, onContent, status, headingRef, focused = false, home, now, onHome, onHomeRetry, attention, usageCard, said, onShare, onVisibility, onSettings }: Props) {
   const h2 = headingRef as RefObject<HTMLHeadingElement | null> | undefined;
   const message = headingRef as RefObject<HTMLParagraphElement | null> | undefined;
   const reason = offline ? "offline-reason" : undefined;
@@ -197,6 +200,60 @@ export function Dashboard({ state, page, offline, onSetup, onRetry, onContent, s
                 </button>
               )}
             </section>
+            {onSettings && (
+              <section id="settings-card" className={s.surface} aria-labelledby="settings-card-title">
+                <h3 id="settings-card-title" tabIndex={-1}>
+                  <T k="settings.entry" />
+                </h3>
+                {offline && (
+                  <p className={s.badge}>
+                    <T k="common.lastKnown" />
+                  </p>
+                )}
+                <dl className={s.stack}>
+                  <div>
+                    <dt>
+                      <T k="review.names" />
+                    </dt>
+                    <dd>
+                      <bdi>{page.label_a}</bdi> &amp; <bdi>{page.label_b}</bdi>
+                    </dd>
+                  </div>
+                  <div>
+                    <dt>
+                      <T k="language.label" />
+                    </dt>
+                    <dd>{LANG_NAMES[page.default_lang]}</dd>
+                  </div>
+                  <div>
+                    <dt>
+                      <T k="zone.label" />
+                    </dt>
+                    <dd>
+                      <bdi>{page.timezone}</bdi>
+                    </dd>
+                  </div>
+                  <div>
+                    <dt>
+                      <T k="settings.theme" />
+                    </dt>
+                    <dd>
+                      <T k={page.theme ? (`theme.${page.theme}` as CopyKey) : "settings.none"} />
+                    </dd>
+                  </div>
+                </dl>
+                <button
+                  id="settings-change"
+                  type="button"
+                  className={s.secondary}
+                  disabled={offline}
+                  aria-describedby={reason || undefined}
+                  onClick={onSettings}
+                >
+                  <L k="settings.change" />
+                </button>
+              </section>
+            )}
             <section className={`${s.surface} ${s.sectionsPanel}`}>
               <h3>
                 <T k="review.sections" />
@@ -223,7 +280,7 @@ function HomeCard({ home, now, offline, onHome, onRetry }: { home: HomeRead; now
   const ready = home.state === "ready" ? home.home : undefined;
   const start = ready?.published ? counter(ready.published.start_date, ready.timezone, now) : null;
   return (
-    <section className={s.surface}>
+    <section id="home-card" className={s.surface}>
       <h3 id="home-card-title" tabIndex={-1}>
         <T k="sections.home" />
       </h3>
@@ -259,7 +316,7 @@ function HomeCard({ home, now, offline, onHome, onRetry }: { home: HomeRead; now
           )}
           {start?.kind === "day" && (
             <p>
-              <T k="home.day" vars={{ days: start.days }} />
+              <T k={start.utc ? "home.dayUtc" : "home.day"} vars={{ days: start.days }} />
             </p>
           )}
           <button id="home-action" type="button" className={s.secondary} disabled={offline} aria-describedby={reason} onClick={onHome}>
@@ -513,6 +570,30 @@ export default function Owner() {
       />
     );
   }
+  // O19: Back returns to O2, whose return read draws the saved settings (and its Home card reads again on arrival, so a
+  // changed zone moves the counter) before focus goes back to Change.
+  // shortcut: a 401 on that return read goes to login as from O8 and O9, not to O2's own Sign in again; change all three together.
+  if (view.name === "settings") {
+    return (
+      <SettingsView
+        offline={!online}
+        onBack={(snap) => {
+          // O19's last accepted snapshot draws O2 at once; offline it stays there as Last known (CHECKS "Build contract").
+          if (snap) setData((old) => ({ ...old, page: snap }));
+          if (snap && !online) {
+            opener.current = ["settings-card-title", "settings-card-title"]; // Change is disabled offline
+            setStatus(null);
+            setView({ name: "dashboard" });
+          } else back(null);
+        }}
+        onSetup={() => {
+          setStatus(null);
+          setView({ name: "dashboard" });
+          setWizard(true);
+        }}
+      />
+    );
+  }
   if (view.name === "upload") {
     return <Upload id={view.id} onSignedOut={signedOut} onBack={() => setView({ name: "item", id: view.id, kind: view.kind, section: view.section })} />;
   }
@@ -538,6 +619,10 @@ export default function Owner() {
       onVisibility={() => {
         opener.current = ["visibility-change", "visibility-card-title"];
         leave({ name: "visibility", from: null });
+      }}
+      onSettings={() => {
+        opener.current = ["settings-change", "settings-card-title"];
+        leave({ name: "settings" });
       }}
       said={<Spoken said={usage.said} />}
       attention={

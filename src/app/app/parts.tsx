@@ -5,6 +5,9 @@ import s from "./owner.module.css";
 
 // Inline text: the English part in lang="en", then the Vietnamese (the document is lang="vi"; Q118). vars fill the
 // copy's {name} slots, such as server numbers; a pair fills each language with its own (a date, a nested string).
+// The two page languages by name, each in its own language (O2, O3, O19).
+export const LANG_NAMES: Record<string, ReactNode> = { en: <span lang="en">English</span>, vi: <span lang="vi">Tiếng Việt</span> };
+
 export type Vars = Record<string, string | number | readonly [string, string]>;
 export function T({ k, vars }: { k: CopyKey; vars?: Vars }) {
   const fill = (text: string, i: 0 | 1) =>

@@ -5,8 +5,9 @@ import {
   browserLang, checkName, finishOutcome, nameErrors, proposeZone, saveBody, saveOutcome, SECTIONS, stepDirty, THEMES, zoneFlagged,
   type Draft, type Drafts, type Page,
 } from "@/lib/setup";
+import { offeredZones, zoneKnown } from "@/lib/zone";
 import { COPY, type CopyKey } from "./copy";
-import { Announcers, L, LogOut, SectionList, T, useOnline } from "./parts";
+import { Announcers, L, LANG_NAMES, LogOut, SectionList, T, useOnline } from "./parts";
 import s from "./owner.module.css";
 // The four theme token sets, scoped to [data-theme], dress only the guest previews (design 4 §9, Q113).
 import "../../../themes/a_dreamy/tokens.css";
@@ -32,24 +33,7 @@ type Status = { key: CopyKey; error: boolean; retry?: Retry; utc?: boolean } | n
 type NameError = "required" | "length" | "characters" | null;
 
 const TITLES: CopyKey[] = ["step.names", "step.zone", "step.sections", "step.wording", "step.review"];
-const LANG_NAMES: Record<string, ReactNode> = { en: <span lang="en">English</span>, vi: <span lang="vi">Tiếng Việt</span> };
 
-// shortcut: the browser's own zone list (ICU names) plus UTC; the database checks the name again (400, then R2)
-const offeredZones = () => {
-  try {
-    return [...new Set([...Intl.supportedValuesOf("timeZone"), "UTC"])];
-  } catch {
-    return ["UTC"];
-  }
-};
-const zoneKnown = (zone: string) => {
-  try {
-    new Intl.DateTimeFormat("en", { timeZone: zone });
-    return true;
-  } catch {
-    return false;
-  }
-};
 // Long enough to swallow the second tap of a double tap on Next, which would land on Finish (the same button).
 const REVIEW_PAUSE_MS = 500;
 const fill = (text: string, a: string, b: string) => text.replaceAll("{partner_a}", a).replaceAll("{partner_b}", b);

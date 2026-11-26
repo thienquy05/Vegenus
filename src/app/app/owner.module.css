@@ -358,6 +358,46 @@
   grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: var(--space-2);
 }
+/* O19 suggested theme: each card in its theme's own tokens (data-theme); No suggestion spans the row in the owner look.
+   Two columns where they fit, one on the narrowest phones and at 200 % text. */
+.swatches {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 10em), 1fr));
+  gap: var(--space-2);
+  /* The rings sit on the owner page, so they keep its colours; each card below switches to its theme's tokens. */
+  --ring: var(--text);
+  --ring-focus: var(--focus);
+}
+.swatch {
+  min-height: 44px;
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  padding: var(--space-3);
+  min-width: 0;
+  overflow-wrap: anywhere;
+  border: 1px solid var(--line);
+  border-block-start: 4px solid var(--accent);
+  background: var(--bg);
+  color: var(--text);
+  font-family: var(--font-display, inherit);
+}
+.swatch:not([data-theme]) {
+  grid-column: 1 / -1;
+  border-block-start-color: var(--line);
+}
+.swatch input {
+  margin: 0;
+  flex: none;
+  accent-color: var(--accent);
+}
+.swatch:has(:checked) {
+  box-shadow: 0 0 0 3px var(--ring);
+}
+.swatch:has(:focus-visible) {
+  outline: 3px solid var(--ring-focus);
+  outline-offset: 5px;
+}
 .sectionRow {
   border-bottom: 1px solid var(--line);
   padding: var(--space-3) 0;
