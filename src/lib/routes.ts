@@ -12,12 +12,17 @@ export const ROUTES: Record<string, RouteClass> = {
   // The guest shell shows G-E1 or exchanges the fragment; the guest pages need the token cookie.
   "/g": "public",
   "/g/home": "guest",
+  "/g/memories": "guest",
+  "/g/wishes": "guest",
   // Login, logout and the token exchange check Origin themselves; logout without a session only clears cookies.
   "/api/owner/login": "public",
   "/api/owner/logout": "public",
   "/api/guest/session": "public",
-  // Checks Origin and the guest header, then the token cookie; the database checks the token (guest_media).
+  // Check Origin and the guest header, then the token (cookie, or the body when cookies are blocked); the database
+  // checks the token (guest_media, guest_list, guest_guestbook_list).
   "/api/guest/media": "guest",
+  "/api/guest/list": "guest",
+  "/api/guest/wishes": "guest",
   // Checks Origin, then the owner session; the database checks the page owner.
   "/api/owner/token": "owner",
   "/api/owner/token/shown": "owner",
@@ -53,6 +58,8 @@ export const HANDLER_METHODS: Record<string, string[]> = {
   "/api/owner/logout": ["POST"],
   "/api/guest/session": ["POST"],
   "/api/guest/media": ["POST"],
+  "/api/guest/list": ["POST"],
+  "/api/guest/wishes": ["POST"],
   "/api/owner/token": ["POST"],
   "/api/owner/token/shown": ["POST"],
   "/api/owner/visibility": ["POST"],

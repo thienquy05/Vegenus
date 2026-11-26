@@ -73,10 +73,10 @@ select is((public.guest_open('token-a') -> 'home') - 'picks',
   '{"lang": "en", "body": "Our note", "lang_alt": "vi", "body_alt": "Lời nhắn", "start_date": "2020-02-29"}',
   'guest_open returns the published Home note and start date');
 select is(public.guest_open('token-a') #> '{home,picks}',
-  '[{"id": "00000000-0000-0000-0000-0000000000c4", "alt": null, "alt_alt": null, "width": 800, "height": 600},
-    {"id": "00000000-0000-0000-0000-0000000000c6", "alt": null, "alt_alt": null, "width": 640, "height": 480},
-    {"id": "00000000-0000-0000-0000-0000000000c1", "alt": "A beach", "alt_alt": "Bãi biển", "width": 1600, "height": 1200}]',
-  'Home picks: every published pick, also of an unpublished memory (Q152), in published order, not the draft-only one');
+  '[{"id": "00000000-0000-0000-0000-0000000000c4", "alt": null, "alt_alt": null, "lang": "en", "lang_alt": null, "width": 800, "height": 600},
+    {"id": "00000000-0000-0000-0000-0000000000c6", "alt": null, "alt_alt": null, "lang": "en", "lang_alt": null, "width": 640, "height": 480},
+    {"id": "00000000-0000-0000-0000-0000000000c1", "alt": "A beach", "alt_alt": "Bãi biển", "lang": "en", "lang_alt": null, "width": 1600, "height": 1200}]',
+  'Home picks: every published pick, also of an unpublished memory (Q152), in published order, not the draft-only one, with the languages of its alt texts');
 select is(public.guest_open('token-a') -> 'sections', '["home", "memories", "together", "guestbook"]', 'guest_open still lists enabled sections only (E5)');
 
 -- guest_list: each row carries its ready media in position order.

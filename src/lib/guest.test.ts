@@ -63,3 +63,34 @@ test("guestMedia throws on a database or storage failure, without the token in t
   rpc.mockResolvedValue({ data: [{ media_id: "m1", bucket: "media-thumb", path: "p" }], error: null });
   await expect(guestMedia("secret-token", ["m1"], "thumb")).rejects.toThrow(/^signing failed$/);
 });
+
+test("guestList and guestWishes pass the cursor to the database and throw without the token on failure", async () => {
+  vi.resetModules();
+  const rpc = vi.fn().mockResolvedValue({ data: [{ id: "i1" }], error: null });
+  vi.doMock("@supabase/supabase-js", () => ({ createClient: () => ({ rpc }) }));
+  const { guestList, guestWishes } = await import("./guest");
+
+  expect(await guestList("tok", "memories", null)).toEqual([{ id: "i1" }]);
+  expect(rpc).toHaveBeenLastCalledWith("guest_list", { token: "tok", section: "memories", after_sort: null, after_id: null });
+  await guestList("tok", "together", { sort: 3, id: "i1" });
+  expect(rpc).toHaveBeenLastCalledWith("guest_list", { token: "tok", section: "together", after_sort: 3, after_id: "i1" });
+  await guestWishes("tok", { created_at: "2026-11-20T10:00:00Z", id: "e1" });
+  expect(rpc).toHaveBeenLastCalledWith("guest_guestbook_list", { token: "tok", after_created_at: "2026-11-20T10:00:00Z", after_id: "e1" });
+
+  rpc.mockResolvedValue({ data: null, error: { message: "boom" } });
+  await expect(guestList("secret-token", "memories", null)).rejects.toThrow(/^guest_list failed$/);
+  await expect(guestWishes("secret-token", null)).rejects.toThrow(/^guest_guestbook_list failed$/);
+});
+
+// Re-review, T3.1b: a section turned off mid-visit is not-available too, not "nothing yet" (token flow §6, E5).
+test("stillOpen: the token opens the page and, when asked, the section is still enabled", async () => {
+  vi.resetModules();
+  const rpc = vi.fn().mockResolvedValue({ data: { sections: ["home", "memories"] }, error: null });
+  vi.doMock("@supabase/supabase-js", () => ({ createClient: () => ({ rpc }) }));
+  const { stillOpen } = await import("./guest");
+  expect(await stillOpen("tok")).toBe(true);
+  expect(await stillOpen("tok", "memories")).toBe(true);
+  expect(await stillOpen("tok", "guestbook")).toBe(false);
+  rpc.mockResolvedValue({ data: null, error: null });
+  expect(await stillOpen("tok", "memories")).toBe(false);
+});

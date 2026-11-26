@@ -1,6 +1,6 @@
 import { requireGuest } from "@/lib/guest";
-import { GuestHome } from "../guest-home";
+import { GuestApp } from "../guest-app";
 
 export default async function GuestHomePage() {
-  return <GuestHome summary={await requireGuest()} />;
+  return <GuestApp summary={await requireGuest()} section="home" />;
 }

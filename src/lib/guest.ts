@@ -3,6 +3,8 @@
 import { createClient } from "@supabase/supabase-js";
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
+import { NextResponse, type NextRequest } from "next/server";
+import { sameOrigin } from "./auth";
 import { signObjects } from "./storage-admin";
 
 export const GUEST_COOKIE = "vegenus_g";
@@ -15,8 +17,11 @@ export const guestCookieOptions = (secure: boolean) =>
 export const isToken = (value: unknown): value is string => typeof value === "string" && /^[A-Za-z0-9_-]{43}$/.test(value);
 
 // What guest_open returns (T3.1a): only published content. copy: {key: {en?, vi?}}; home null when unpublished or off.
-type Lang = "en" | "vi";
-export type GuestMediaRef = { id: string; alt: string | null; alt_alt: string | null; width: number | null; height: number | null };
+export type Lang = "en" | "vi";
+// alt is in the memory's main language (lang), alt_alt in its second one (lang_alt).
+export type GuestMediaRef = {
+  id: string; alt: string | null; alt_alt: string | null; lang: Lang; lang_alt: Lang | null; width: number | null; height: number | null;
+};
 export type GuestSummary = {
   theme: string | null;
   default_lang: Lang;
@@ -76,4 +81,48 @@ export async function guestMedia(token: string, ids: string[], variant: GuestVar
     }
   }
   return urls;
+}
+
+// Guest route handlers (T3.1): same origin and the guest header, else null (403). The token comes from the body when
+// the visit runs from memory (cookies blocked, design 1 §4, E30), which may still send an old cookie it cannot replace,
+// else from the HttpOnly cookie.
+export async function guestRequest(request: NextRequest) {
+  if (!sameOrigin(request) || request.headers.get("x-vegenus-guest") !== "1") return null;
+  const body = await request.json().catch(() => null);
+  const cookie = request.cookies.get(GUEST_COOKIE)?.value;
+  const token = isToken(body?.token) ? (body.token as string) : isToken(cookie) ? cookie : null;
+  return { body, token };
+}
+
+// An empty answer is either nothing published or a token that no longer opens the page (rotated, Private, page gone):
+// only the second is the not-available answer, so an open visit learns that access is gone (token flow §6). A section
+// turned off is the same answer as for its address (E5).
+export async function stillOpen(token: string, section?: string) {
+  const summary = await guestOpen(token);
+  return summary !== null && (!section || summary.sections.includes(section as GuestSummary["sections"][number]));
+}
+
+// Guest answers are never cached: they depend on the token and on what is published now.
+export function guestAnswer(body: object | null, status: number) {
+  const res = body ? NextResponse.json(body, { status }) : new NextResponse(null, { status });
+  res.headers.set("Cache-Control", "no-store");
+  return res;
+}
+
+// A section's published items (design 1 §5 guest_list), 50 per page after the (sort_order, id) cursor. Empty for a
+// dead token, a page that is not live or a disabled section (E5, E6). Throws on a database failure.
+export type ListSection = "memories" | "together";
+export async function guestList(token: string, section: ListSection, after: { sort: number; id: string } | null) {
+  const { data, error } = await anon().rpc("guest_list", { token, section, after_sort: after?.sort ?? null, after_id: after?.id ?? null });
+  if (error || !data) throw new Error("guest_list failed");
+  return data as Record<string, unknown>[];
+}
+
+// Approved wishes, newest first, 50 per page before the (created_at, id) cursor (Q34d: never a pending one).
+export async function guestWishes(token: string, after: { created_at: string; id: string } | null) {
+  const { data, error } = await anon().rpc("guest_guestbook_list", {
+    token, after_created_at: after?.created_at ?? null, after_id: after?.id ?? null,
+  });
+  if (error || !data) throw new Error("guest_guestbook_list failed");
+  return data as Record<string, unknown>[];
 }

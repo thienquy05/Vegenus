@@ -2,12 +2,13 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import type { GuestSummary } from "@/lib/guest";
 import { MIN_TARGET_PX } from "@/lib/ui";
-import { GuestHome } from "./guest-home";
+import { GuestApp } from "./guest-app";
 
 // G-E1: the same screen for no token, a wrong, rotated or private one (design 1 §4, E47).
 const TAP = "Tap the tag or scan the QR code to see this page.";
 
-type View = { summary: GuestSummary; remembered: boolean };
+// token: only for a visit run from memory (cookies blocked), which sends it with every read.
+type View = { summary: GuestSummary; remembered: boolean; token?: string };
 type State = "loading" | "tap" | "retry" | View;
 const dropFragment = () => history.replaceState(null, "", "/g");
 
@@ -37,7 +38,7 @@ async function exchangeOnce(token: string, stale: () => boolean, show: (state: S
   if (home?.type === "opaqueredirect") {
     // Cookies blocked: the fragment is the only way back after a reload, also after a retry (Codex, round 2).
     history.replaceState(null, "", `/g#${token}`);
-    return show({ summary, remembered: false });
+    return show({ summary, remembered: false, token });
   }
   dropFragment();
   if (home?.ok) return location.replace("/g/home");
@@ -111,9 +112,10 @@ export function GuestEntry() {
       </main>
     );
   }
+  // Cookies blocked: the visit runs from memory and every read carries the token (E30).
   return (
-    <GuestHome summary={state.summary}>
-      {!state.remembered && <p role="status">This visit won’t be remembered. Tap the tag again next time.</p>}
-    </GuestHome>
+    <GuestApp summary={state.summary} section="home" token={state.token}>
+      {!state.remembered && <p role="status" lang="en">This visit won’t be remembered. Tap the tag again next time.</p>}
+    </GuestApp>
   );
 }
