@@ -129,6 +129,9 @@ test("complete maps ready 200, too_large 422, incomplete 409, and an unknown or 
   const part = await done("incomplete");
   expect(part.status).toBe(409);
   expect(await part.json()).toEqual({ error: "incomplete" });
+  const wrongType = await done("invalid_file"); // a recorded type the bucket does not allow (Q141)
+  expect(wrongType.status).toBe(409);
+  expect(await wrongType.json()).toEqual({ error: "invalid_file" });
   expect((await done(null)).status).toBe(404);
 });
 
