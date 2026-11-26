@@ -55,5 +55,6 @@ export async function POST(request: NextRequest) {
   if (data === "ready") return answer({ state: "ready" }, 200);
   if (data === "too_large") return answer({ error: "too_large" }, 422);
   if (data === "incomplete") return answer({ error: "incomplete" }, 409);
+  if (data === "invalid_file") return answer({ error: "invalid_file" }, 409); // a type its bucket does not allow (Q141)
   return answer(null, 404); // no reservation: unknown, late, cancelled or not the caller's (E56)
 }
