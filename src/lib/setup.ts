@@ -31,8 +31,9 @@ export const dashState = (page: Page | null) => (!page ? "empty" : page.setup_co
 // Five steps since Q128: 1 language and names, 2 time zone, 3 sections, 4 wording, 5 review.
 export const resumeStep = (page: Page) => (page.label_a === null || page.label_b === null ? 1 : 5);
 
-// The characters owner_save_page refuses in a name, plus the line separators pages_labels_single_line refuses.
-const BAD = /[\x01-\x1f\x7f-\x9f\u061c\u200e\u200f\u2028\u2029\u202a-\u202e\u2066-\u2069]/u;
+// The characters owner_save_page refuses in a name, plus the line separators pages_labels_single_line refuses, and
+// U+0000 and lone surrogates, which Postgres text cannot hold.
+const BAD = /[\x00-\x1f\p{Cs}\x7f-\x9f\u061c\u200e\u200f\u2028\u2029\u202a-\u202e\u2066-\u2069]/u;
 
 export function checkName(raw: string) {
   const value = raw.trim().normalize("NFC");

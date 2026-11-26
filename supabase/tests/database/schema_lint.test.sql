@@ -49,7 +49,7 @@ select is((
 select is((
   select array_agg(p.proname::text order by p.proname) from pg_proc p
   where p.pronamespace = 'public'::regnamespace and has_function_privilege('authenticated', p.oid, 'execute')
-), array['owner_copy_accept_defaults', 'owner_copy_drafts', 'owner_home_get', 'owner_home_photos', 'owner_home_save', 'owner_item_delete', 'owner_item_get', 'owner_item_save', 'owner_item_set_status', 'owner_items_list', 'owner_media_delete', 'owner_media_readable', 'owner_page', 'owner_rotate_token', 'owner_save_page', 'owner_save_sections', 'owner_set_visibility', 'owner_token_shown', 'owner_upload_admitted', 'owner_upload_begin', 'owner_upload_cancel', 'owner_upload_complete', 'owner_usage'],
+), array['owner_copy_accept_defaults', 'owner_copy_drafts', 'owner_home_get', 'owner_home_photos', 'owner_home_save', 'owner_item_delete', 'owner_item_get', 'owner_item_save', 'owner_item_set_status', 'owner_items_list', 'owner_media_delete', 'owner_media_readable', 'owner_page', 'owner_rotate_token', 'owner_save_page', 'owner_save_sections', 'owner_save_settings', 'owner_set_visibility', 'owner_token_shown', 'owner_upload_admitted', 'owner_upload_begin', 'owner_upload_cancel', 'owner_upload_complete', 'owner_usage'],
   'authenticated executes only the owner functions (account_* come in T3.6)');
 
 select is((

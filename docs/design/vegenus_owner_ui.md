@@ -517,7 +517,7 @@ Copy approved by the owner on 2026-11-21 (EN and VI as drawn; [DATE] [TIME] in t
 | `dashboard.shareCreated` | Guest link created [DATE] | Liên kết cho khách đã tạo ngày [DATE] |
 | `dashboard.shareUnshown` | New link: display not confirmed. Open Share to rotate again. | Liên kết mới: chưa xác nhận hiển thị. Mở Chia sẻ để đổi liên kết lần nữa. |
 
-### O19 Page settings and the O2 Settings card for T2.8 (2026-11-22, boards drawn; awaiting owner approval, Q115)
+### O19 Page settings and the O2 Settings card for T2.8 (2026-11-22, boards drawn; approved by the owner's merge of PR #75 on 2026-11-25, Q115)
 
 Boards: OwnerSettings, OwnerSettingsTab and OwnerSettingsLap (O19, 58 review states each), OwnerDashSettings, OwnerDashSettingsTab and OwnerDashSettingsLap (the approved O2 boards plus a Settings card, 50 review states each) on canvas page 10 "Owner area" (Theme Preview version 123, with a "settings" note). Codex lead design, Claude review and render; working copies, brief, checks (with the full build contract and focus table) and reviews in the git-ignored `.design/settings/`. Owner decisions (2026-11-22, Q115): one Settings view opened from O2 with one panel per group, each saved on its own and live once its save succeeds; the suggested theme is included, A-D side by side plus No suggestion.
 

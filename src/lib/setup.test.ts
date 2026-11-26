@@ -26,9 +26,11 @@ test("a name is trimmed and NFC, 1 to 40 code points, with no control or bidirec
   expect(checkName("x".repeat(41)).error).toBe("length");
   // 40 code points, more UTF-16 units: an emoji counts once.
   expect(checkName(`${"x".repeat(39)}${String.fromCodePoint(0x1f337)}`).error).toBeNull();
-  for (const code of [0x01, 0x1f, 0x7f, 0x9f, 0x061c, 0x200e, 0x200f, 0x202a, 0x202e, 0x2066, 0x2069, 0x2028, 0x2029]) {
+  for (const code of [0x00, 0x01, 0x1f, 0x7f, 0x9f, 0x061c, 0x200e, 0x200f, 0x202a, 0x202e, 0x2066, 0x2069, 0x2028, 0x2029]) {
     expect(checkName(`Partner${String.fromCodePoint(code)}A`).error, code.toString(16)).toBe("characters");
   }
+  // A lone surrogate is not text Postgres can store.
+  expect(checkName("Partner\ud800A").error).toBe("characters");
 });
 
 test("the browser language proposes vi or else en", () => {
