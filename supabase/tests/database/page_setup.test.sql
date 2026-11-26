@@ -9,6 +9,8 @@ insert into auth.users (id, email) values
   ('00000000-0000-0000-0000-0000000000f2', 'coeditor@example.test'),
   ('00000000-0000-0000-0000-0000000000f6', 'new-owner@example.test'),
   ('00000000-0000-0000-0000-0000000000f7', 'other-new-owner@example.test');
+-- Page creation needs the admin-set mark (security gate, Phase 2; page_creator.test.sql).
+update auth.users set raw_app_meta_data = '{"page_creator": true}' where id in ('00000000-0000-0000-0000-0000000000f1', '00000000-0000-0000-0000-0000000000f2', '00000000-0000-0000-0000-0000000000f6', '00000000-0000-0000-0000-0000000000f7');
 -- A: f1's live page with f2 as the (reserved) co-editor. C: a page with no owner yet.
 insert into public.pages (id, theme, default_lang, visibility, timezone, copy_published_at) values
   ('00000000-0000-0000-0000-00000000000a', 'a_dreamy', 'en', 'token_only', 'UTC', now()),
