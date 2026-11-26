@@ -12,6 +12,8 @@ const GUEST_POST = { "content-type": "application/json", "x-vegenus-guest": "1",
 const randomIp = () => `203.0.113.${Math.floor(Math.random() * 250) + 1}`;
 test.beforeEach(async ({ page }) => {
   await page.setExtraHTTPHeaders({ "x-forwarded-for": randomIp() });
+  // A returning guest: a saved theme, so the first-visit theme prompt (guest-views.spec.ts) stays closed.
+  await page.addInitScript(() => localStorage.getItem("vegenus_prefs") ?? localStorage.setItem("vegenus_prefs", '{"theme":"a_dreamy"}'));
 });
 
 // Which page opened: page A enables Memories, page B does not (its Zodiac section is not built yet).

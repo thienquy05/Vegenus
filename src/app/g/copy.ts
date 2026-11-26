@@ -25,6 +25,16 @@ export const COPY = {
   "settings.right": ["Top right", "Trên phải"],
   "settings.saved": ["Saved on this device", "Lưu trên thiết bị này"],
   "settings.visitOnly": ["Applies to this visit only", "Chỉ áp dụng trong lần truy cập này"],
+  "theme.title": ["Choose a theme", "Chọn giao diện"],
+  "theme.legend": ["Theme", "Giao diện"],
+  "theme.help": ["You can change your theme anytime in Settings.", "Bạn có thể đổi giao diện bất cứ lúc nào trong phần Cài đặt."],
+  "theme.suggested": ["Suggested", "Được gợi ý"],
+  "theme.skip": ["Not now", "Để sau"],
+  "theme.continue": ["Continue", "Tiếp tục"],
+  "theme.a_dreamy": ["A Dreamy", "A Mơ mộng"],
+  "theme.b_cosmic": ["B Cosmic", "B Vũ trụ"],
+  "theme.c_cozy": ["C Cozy", "C Ấm áp"],
+  "theme.d_elegant": ["D Elegant", "D Thanh lịch"],
 } as const;
 export type CopyKey = keyof typeof COPY;
 export type Lang = "en" | "vi";

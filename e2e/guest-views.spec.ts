@@ -4,7 +4,7 @@ import postgres from "postgres";
 import { checkSizes } from "./owner-checks";
 
 // T3.1b guest views against the local stack: the token page of e2e/global-setup.ts (Home and Memories enabled, no Home
-// item) opens G1, the menu reaches G2 with a published memory, a disabled section by URL is not found (E5), and every
+// item) opens G1 under the first-visit theme prompt, the menu reaches G2 with a published memory, a disabled section by URL is not found (E5), and every
 // theme passes axe at phone, tablet and laptop and reflows at 320 px with 200 % text. Each browser project uses its
 // own memory id. Placeholder data only.
 const PAGE = "00000000-0000-0000-0000-0000000000e2";
@@ -25,7 +25,15 @@ test("G1, the menu and G2 for a token guest, in every theme and size", async ({ 
 
     await page.goto(`/g#${process.env.E2E_GUEST_TOKEN}`);
     await expect(page).toHaveURL("/g/home");
+    // First visit (Q128): the theme prompt over Home, checked at every size, then skipped.
+    const dialog = page.getByRole("dialog", { name: "Choose a theme" });
+    await expect(dialog).toBeVisible();
+    await expect(dialog.getByRole("radio", { checked: true })).toBeFocused();
+    await checkSizes(page, "theme prompt");
+    await dialog.getByRole("button", { name: "Not now" }).click();
+    await expect(dialog).toBeHidden();
     await expect(page.getByRole("heading", { level: 1 })).toHaveText("Partner A & Partner B");
+    await expect(page.getByRole("heading", { level: 1 })).toBeFocused();
 
     // E5: the page enables no wishes, so their address is not found.
     expect((await page.request.get("/g/wishes", { maxRedirects: 0 })).status()).toBe(404);

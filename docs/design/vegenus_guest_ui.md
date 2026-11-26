@@ -173,6 +173,7 @@ Use the current theme’s surface and edge treatment, with a still background. A
 | Group | English / Vietnamese | Behavior |
 |---|---|---|
 | Language | “Language / Ngôn ngữ”; “English”; “Tiếng Việt” | Immediate UI update, preserve focus and draft. Q67: the only guest language-switch location. |
+| Theme | “Theme / Giao diện”; the shipped names “A Dreamy / A Mơ mộng”, “B Cosmic / B Vũ trụ”, “C Cozy / C Ấm áp”, “D Elegant / D Thanh lịch”; badge “Suggested / Được gợi ý” | Q128, Q154: four native radio cards, each in its own theme's ground, text and display font; applies and saves at once; the owner's suggestion keeps its badge. The same cards form the first-visit prompt “Choose a theme / Chọn giao diện” over Home, with “Not now / Để sau” and “Continue / Tiếp tục” and the help line “You can change your theme anytime in Settings. / Bạn có thể đổi giao diện bất cứ lúc nào trong phần Cài đặt.” |
 | Mode | “View / Chế độ xem”; “Page / Trang”, “Static / Tĩnh”, “World / Thế giới” | Show World only once available. Keep design 5’s capability and downgrade rules. |
 | Motion | “Reduce motion / Giảm chuyển động” | Starts from system preference unless explicitly set. G8 choice overrides system; effective On forces Static. |
 | Preference origin | “Using device setting / Theo cài đặt thiết bị”; “Use device setting / Dùng cài đặt thiết bị” | Proposed reset clears the explicit motion override without changing intro history. |

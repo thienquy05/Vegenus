@@ -310,6 +310,75 @@
   font: inherit;
   cursor: pointer;
 }
+.primary {
+  min-height: 48px;
+  min-width: 44px;
+  padding: 0 var(--space-4);
+  border-radius: var(--radius-pill);
+  border: 1px solid var(--accent);
+  background: var(--accent);
+  color: var(--text-on-accent);
+  font: inherit;
+  cursor: pointer;
+}
+.actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: var(--space-2);
+  margin-top: var(--space-4);
+}
+/* Theme cards (Q128): each label carries its own data-theme, so it shows that theme's ground, text and display font;
+   the native radio and a check mark mark the choice, never colour alone. */
+.themeCards {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 9rem), 1fr));
+  gap: var(--space-2);
+}
+.themeCard {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-2);
+  min-height: 56px;
+  padding: var(--space-2) var(--space-3);
+  border-radius: var(--radius-md);
+  border: 1px solid var(--surface-border);
+  background-color: var(--bg); /* C and D have no ground image */
+  background-image: var(--bg-image);
+  color: var(--text);
+  cursor: pointer;
+}
+.themeCard input {
+  width: 22px;
+  height: 22px;
+  margin: 0;
+  accent-color: var(--accent);
+}
+.themeCard:has(input:checked) {
+  border: 2px solid var(--accent);
+}
+.themeCard:has(input:checked)::after {
+  content: "✓" / ""; /* visual only: the native checked state names the choice */
+  margin-left: auto;
+}
+.themeCard:has(input:focus-visible) {
+  outline: 2px dashed var(--text);
+  outline-offset: 2px;
+}
+.themeName {
+  font-family: var(--font-display);
+}
+.badge {
+  padding: 0 var(--space-2);
+  border: 1px solid currentColor;
+  border-radius: var(--radius-pill);
+  font-size: 1rem; /* new copy is at least 16 px (theme boards) */
+}
+.note16 {
+  font-size: 1rem;
+  color: var(--text-muted);
+}
 .small {
   font-size: var(--fs-sm);
   color: var(--text-muted);

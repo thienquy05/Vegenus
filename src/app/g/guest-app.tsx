@@ -10,7 +10,9 @@ import "../../../themes/c_cozy/tokens.css";
 import "../../../themes/d_elegant/tokens.css";
 
 // The guest shell (T3.1b): theme, language, the circular menu (theme system §2), the sections built so far and the
-// G8 Settings sheet (guest UI §9). The guest's choices live on this device only (`vegenus_prefs`).
+// G8 Settings sheet (guest UI §9) and the first-visit theme prompt (Q128). The guest's choices live on this device only
+// (`vegenus_prefs`).
+// shortcut: the theme changes without the boards' cross-fade (--dur-fast); it comes with the motion work.
 // ponytail: one icon set for all four themes; the per-theme icon families (theme system §2) come with the scene work.
 export type Section = "home" | "memories" | "guestbook";
 const BUILT: Section[] = ["home", "memories", "guestbook"]; // menu order; Together (T3.1c) and Zodiac (T3.9) later
@@ -77,6 +79,9 @@ export function GuestApp({ summary, section: initial, token, children }: { summa
   const dialog = useRef<HTMLDialogElement>(null);
   const focusHeading = useRef(false);
   const wasOpen = useRef(false);
+  const promptDialog = useRef<HTMLDialogElement>(null);
+  const [preview, setPreview] = useState<string | null>(null); // the prompt's choice before Continue
+  const [picked, setPicked] = useState(false); // a choice was made in the prompt: announce if it cannot be kept
 
   // localStorage exists only in the browser: the server renders an empty shell and nothing themed flashes; until
   // the guest changes something, the saved choices are read as they are.
@@ -86,12 +91,31 @@ export function GuestApp({ summary, section: initial, token, children }: { summa
   const ready = prefs !== null;
 
   const lang: Lang = prefs?.lang ?? summary.default_lang;
-  const theme = [prefs?.theme, summary.theme].find((x) => x && THEMES.includes(x)) ?? "a_dreamy";
+  const suggested = summary.theme && THEMES.includes(summary.theme) ? summary.theme : "a_dreamy";
+  // Q128: no theme saved on this device (or for this visit) yet means the first-visit prompt, over Home.
+  const prompting = prefs !== null && !prefs.theme;
+  const theme = (prompting && preview) || prefs?.theme || suggested;
   const reduce = prefs?.motion ? prefs.motion === "reduce" : systemReduce;
   const corner = prefs?.corner ?? "left";
   const t = (key: CopyKey, vars?: Record<string, string | number>) => say(key, lang, vars);
   const online = useOnline();
   const onGone = useCallback(() => setGone(true), []);
+  // The prompt opens as a native modal on the checked card; Continue, Not now, Close and Escape all end on Home's heading.
+  const promptWasOpen = useRef(false);
+  useEffect(() => {
+    const d = promptDialog.current;
+    if (prompting && d && !d.open) {
+      d.showModal();
+      d.querySelector<HTMLInputElement>("input[type=radio]:checked")?.focus();
+    }
+    if (!prompting && promptWasOpen.current) document.querySelector<HTMLElement>("main h1")?.focus();
+    promptWasOpen.current = prompting;
+  }, [prompting]);
+  const finishPrompt = (chosen: string) => {
+    setPreview(null);
+    change({ theme: chosen });
+  };
+
   // The access-gone notice takes focus, so it is spoken and focus does not fall to the page.
   useEffect(() => {
     if (gone) document.querySelector<HTMLElement>("main h1")?.focus();
@@ -176,6 +200,21 @@ export function GuestApp({ summary, section: initial, token, children }: { summa
   }, [settingsOpen]);
 
   if (!prefs) return <div className={s.shell} aria-busy="true" />;
+  // The four themes as native radios, each card in its own tokens; the owner's suggestion carries a text badge.
+  const themeCards = (name: string, checked: string, pick: (id: string) => void) => (
+    <fieldset className={s.group}>
+      <legend>{t("theme.legend")}</legend>
+      <div className={s.themeCards}>
+        {THEMES.map((id) => (
+          <label key={id} className={s.themeCard} data-theme={id}>
+            <input type="radio" name={name} value={id} checked={checked === id} onChange={() => pick(id)} />
+            <span className={s.themeName}>{t(`theme.${id}` as CopyKey)}</span>
+            {id === summary.theme && <span className={s.badge}>{t("theme.suggested")}</span>}
+          </label>
+        ))}
+      </div>
+    </fieldset>
+  );
   // Access gone mid-visit (token rotated, page Private or the section turned off; token flow §6): what was shown
   // goes, and one neutral line stays, the same for every cause.
   if (gone)
@@ -231,7 +270,7 @@ export function GuestApp({ summary, section: initial, token, children }: { summa
         type="button"
         className={s.menuButton}
         data-corner={corner}
-        hidden={settingsOpen}
+        hidden={settingsOpen || prompting}
         aria-expanded={menuOpen}
         aria-controls="guest-nav"
         aria-label={t(menuOpen ? "menu.close" : "menu.open")}
@@ -282,6 +321,7 @@ export function GuestApp({ summary, section: initial, token, children }: { summa
             <p className={s.small}>{t("settings.usingDevice")}</p>
           )}
         </div>
+        {themeCards("g8-theme", theme, (id) => change({ theme: id }))}
         <fieldset className={s.group}>
           <legend>{t("settings.corner")}</legend>
           {(["left", "right"] as const).map((c) => (
@@ -295,6 +335,40 @@ export function GuestApp({ summary, section: initial, token, children }: { summa
           {t(stored ? "settings.saved" : "settings.visitOnly")}
         </p>
       </dialog>
+      {prompting && (
+        <dialog
+          ref={promptDialog}
+          className={s.sheet}
+          aria-labelledby="theme-title"
+          onCancel={(event) => {
+            event.preventDefault();
+            finishPrompt(suggested);
+          }}
+        >
+          <div className={s.sheetHead}>
+            <h2 id="theme-title">{t("theme.title")}</h2>
+            <button type="button" className={s.secondary} onClick={() => finishPrompt(suggested)}>
+              {t("settings.close")}
+            </button>
+          </div>
+          {themeCards("prompt-theme", theme, (id) => {
+            setPreview(id);
+            setPicked(true);
+          })}
+          <p className={s.note16}>{t("theme.help")}</p>
+          <p className={s.note16} role="status">
+            {picked && !stored ? t("settings.visitOnly") : ""}
+          </p>
+          <div className={s.actions}>
+            <button type="button" className={s.secondary} onClick={() => finishPrompt(suggested)}>
+              {t("theme.skip")}
+            </button>
+            <button type="button" className={s.primary} onClick={() => finishPrompt(theme)}>
+              {t("theme.continue")}
+            </button>
+          </div>
+        </dialog>
+      )}
     </div>
   );
 }

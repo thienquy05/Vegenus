@@ -66,7 +66,18 @@ const to = (url: string) => sent.filter((c) => c.url === url);
 
 let root: Root | null = null;
 let host: HTMLElement;
-function mount(props: Partial<Parameters<typeof GuestApp>[0]> = {}) {
+// Note: a saved theme wins over the suggestion, so a test that remounts with another suggestion clears the key first.
+// A returning guest unless the test asks for a first visit: a saved theme means no theme prompt (Q128). The real
+// setItem, so tests that make storage fail still start as returning guests.
+const realSetItem = Storage.prototype.setItem;
+function mount(props: Partial<Parameters<typeof GuestApp>[0]> & { firstVisit?: boolean } = {}) {
+  const { firstVisit, ...rest } = props;
+  if (!firstVisit) {
+    const saved = JSON.parse(localStorage.getItem("vegenus_prefs") ?? "{}");
+    const theme = saved.theme ?? (rest.summary === undefined ? SUMMARY.theme : rest.summary.theme) ?? "a_dreamy";
+    realSetItem.call(localStorage, "vegenus_prefs", JSON.stringify({ theme, ...saved }));
+  }
+  props = rest;
   host = document.createElement("div");
   document.body.append(host);
   root = createRoot(host);
@@ -379,4 +390,137 @@ test("G8 says from the start when this device cannot store settings; unknown sav
   await userEvent.click(menu());
   await userEvent.click(item("Settings"));
   expect(host.querySelector("dialog[open]")?.textContent).toContain("Applies to this visit only");
+});
+
+// Q128 theme choice (owner, 2026-11-26: the prompt wears the suggested theme, over Home, with "Not now"; boards in
+// .design/guest-theme). Continue saves the chosen theme; Not now, Close and Escape save the suggestion, else A.
+const prompt = () => host.querySelector<HTMLDialogElement>("dialog[open]");
+const radio = (id: string) => host.querySelector<HTMLInputElement>(`dialog[open] input[value="${id}"]`)!;
+const saved = () => JSON.parse(localStorage.getItem("vegenus_prefs") ?? "{}");
+const button = (label: string) => [...(prompt()?.querySelectorAll("button") ?? [])].find((b) => b.textContent === label)!;
+
+test("first visit: the theme prompt over Home, the suggestion checked, focused and badged, the menu hidden", async () => {
+  serve();
+  mount({ firstVisit: true });
+  await expect.poll(() => prompt()?.querySelector("h2")?.textContent).toBe("Choose a theme");
+  expect(heading()?.textContent).toBe("[PARTNER_A] & [PARTNER_B]"); // Home behind it
+  expect(document.documentElement.dataset.theme).toBe("c_cozy");
+  expect(prompt()!.querySelector("legend")?.textContent).toBe("Theme");
+  expect([...prompt()!.querySelectorAll<HTMLInputElement>("input[type=radio]")].map((r) => r.value)).toEqual(["a_dreamy", "b_cosmic", "c_cozy", "d_elegant"]);
+  expect(radio("c_cozy").checked).toBe(true);
+  expect(document.activeElement).toBe(radio("c_cozy"));
+  expect(radio("c_cozy").closest("label")?.textContent).toContain("Suggested");
+  expect(radio("a_dreamy").closest("label")?.textContent).not.toContain("Suggested");
+  expect(radio("b_cosmic").closest("label")?.textContent).toContain("B Cosmic");
+  expect(radio("d_elegant").closest("label")?.getAttribute("data-theme")).toBe("d_elegant"); // each card in its own look
+  expect(menu().hidden).toBe(true);
+});
+
+test("choosing previews at once; Continue saves it and focus goes to Home's heading", async () => {
+  serve();
+  mount({ firstVisit: true });
+  await expect.poll(() => prompt()).toBeTruthy();
+  await userEvent.click(radio("b_cosmic"));
+  expect(document.documentElement.dataset.theme).toBe("b_cosmic");
+  expect(saved().theme).toBeUndefined();
+  await userEvent.click(button("Continue"));
+  expect(prompt()).toBeNull();
+  expect(saved().theme).toBe("b_cosmic");
+  await expect.poll(() => document.activeElement).toBe(heading());
+  expect(menu().hidden).toBe(false);
+});
+
+test("Not now and Escape keep the suggestion (else A) and do not ask again", async () => {
+  serve();
+  mount({ firstVisit: true });
+  await expect.poll(() => prompt()).toBeTruthy();
+  await userEvent.click(radio("d_elegant"));
+  await userEvent.click(button("Not now"));
+  expect(prompt()).toBeNull();
+  expect(document.documentElement.dataset.theme).toBe("c_cozy");
+  expect(saved().theme).toBe("c_cozy");
+  await expect.poll(() => document.activeElement).toBe(heading());
+  root?.unmount();
+  host.remove();
+  mount({ firstVisit: true });
+  await expect.poll(() => heading()).toBeTruthy();
+  expect(prompt()).toBeNull();
+
+  root?.unmount();
+  host.remove();
+  localStorage.clear();
+  mount({ firstVisit: true, summary: { ...SUMMARY, theme: null } });
+  await expect.poll(() => prompt()).toBeTruthy();
+  expect(radio("a_dreamy").checked).toBe(true);
+  expect(prompt()!.textContent).not.toContain("Suggested");
+  await userEvent.keyboard("{Escape}");
+  expect(prompt()).toBeNull();
+  expect(saved().theme).toBe("a_dreamy");
+});
+
+test("the prompt in Vietnamese, and with storage blocked it still applies and says so", async () => {
+  serve();
+  vi.spyOn(Storage.prototype, "setItem").mockImplementation(() => {
+    throw new DOMException("blocked", "SecurityError");
+  });
+  mount({ firstVisit: true, summary: { ...SUMMARY, default_lang: "vi" } });
+  await expect.poll(() => prompt()).toBeTruthy();
+  expect(prompt()!.textContent).toContain("Chọn giao diện");
+  expect(radio("b_cosmic").closest("label")?.textContent).toContain("B Vũ trụ");
+  // The live region is there from the start and speaks when a choice cannot be kept (polite announcement on select).
+  const status = prompt()!.querySelector('[role="status"]')!;
+  expect(status.textContent).toBe("");
+  await userEvent.click(radio("b_cosmic"));
+  expect(status.textContent).toBe("Chỉ áp dụng trong lần truy cập này");
+  await userEvent.click(button("Tiếp tục"));
+  expect(document.documentElement.dataset.theme).toBe("b_cosmic");
+});
+
+test("G8: the Theme group follows Language, applies and saves at once, and the suggestion keeps its badge", async () => {
+  serve();
+  mount();
+  await expect.poll(() => menu()).toBeTruthy();
+  await userEvent.click(menu());
+  await userEvent.click(item("Settings"));
+  expect([...prompt()!.querySelectorAll("legend")].map((l) => l.textContent)).toEqual(["Language", "Theme", "Menu corner"]);
+  expect(radio("c_cozy").checked).toBe(true);
+  await userEvent.click(radio("a_dreamy"));
+  expect(document.documentElement.dataset.theme).toBe("a_dreamy");
+  expect(saved().theme).toBe("a_dreamy");
+  expect(radio("c_cozy").closest("label")?.textContent).toContain("Suggested");
+});
+
+// Theme-choice review: a saved choice beats a new suggestion, an unknown saved theme asks again, Close is a skip,
+// new copy is at least 16 px, and the check mark is visual only.
+test("a saved theme beats a later suggestion; an unknown saved theme asks again; Close keeps the suggestion", async () => {
+  serve();
+  localStorage.setItem("vegenus_prefs", JSON.stringify({ theme: "d_elegant" }));
+  mount({ firstVisit: true });
+  await expect.poll(() => heading()).toBeTruthy();
+  expect(prompt()).toBeNull();
+  expect(document.documentElement.dataset.theme).toBe("d_elegant");
+  root?.unmount();
+  host.remove();
+  localStorage.setItem("vegenus_prefs", JSON.stringify({ theme: "bogus" }));
+  mount({ firstVisit: true });
+  await expect.poll(() => prompt()).toBeTruthy();
+  await userEvent.click(radio("a_dreamy"));
+  await userEvent.click(button("Close"));
+  expect(prompt()).toBeNull();
+  expect(saved().theme).toBe("c_cozy");
+});
+
+test("the prompt's badge, help and status text are at least 16 px; the check mark adds nothing to the name", async () => {
+  serve();
+  mount({ firstVisit: true });
+  await expect.poll(() => prompt()).toBeTruthy();
+  const size = (el: Element) => parseFloat(getComputedStyle(el).fontSize);
+  const badge = radio("c_cozy").closest("label")!.querySelector("span:last-of-type")!;
+  expect(badge.textContent).toBe("Suggested");
+  expect(size(badge)).toBeGreaterThanOrEqual(16);
+  const help = [...prompt()!.querySelectorAll("p")].find((p) => p.textContent?.startsWith("You can change"))!;
+  expect(size(help)).toBeGreaterThanOrEqual(16);
+  expect(size(prompt()!.querySelector('[role="status"]')!)).toBeGreaterThanOrEqual(16);
+  const mark = getComputedStyle(radio("c_cozy").closest("label")!, "::after").content;
+  expect(mark).toMatch(/^"✓"\s*\/\s*""$/);
 });
