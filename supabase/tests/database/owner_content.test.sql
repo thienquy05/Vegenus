@@ -4,7 +4,7 @@
 -- removing the second language drops its alt text; the owner may read the files of their own page's media, so the
 -- item route can sign preview URLs with the owner's session. Placeholder data only.
 begin;
-select plan(31);
+select plan(32);
 
 insert into auth.users (id, email) values
   ('00000000-0000-0000-0000-0000000000e1', 'owner@example.test'),
@@ -149,8 +149,9 @@ set local role authenticated;
 select is(pg_temp.visible('p/a1/c1/thumb') + pg_temp.visible('p/a1/c2/poster'), 2::bigint, 'the owner sees their media files');
 select is(pg_temp.visible('p/a3/c9/thumb') + pg_temp.visible('p/a1/stray/thumb'), 0::bigint,
   'but not another page''s, nor a file no media of theirs names');
-select is(pg_temp.visible('p/a1/c5/thumb') + pg_temp.visible('p/a1/c6/thumb'), 0::bigint,
-  'nor an upload in progress, nor the file of deleted media still waiting for the worker');
+select is(pg_temp.visible('p/a1/c6/thumb'), 0::bigint, 'nor the file of deleted media still waiting for the worker');
+select is(pg_temp.visible('p/a1/c5/thumb'), 1::bigint,
+  'but a file of their own upload in progress, so Complete can check its bytes (security gate, Phase 2)');
 reset role;
 select pg_temp.act_as('00000000-0000-0000-0000-0000000000e2');
 set local role authenticated;

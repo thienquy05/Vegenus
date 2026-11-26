@@ -8,7 +8,10 @@ import { beforeEach, expect, test, vi } from "vitest";
 const getUser = vi.fn();
 const rpc = vi.fn();
 const createSignedUploadUrl = vi.fn();
-const from = vi.fn(() => ({ createSignedUploadUrl }));
+const createSignedUrl = vi.fn();
+const from = vi.fn(() => ({ createSignedUploadUrl, createSignedUrl }));
+const fetchMock = vi.fn();
+vi.stubGlobal("fetch", fetchMock);
 vi.mock("@/lib/auth", async (original) => ({
   ...(await original<typeof import("@/lib/auth")>()),
   requestAuth: vi.fn(async () => ({ auth: { getUser }, rpc, storage: { from } })),
@@ -44,7 +47,25 @@ beforeEach(() => {
   createSignedUploadUrl
     .mockReset()
     .mockImplementation(async (path: string) => ({ data: { path, token: `token-${path}`, signedUrl: `https://storage.example/${path}?token=token-${path}` }, error: null }));
+  createSignedUrl.mockReset().mockImplementation(async (path: string) => ({ data: { signedUrl: `https://storage.example/read/${path}` }, error: null }));
+  fetchMock.mockReset().mockImplementation(async () => new Response(WEBP));
 });
+
+// Complete reads every stored file before the database marks the media ready (security gate, Phase 2): a minimal
+// browser-made WebP passes the content check; zero bytes declared as WebP do not.
+const WEBP = new Uint8Array([82, 73, 70, 70, 22, 0, 0, 0, 87, 69, 66, 80, 86, 80, 56, 32, 10, 0, 0, 0, ...new Array(10).fill(0)]);
+const FILES = [
+  { bucket: "media-thumb", path: `pages/p/media/${MEDIA}/thumb`, mime: "image/webp", present: true },
+  { bucket: "media-video", path: `pages/p/media/${MEDIA}/video`, mime: "video/mp4", present: true },
+];
+const MP4 = new Uint8Array([0, 0, 0, 24, 102, 116, 121, 112, 105, 115, 111, 109, ...new Array(52).fill(0)]);
+const answers = (files: unknown, state: string | null = "ready") =>
+  rpc.mockImplementation(async (fn: string) => ({
+    data: fn === "owner_upload_files" ? files : fn === "owner_upload_complete" ? state : true,
+    error: null,
+  }));
+const completeCall = () => call(complete, "upload/complete", { media_id: MEDIA, width: 1600, height: 1200, duration_ms: null });
+const called = (fn: string) => rpc.mock.calls.some(([name]) => name === fn);
 
 test("begin admits the files and returns one upload token and URL per file, minted with upsert off", async () => {
   const res = await call(begin, "upload/begin", { item_id: ITEM, kind: "photo", variants: ["thumb", "display"] });
@@ -97,7 +118,7 @@ test("if a token cannot be minted, begin cancels the upload so its reservation i
 });
 
 test("complete maps ready 200, too_large 422, incomplete 409, and an unknown or late upload 404", async () => {
-  const done = (state: string | null) => (rpc.mockResolvedValue({ data: state, error: null }), call(complete, "upload/complete", { media_id: MEDIA, width: 1600, height: 1200, duration_ms: null }));
+  const done = (state: string | null) => (answers(FILES.slice(0, 1), state), completeCall());
   const ready = await done("ready");
   expect(ready.status).toBe(200);
   expect(await ready.json()).toEqual({ state: "ready" });
@@ -109,6 +130,50 @@ test("complete maps ready 200, too_large 422, incomplete 409, and an unknown or 
   expect(part.status).toBe(409);
   expect(await part.json()).toEqual({ error: "incomplete" });
   expect((await done(null)).status).toBe(404);
+});
+
+test("complete reads each stored file, a photo whole and video only its first bytes, before marking it ready", async () => {
+  answers(FILES);
+  fetchMock.mockImplementation(async (url: string) => new Response(url.endsWith("/video") ? MP4 : WEBP));
+  expect((await completeCall()).status).toBe(200);
+  expect(createSignedUrl.mock.calls.map(([path]) => path)).toEqual(FILES.map((f) => f.path));
+  const range = (n: number) => new Headers(fetchMock.mock.calls[n][1]?.headers).get("range");
+  expect([range(0), range(1)]).toEqual([null, "bytes=0-63"]);
+  expect(fetchMock.mock.calls.every(([, init]) => init?.signal instanceof AbortSignal)).toBe(true); // a read cannot hang
+  expect(called("owner_upload_complete")).toBe(true);
+});
+
+test("a file whose bytes fail the check cancels the upload and answers 409 invalid_file", async () => {
+  answers(FILES.slice(0, 1));
+  fetchMock.mockImplementation(async () => new Response(new Uint8Array(5000)));
+  const res = await completeCall();
+  expect(res.status).toBe(409);
+  expect(await res.json()).toEqual({ error: "invalid_file" });
+  expect(rpc).toHaveBeenCalledWith("owner_upload_cancel", { media_id: MEDIA });
+  expect(called("owner_upload_complete")).toBe(false);
+});
+
+test("a file not written yet answers incomplete before any read, so nothing can land after the check", async () => {
+  answers([FILES[0], { ...FILES[1], mime: null, present: false }]);
+  const res = await completeCall();
+  expect(res.status).toBe(409);
+  expect(await res.json()).toEqual({ error: "incomplete" });
+  expect(fetchMock).not.toHaveBeenCalled();
+  expect(called("owner_upload_complete")).toBe(false);
+});
+
+test("no reservation answers 404, and a failed storage read answers 503 without completing or cancelling", async () => {
+  answers(null);
+  expect((await completeCall()).status).toBe(404);
+  expect(called("owner_upload_complete")).toBe(false);
+  const broken = () => fetchMock.mockResolvedValue({ ok: true, arrayBuffer: () => Promise.reject(new Error("reset")) });
+  for (const fail of [() => fetchMock.mockResolvedValue(new Response(null, { status: 500 })), broken, () => createSignedUrl.mockResolvedValue({ data: null, error: { message: "not found" } })]) {
+    rpc.mockReset();
+    answers(FILES.slice(0, 1));
+    fail();
+    expect((await completeCall()).status).toBe(503);
+    expect(called("owner_upload_complete") || called("owner_upload_cancel")).toBe(false);
+  }
 });
 
 test("complete refuses malformed dimensions before the database", async () => {

@@ -642,6 +642,22 @@ test("Complete refusing an incomplete upload offers a restart; refusing a size c
   expect(posted("/api/owner/upload/cancel").map((c) => c.body)).toEqual([{ media_id: M1 }, { media_id: M2 }]);
 });
 
+test("Complete refusing the file's content says it cannot be read, offers no retry, and forgets the cancelled upload", async () => {
+  serve({
+    "/api/owner/item/get": [ok(item())],
+    "/api/owner/page": [ok(page())],
+    "/api/owner/upload/begin": [ok(begun(M1))],
+    "/api/owner/upload/complete": [{ status: 409, body: { error: "invalid_file" } }],
+  });
+  screen();
+  await ready();
+  await userEvent.upload(picker(), jpg("photo-01.jpg"));
+  await userEvent.click(button("Start uploads"));
+  await expect.poll(() => row("photo-01.jpg").textContent).toContain("Can’t read this file.");
+  expect(row("photo-01.jpg").querySelectorAll("button")).not.toContain(button("Try again", row("photo-01.jpg")));
+  expect(posted("/api/owner/upload/cancel")).toEqual([]); // the server already cancelled it
+});
+
 test("access lost during an upload offers Log out and stays blocked after reconnecting", async () => {
   serve({ "/api/owner/item/get": [ok(item())], "/api/owner/page": [ok(page())], "/api/owner/upload/begin": [{ status: 403 }] });
   screen();
