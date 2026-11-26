@@ -42,8 +42,8 @@ insert into public.media_variants (media_id, page_id, variant, bucket, path, mim
 select m.id, m.page_id, v, public.media_bucket(v), 'p/' || m.id || '/' || v, 'image/webp', 10, now()
 from public.media m cross join unnest('{thumb,display,full}'::public.media_variant[]) v;
 
--- Home picks: c4 hidden (its memory is a draft), c6 and c1 shown, guests in the order c6, c1 (opposite to the draft's),
--- c5 in the draft only.
+-- Home picks: c4 (its memory is a draft: still shown, Q152), c6 and c1, guests in the order c4, c6, c1 (c6 and c1
+-- opposite to the draft's), c5 in the draft only.
 insert into public.home_picks (item_id, page_id, media_id, position, published_position) values
   ('00000000-0000-0000-0000-0000000000d1', '00000000-0000-0000-0000-0000000000a1', '00000000-0000-0000-0000-0000000000c4', 0, 0),
   ('00000000-0000-0000-0000-0000000000d1', '00000000-0000-0000-0000-0000000000a1', '00000000-0000-0000-0000-0000000000c1', 1, 3),
@@ -73,9 +73,10 @@ select is((public.guest_open('token-a') -> 'home') - 'picks',
   '{"lang": "en", "body": "Our note", "lang_alt": "vi", "body_alt": "Lời nhắn", "start_date": "2020-02-29"}',
   'guest_open returns the published Home note and start date');
 select is(public.guest_open('token-a') #> '{home,picks}',
-  '[{"id": "00000000-0000-0000-0000-0000000000c6", "alt": null, "alt_alt": null, "width": 640, "height": 480},
+  '[{"id": "00000000-0000-0000-0000-0000000000c4", "alt": null, "alt_alt": null, "width": 800, "height": 600},
+    {"id": "00000000-0000-0000-0000-0000000000c6", "alt": null, "alt_alt": null, "width": 640, "height": 480},
     {"id": "00000000-0000-0000-0000-0000000000c1", "alt": "A beach", "alt_alt": "Bãi biển", "width": 1600, "height": 1200}]',
-  'Home picks: only shown picks of published memories, in published order (Q144 defaults 6, 14, 21)');
+  'Home picks: every published pick, also of an unpublished memory (Q152), in published order, not the draft-only one');
 select is(public.guest_open('token-a') -> 'sections', '["home", "memories", "together", "guestbook"]', 'guest_open still lists enabled sections only (E5)');
 
 -- guest_list: each row carries its ready media in position order.
@@ -97,8 +98,8 @@ select is((select count(*) from public.guest_item('token-a-old', '00000000-0000-
 select is((select count(*) from public.guest_item('token-b', '00000000-0000-0000-0000-0000000000b1')), 0::bigint, 'guest_item: another page''s token reads nothing (E6)');
 
 -- guest_media: only ready media of published items in enabled sections, or shown Home picks.
-select is(pg_temp.admitted('token-a', pg_temp.ids(1, 2, 3, 4, 5, 9), 'thumb'), pg_temp.ids(1, 2, 5),
-  'guest_media admits ready media of published items only (not unfinished, draft or another page''s)');
+select is(pg_temp.admitted('token-a', pg_temp.ids(1, 2, 3, 4, 5, 9), 'thumb'), pg_temp.ids(1, 2, 4, 5),
+  'guest_media admits ready media of published items and Home picks (a draft memory''s photo only as a pick, Q152; not unfinished or another page''s)');
 select is((select g.bucket || ' ' || g.path from public.guest_media('token-a', pg_temp.ids(1), 'display') g),
   'media-display p/00000000-0000-0000-0000-0000000000c1/display', 'guest_media returns the bucket and path of the asked variant');
 select is(pg_temp.admitted('token-a', pg_temp.ids(1), 'full'), '{}', 'guest_media never returns the full-size original');
@@ -121,8 +122,8 @@ update public.page_sections set enabled = false where page_id = '00000000-0000-0
 set local role anon;
 select is((select count(*) from public.guest_item('token-a', '00000000-0000-0000-0000-0000000000b1')), 0::bigint,
   'guest_item: an item of a disabled section is not found (E5)');
-select is(pg_temp.admitted('token-a', pg_temp.ids(1, 2), 'thumb'), pg_temp.ids(1),
-  'Memories disabled: a shown Home pick stays visible, the memory''s other media do not');
+select is(pg_temp.admitted('token-a', pg_temp.ids(1, 2, 4), 'thumb'), pg_temp.ids(1, 4),
+  'Memories disabled: Home picks stay visible, the memory''s other media do not');
 
 reset role;
 update public.page_sections set enabled = false where page_id = '00000000-0000-0000-0000-0000000000a1' and section = 'home';

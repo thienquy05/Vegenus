@@ -171,6 +171,8 @@ test("Unpublish from the list asks first; Cancel sends nothing", async () => {
   await expect.poll(() => host.querySelectorAll("article").length).toBe(2);
   await userEvent.click(button("Unpublish", host.querySelector("article")!));
   expect(host.querySelector("dialog[open]")?.textContent).toContain("Unpublish this item?");
+  // Q152: Home picks stay visible to guests, so the confirmation says so.
+  expect(host.querySelector("dialog[open]")?.textContent).toContain("Photos you picked for Home stay on Home.");
   await userEvent.click(button("Cancel"));
   expect(host.querySelector("dialog[open]")).toBeNull();
   expect(calls).toHaveLength(1);
@@ -586,6 +588,7 @@ test("Unpublish in the editor asks first; afterwards focus is on the page headin
   await expect.poll(() => button("Unpublish")).toBeTruthy();
   await userEvent.click(button("Unpublish"));
   expect(host.querySelector("dialog[open]")?.textContent).toContain("Unpublish this item?");
+  expect(host.querySelector("dialog[open]")?.textContent).toContain("Photos you picked for Home stay on Home.");
   await userEvent.click(button("Unpublish"));
   await expect.poll(() => region("status")).toContain("Unpublished.");
   expect(calls.at(-1)).toEqual({ url: "/api/owner/item/status", body: { id: A, expected_version: 4, status: "draft" } });
@@ -696,4 +699,18 @@ test("a saved item opens O6 with Add photos or video, asking first when there ar
   editor({ id: null });
   await expect.poll(() => host.querySelector("#title")).toBeTruthy();
   expect(button("Add photos or video")).toBeUndefined();
+});
+
+// Q153 (owner, 2026-11-26): photos are live on a published memory, so O5 says so there, and only there.
+test("a published memory says its photos show to guests at once; a draft does not", async () => {
+  const LIVE = "Photos and their descriptions show to guests as soon as they're added or changed.";
+  serve({ "/api/owner/item/get": [ok({ item: ITEM }), ok({ item: { ...ITEM, status: "draft", published: null } })] });
+  editor();
+  await expect.poll(() => host.querySelector("#title")).toBeTruthy();
+  expect(text()).toContain(LIVE);
+  root?.unmount();
+  host.remove();
+  editor();
+  await expect.poll(() => host.querySelector("#title")).toBeTruthy();
+  expect(text()).not.toContain(LIVE);
 });

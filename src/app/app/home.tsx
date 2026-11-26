@@ -29,7 +29,7 @@ import s from "./owner.module.css";
 // confirmed write. Photos are picked from the ready photos of published memories; no upload here.
 type Props = { page: Page; drafts: Drafts | null; now?: Date; onBack: () => void; onSignedOut: () => void; onContent: () => void };
 type Load = "loading" | "ready" | "error" | "accessLost";
-type Memory = { item_id: string; lang: Lang; title: string; event_date: string | null; date_precision: Precision; photos: Omit<Photo, "item_id" | "hidden">[] };
+type Memory = { item_id: string; lang: Lang; title: string; event_date: string | null; date_precision: Precision; photos: Omit<Photo, "item_id">[] };
 type Picker = { state: "loading" | "error" } | { state: "ready"; memories: Memory[]; reread: boolean };
 type Conflict = { state: "loading" | "error" | "missing" } | { state: "ready"; home: Home };
 type Notice = { key: CopyKey; pending?: Pending; reread?: boolean; sent?: string[]; signin?: boolean; logout?: boolean };
@@ -334,9 +334,9 @@ export function HomeEditor({ page, drafts, now, onBack, onSignedOut, onContent }
     setPicker(null);
     focusChoose();
   };
-  const shown: Photo[] = picker?.state === "ready" ? picker.memories.flatMap((m) => m.photos.map((p) => ({ ...p, item_id: m.item_id, hidden: false }))) : [];
+  const shown: Photo[] = picker?.state === "ready" ? picker.memories.flatMap((m) => m.photos.map((p) => ({ ...p, item_id: m.item_id }))) : [];
   const isShown = (mediaId: string) => shown.some((p) => p.media_id === mediaId);
-  // Picks the picker does not list (hidden ones, say) stay in the stack and use a slot.
+  // Picks the picker does not list (of a memory unpublished since, say) stay in the stack and use a slot.
   const outside = draft.picks.filter((p) => !isShown(p.media_id));
   const count = outside.length + shown.filter((p) => staged.includes(p.media_id)).length;
   const full = count >= MAX_PICKS;
@@ -349,7 +349,7 @@ export function HomeEditor({ page, drafts, now, onBack, onSignedOut, onContent }
   };
 
   const editorCount = counter(draft.start_date || null, home?.timezone ?? page.timezone, now);
-  const cover = draft.picks.find((p) => !p.hidden);
+  const cover = draft.picks[0];
   // Preview languages are the Wording's (both); the note resolves on its own, falling back to the main note (Q144 20).
   const shownLang = previewLang ?? draft.lang;
   const ownNote = draft.second && draft.lang_alt === shownLang && draft.body_alt.trim() ? draft.body_alt : null;
@@ -674,11 +674,6 @@ export function HomeEditor({ page, drafts, now, onBack, onSignedOut, onContent }
                           <T k="home.cover" />
                         </p>
                       )}
-                      {p.hidden && (
-                        <p className={s.notice}>
-                          <T k="home.hidden" />
-                        </p>
-                      )}
                       <div className={s.actions}>
                         {(
                           [
@@ -867,7 +862,7 @@ export function HomeEditor({ page, drafts, now, onBack, onSignedOut, onContent }
                     {picker.reread && <T k="home.photosReady" />} <T k="home.selected" vars={{ count }} />
                   </p>
                   <p id="picker-limit" className={s.small}>
-                    {full && <T k={outside.some((p) => p.hidden) ? "home.hiddenLimit" : "home.limit"} />}
+                    {full && <T k={outside.length ? "home.outsideLimit" : "home.limit"} />}
                   </p>
                   {picker.memories.map((m) => (
                     <fieldset key={m.item_id} className={`${s.fieldset} ${s.stack}`}>

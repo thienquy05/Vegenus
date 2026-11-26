@@ -20,11 +20,11 @@ const B1 = "00000000-0000-0000-0000-0000000000b1";
 const C1 = "00000000-0000-0000-0000-0000000000c1";
 const C2 = "00000000-0000-0000-0000-0000000000c2";
 const C3 = "00000000-0000-0000-0000-0000000000c3";
-const pick = (media_id: string, alt: string | null, hidden = false) => ({ media_id, item_id: B1, hidden, alt, alt_alt: null, width: 4, height: 3, preview_url: null });
+const pick = (media_id: string, alt: string | null) => ({ media_id, item_id: B1, alt, alt_alt: null, width: 4, height: 3, preview_url: null });
 const SAVED: Home = {
   id: ID, version: 3, status: "published", lang: "en", body: "Welcome", lang_alt: null, body_alt: null, start_date: "2026-11-01",
   published: { start_date: "2026-11-01" }, published_at: "2026-11-02T00:00:00Z", timezone: "UTC", unpublished_changes: false,
-  picks: [pick(C1, "Beach"), pick(C2, "Hill", true), pick(C3, null)],
+  picks: [pick(C1, "Beach"), pick(C2, "Hill"), pick(C3, null)],
 };
 const PAGE = { version: 2, theme: "a_dreamy", default_lang: "en", label_a: "[PARTNER_A]", label_b: "[PARTNER_B]", timezone: "UTC", visibility: "token_only", setup_completed: true, sections: [] };
 const DRAFTS = { "home.greeting": { en: "Hello from {partner_a}.", vi: "Chào từ {partner_a}." }, "home.days": { en: "Together for {days} days.", vi: "Bên nhau {days} ngày." } };
@@ -307,13 +307,14 @@ test("Back with unsaved changes asks first", async () => {
   expect(onBack).toHaveBeenCalled();
 });
 
-test("the stack: the first guest-visible pick is the cover, a hidden pick says why, and moves keep focus", async () => {
-  serve({ [GET]: [read({ ...SAVED, picks: [pick(C2, "Hill", true), pick(C1, "Beach"), pick(C3, null)] })] });
+test("the stack: the first pick is the cover, whatever its memory (Q152), and moves keep focus", async () => {
+  serve({ [GET]: [read({ ...SAVED, picks: [pick(C2, "Hill"), pick(C1, "Beach"), pick(C3, null)] })] });
   editor();
   await opened();
   expect(rows()).toHaveLength(3);
-  expect(rows()[0].textContent).toContain("Hidden: its memory is unpublished");
-  expect(rows()[1].textContent).toContain("Cover");
+  expect(text()).not.toContain("Hidden");
+  expect(rows()[0].textContent).toContain("Cover");
+  expect(rows()[1].textContent).not.toContain("Cover");
   expect(rows()[2].textContent).toContain("Photo 3"); // no description
   // Move down keeps focus on the same button in the pick's new row.
   await userEvent.click(button("Move down", rows()[1]));
@@ -321,7 +322,7 @@ test("the stack: the first guest-visible pick is the cover, a hidden pick says w
   expect(button("Move down", rows()[2]).disabled).toBe(true);
   // That button is now disabled, so focus is on the pick's row.
   expect(document.activeElement).toBe(rows()[2]);
-  expect(rows()[1].textContent).toContain("Cover"); // the cover is the first guest-visible pick
+  expect(rows()[0].textContent).toContain("Cover"); // the cover is the first pick
   expect(region("status")).toContain("Moved to position 3.");
   await userEvent.click(button("Move down", rows()[0]));
   expect(document.activeElement).toBe(button("Move down", rows()[1]));
@@ -386,8 +387,8 @@ test("the picker stages choices until Use these photos; Esc discards them and re
   expect(text()).not.toContain("Pick 3 to 7 photos.");
 });
 
-test("at seven the picker disables the rest with the reason; a hidden pick uses a slot and the picker says so", async () => {
-  serve({ [GET]: [read({ ...SAVED, picks: [pick(C2, "Hill", true)] })], [PICKER]: [ok({ memories: MEMORIES })] });
+test("at seven the picker disables the rest with the reason; a pick the picker does not list uses a slot and the picker says so", async () => {
+  serve({ [GET]: [read({ ...SAVED, picks: [pick(C2, "Hill")] })], [PICKER]: [ok({ memories: MEMORIES })] });
   editor();
   await opened();
   await userEvent.click(button("Choose photos"));
@@ -395,7 +396,7 @@ test("at seven the picker disables the rest with the reason; a hidden pick uses 
   for (const b of boxes().slice(0, 6)) await userEvent.click(b);
   expect(text()).toContain("7 of 7 photos selected");
   expect(boxes()[6].disabled).toBe(true);
-  expect(text()).toContain("Close the picker and remove a hidden photo from the stack to free a slot.");
+  expect(text()).toContain("Close the picker and remove a photo from the stack to free a slot.");
 });
 
 test("the picker: a failed read has its own Try again; empty links to Content", async () => {
