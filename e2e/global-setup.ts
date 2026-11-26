@@ -54,6 +54,9 @@ export default async function globalSetup() {
     });
     if (error && error.code !== "email_exists") throw error;
   }
+  // Page creation needs the admin-set mark (security gate, Phase 2), also on accounts left from an earlier run.
+  await sql`update auth.users set raw_app_meta_data = raw_app_meta_data || '{"page_creator": true}'::jsonb
+    where email like 'owner-%@example.test'`;
 
   // T1.5b: one live Token-only page per browser project, owned by that project's owner, with no token
   // yet; e2e/token-rotation.spec.ts creates and rotates its tokens. T1.5c: a second set for

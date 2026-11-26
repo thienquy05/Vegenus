@@ -493,7 +493,7 @@ Deleting a page cascades to its page rows only after enqueuing storage keys and 
 
 | Table | `anon` (visitor, token guest) | Member (guest account) | Owner | Co-editor (reserved, unused) | Service role |
 |---|---|---|---|---|---|
-| `pages` | fn (`public_open`, `guest_open`) | fn (`account_open`) | read through `owner_page()` (and its drafted wording through `owner_copy_drafts()`, Q124); create and update through `owner_save_page` (the first save creates the page with the caller's owner membership; later saves name the `version` they read, Q116) / `owner_set_visibility` only (a trigger also enforces the wording invariants on any direct update) | read | admin jobs |
+| `pages` | fn (`public_open`, `guest_open`) | fn (`account_open`) | read through `owner_page()` (and its drafted wording through `owner_copy_drafts()`, Q124); create and update through `owner_save_page` (the first save creates the page with the caller's owner membership, only for an account an admin marked `page_creator` in its app metadata and never for an anonymous one, Q147; later saves name the `version` they read, Q116) / `owner_set_visibility` only (a trigger also enforces the wording invariants on any direct update) | read | admin jobs |
 | `page_sections` | fn | fn | read through `owner_page()`; update through `owner_save_page` (Home always on, Q118) | read | |
 | `memberships`, `owner_settings` | — | — | read own; settings update own | read own; settings update own | provisioning (Q30) |
 | `guest_tokens` | fn (hash lookup inside) | — | create, rotate through `owner_rotate_token`; never read `token_hash` | — | |

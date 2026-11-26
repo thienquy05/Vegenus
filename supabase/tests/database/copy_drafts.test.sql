@@ -7,6 +7,8 @@ insert into auth.users (id, email) values
   ('00000000-0000-0000-0000-0000000000f1', 'owner@example.test'),
   ('00000000-0000-0000-0000-0000000000f2', 'coeditor@example.test'),
   ('00000000-0000-0000-0000-0000000000f3', 'other-owner@example.test');
+-- Page creation needs the admin-set mark (security gate, Phase 2; page_creator.test.sql).
+update auth.users set raw_app_meta_data = '{"page_creator": true}' where id in ('00000000-0000-0000-0000-0000000000f1', '00000000-0000-0000-0000-0000000000f2', '00000000-0000-0000-0000-0000000000f3');
 
 create function pg_temp.act_as(id uuid) returns void language sql as $$
   select set_config('request.jwt.claims', json_build_object('sub', id, 'role', 'authenticated')::text, true)
