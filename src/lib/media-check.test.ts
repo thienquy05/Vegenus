@@ -64,6 +64,12 @@ test("a photo with no image in it is refused (Codex re-review)", () => {
   expect(contentOk("image/jpeg", new Uint8Array([0xff, 0xd8, ...sof(), 0xff, 0xda, 0, 2, 1, 2, 3, ...EOI]))).toBe(false); // empty scan header
 });
 
+test("a frame header a decoder cannot start on is refused (Codex re-review)", () => {
+  expect(contentOk("image/webp", webp(raw("VP8L", [0x2f, 0x03, 0x80, 0x00, 0x20, 0, 0, 0])))).toBe(false); // lossless version 1
+  const threeParts = sof().map((v, i) => (i === 9 ? 3 : v)); // declares 3 components but describes 1
+  expect(contentOk("image/jpeg", new Uint8Array([0xff, 0xd8, ...threeParts, ...SOS, 1, 2, 3, ...EOI]))).toBe(false);
+});
+
 test("a photo that still carries EXIF, XMP or IPTC metadata is refused", () => {
   expect(contentOk("image/webp", webp(vp8x(), vp8(), chunk("EXIF", 8)))).toBe(false);
   expect(contentOk("image/webp", webp(vp8x(), vp8(), chunk("XMP ", 8)))).toBe(false);
