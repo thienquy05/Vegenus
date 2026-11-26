@@ -17,6 +17,8 @@ personal/
 content/private/
 uploads/
 media/
+# Route code, not media: the guest media signer (T3.1a).
+!src/app/api/guest/media/
 photos/
 originals/
 *.heic
