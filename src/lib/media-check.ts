@@ -12,9 +12,9 @@ const text = (b: Uint8Array, at: number, n: number) => String.fromCharCode(...b.
 const le32 = (b: Uint8Array, at: number) => (b[at] | (b[at + 1] << 8) | (b[at + 2] << 16) | (b[at + 3] << 24)) >>> 0;
 
 // A frame the decoder can start on: a lossy key frame (start code 9d 01 2a) with a non-zero width and height, or a
-// lossless frame (signature 2f). A full pixel decode is not done (Q148).
+// lossless frame (signature 2f, version 0). A full pixel decode is not done (Q148).
 function frameOk(id: string, b: Uint8Array, at: number, size: number) {
-  if (id === "VP8L") return size >= 5 && b[at] === 0x2f;
+  if (id === "VP8L") return size >= 5 && b[at] === 0x2f && b[at + 4] >> 5 === 0; // signature, version 0
   return size >= 10 && (b[at] & 1) === 0 && b[at + 3] === 0x9d && b[at + 4] === 0x01 && b[at + 5] === 0x2a &&
     ((b[at + 6] | (b[at + 7] << 8)) & 0x3fff) > 0 && ((b[at + 8] | (b[at + 9] << 8)) & 0x3fff) > 0;
 }
@@ -63,7 +63,9 @@ function jpegOk(b: Uint8Array) {
     }
     if (marker === 0xe1 || marker === 0xed) return false; // APP1 (Exif, XMP) and APP13 (IPTC)
     if (SOF(marker)) {
-      if (length < 8 || ((b[at + 5] << 8) | b[at + 6]) === 0 || ((b[at + 7] << 8) | b[at + 8]) === 0 || b[at + 9] < 1) return false;
+      // A non-zero size and one 3-byte descriptor per declared component.
+      if (length < 8 || ((b[at + 5] << 8) | b[at + 6]) === 0 || ((b[at + 7] << 8) | b[at + 8]) === 0 || b[at + 9] < 1 ||
+        length !== 8 + 3 * b[at + 9]) return false;
       frame = true;
     }
     at += 2 + length;
