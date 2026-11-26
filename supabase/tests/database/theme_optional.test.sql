@@ -4,6 +4,8 @@ begin;
 select plan(9);
 
 insert into auth.users (id, email) values ('00000000-0000-0000-0000-0000000000f9', 'owner@example.test');
+-- Page creation needs the admin-set mark (security gate, Phase 2; page_creator.test.sql).
+update auth.users set raw_app_meta_data = '{"page_creator": true}' where id in ('00000000-0000-0000-0000-0000000000f9');
 select set_config('request.jwt.claims', json_build_object('sub', '00000000-0000-0000-0000-0000000000f9', 'role', 'authenticated')::text, true);
 
 select col_is_null('public', 'pages', 'theme', 'a page may have no theme');

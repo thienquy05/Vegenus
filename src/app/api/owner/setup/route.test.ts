@@ -112,7 +112,7 @@ test("an Auth outage is a retryable 503, not 401, and saves nothing", async () =
 
 test("database answers map to the owner contract", async () => {
   for (const [code, status] of [
-    ["42501", 403], // not an owner (a co-editor, E33)
+    ["42501", 403], // not allowed: a co-editor (E33), an anonymous account, or an account without the page-creator mark (Q147)
     ["22023", 400], // unknown time zone, a control character or space in a name
     ["23514", 400], // a name of 0 or over 40 characters, or not in NFC
     ["22P02", 400], // a value the enum types refuse
