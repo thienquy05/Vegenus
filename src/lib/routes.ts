@@ -1,7 +1,8 @@
 // Route table, deny by default (design 1 §9, layer 1). Every route the build contains
 // needs a class here; `npm run build` fails otherwise (scripts/check-routes.ts, E32).
-// The class names the handler check the route starts with: requireGuest(), requireOwner()
-// or requireMachine(); `public` routes need none.
+// The class names the handler check the route starts with: requireOwner(), requireMachine(), and for guest
+// pages requireGuest() (a guest route handler checks the token itself, since requireGuest() redirects);
+// `public` routes need none.
 export type RouteClass = "public" | "guest" | "owner" | "machine";
 
 export const ROUTES: Record<string, RouteClass> = {
@@ -15,6 +16,8 @@ export const ROUTES: Record<string, RouteClass> = {
   "/api/owner/login": "public",
   "/api/owner/logout": "public",
   "/api/guest/session": "public",
+  // Checks Origin and the guest header, then the token cookie; the database checks the token (guest_media).
+  "/api/guest/media": "guest",
   // Checks Origin, then the owner session; the database checks the page owner.
   "/api/owner/token": "owner",
   "/api/owner/token/shown": "owner",
@@ -49,6 +52,7 @@ export const HANDLER_METHODS: Record<string, string[]> = {
   "/api/owner/login": ["POST"],
   "/api/owner/logout": ["POST"],
   "/api/guest/session": ["POST"],
+  "/api/guest/media": ["POST"],
   "/api/owner/token": ["POST"],
   "/api/owner/token/shown": ["POST"],
   "/api/owner/visibility": ["POST"],

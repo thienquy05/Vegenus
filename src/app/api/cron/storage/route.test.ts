@@ -169,11 +169,12 @@ test("a run whose success cannot be recorded answers 503, so the cron log shows 
   alert.mockRestore();
 });
 
-// The Supabase secret key bypasses every policy: only this route may use it (design 7 §3).
-test("only the storage cron route imports storage-admin", () => {
+// The Supabase secret key bypasses every policy: only this route and the guest media signer may use it (design 7 §3;
+// owner, 2026-11-26: the signer signs only the paths guest_media admits).
+test("only the storage cron route and the guest media signer import storage-admin", () => {
   const files = readdirSync("src", { recursive: true, encoding: "utf8" })
     .map((f) => join("src", f))
     .filter((f) => /\.(ts|tsx)$/.test(f) && !f.endsWith(".test.ts") && f !== join("src", "lib", "storage-admin.ts"));
   const importers = files.filter((f) => /from\s+["'][^"']*storage-admin["']/.test(readFileSync(f, "utf8")));
-  expect(importers).toEqual([join("src", "app", "api", "cron", "storage", "route.ts")]);
+  expect(importers.sort()).toEqual([join("src", "app", "api", "cron", "storage", "route.ts"), join("src", "lib", "guest.ts")]);
 });

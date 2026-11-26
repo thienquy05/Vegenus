@@ -76,7 +76,7 @@ select is(public.guest_open('token-unknown'), null, 'unknown token: empty result
 select is(public.guest_open('token-a-old'), null, 'rotated token: empty result (E3)');
 select is(public.guest_open('token-c'), null, 'private page: empty result (E4)');
 select is(public.guest_open('token-d'), null, 'wording never published: empty result (Q82)');
-select is(public.guest_open('token-a'), '{"theme": "a_dreamy", "default_lang": "en", "sections": ["memories", "guestbook"]}'::jsonb,
+select is(public.guest_open('token-a') - '{names,timezone,copy,home}'::text[], '{"theme": "a_dreamy", "default_lang": "en", "sections": ["memories", "guestbook"]}'::jsonb,
   'valid token: page summary with enabled sections only (E5)');
 
 -- guest_list: published items of an enabled section of the token's page only (E5, E6, E28).
@@ -88,7 +88,7 @@ select is_empty($$select * from public.guest_list('token-c', 'memories')$$, 'pri
 select results_eq($$select title from public.guest_list('token-a', 'memories', 1, '00000000-0000-0000-0000-0000000000a1')$$, array['A memory two'],
   'keyset cursor continues after the given row');
 select is((select array_agg(k order by k) from public.guest_list('token-a', 'memories') g, jsonb_object_keys(to_jsonb(g)) k where g.title = 'A memory one'),
-  array['body', 'body_alt', 'date_precision', 'event_date', 'id', 'kind', 'lang', 'lang_alt', 'recurs_yearly', 'sort_order', 'start_date', 'title', 'title_alt', 'zodiac_key', 'zodiac_system'],
+  array['body', 'body_alt', 'date_precision', 'event_date', 'id', 'kind', 'lang', 'lang_alt', 'media', 'recurs_yearly', 'sort_order', 'start_date', 'title', 'title_alt', 'zodiac_key', 'zodiac_system'],
   'items carry an explicit column list, no internal column (E28)');
 
 -- guest_guestbook_list: approved entries only (E28).
@@ -98,7 +98,7 @@ select is((select array_agg(k order by k) from public.guest_guestbook_list('toke
   'entries carry an explicit column list, no internal column (E28)');
 
 -- public_*: Published pages with published wording only (E31, E36, E47).
-select is(public.public_open('page-b'), '{"theme": "b_cosmic", "default_lang": "vi", "sections": ["memories", "guestbook"]}'::jsonb,
+select is(public.public_open('page-b') - '{names,timezone,copy,home}'::text[], '{"theme": "b_cosmic", "default_lang": "vi", "sections": ["memories", "guestbook"]}'::jsonb,
   'published page: page summary');
 select is(public.public_open('page-a'), null, 'token-only page: empty result (E47)');
 select is(public.public_open('page-c'), null, 'private page: empty result');
