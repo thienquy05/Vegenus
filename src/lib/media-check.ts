@@ -11,20 +11,31 @@ export const readsWhole = (mime: string) => mime.startsWith("image/");
 const text = (b: Uint8Array, at: number, n: number) => String.fromCharCode(...b.subarray(at, at + n));
 const le32 = (b: Uint8Array, at: number) => (b[at] | (b[at + 1] << 8) | (b[at + 2] << 16) | (b[at + 3] << 24)) >>> 0;
 
-// A frame the decoder can start on: a lossy key frame (start code 9d 01 2a) with a non-zero width and height, or a
-// lossless frame (signature 2f, version 0). A full pixel decode is not done (Q148).
-function frameOk(id: string, b: Uint8Array, at: number, size: number) {
-  if (id === "VP8L") return size >= 5 && b[at] === 0x2f && b[at + 4] >> 5 === 0; // signature, version 0
-  return size >= 10 && (b[at] & 1) === 0 && b[at + 3] === 0x9d && b[at + 4] === 0x01 && b[at + 5] === 0x2a &&
-    ((b[at + 6] | (b[at + 7] << 8)) & 0x3fff) > 0 && ((b[at + 8] | (b[at + 9] << 8)) & 0x3fff) > 0;
+// A frame the decoder can start on, as its [width, height]: a lossy key frame (start code 9d 01 2a) with a non-zero
+// size, or a lossless frame (signature 2f, version 0); null otherwise. A full pixel decode is not done (Q148).
+function frameSize(id: string, b: Uint8Array, at: number, size: number): [number, number] | null {
+  if (id === "VP8L") {
+    if (size < 5 || b[at] !== 0x2f) return null;
+    const bits = le32(b, at + 1);
+    return bits >>> 29 === 0 ? [(bits & 0x3fff) + 1, ((bits >>> 14) & 0x3fff) + 1] : null;
+  }
+  if (size < 10 || (b[at] & 1) !== 0 || b[at + 3] !== 0x9d || b[at + 4] !== 0x01 || b[at + 5] !== 0x2a) return null;
+  const w = (b[at + 6] | (b[at + 7] << 8)) & 0x3fff;
+  const h = (b[at + 8] | (b[at + 9] << 8)) & 0x3fff;
+  return w > 0 && h > 0 ? [w, h] : null;
 }
 
+const le24 = (b: Uint8Array, at: number) => b[at] | (b[at + 1] << 8) | (b[at + 2] << 16);
+
+// One still image: an optional extended header first (exactly 10 bytes, no animation flag, its canvas the size of the
+// frame), then exactly one frame, with every chunk inside the file and nothing after it.
 function webpOk(b: Uint8Array) {
   if (b.length < 20 || text(b, 0, 4) !== "RIFF" || text(b, 8, 4) !== "WEBP") return false;
   const end = 8 + le32(b, 4);
   if (end !== b.length) return false;
   let at = 12;
-  let frame = false;
+  let canvas: [number, number] | null = null;
+  let frame: [number, number] | null = null;
   while (at < end) {
     if (at + 8 > end) return false;
     const id = text(b, at, 4);
@@ -32,13 +43,18 @@ function webpOk(b: Uint8Array) {
     if (at + 8 + size > end) return false;
     if (at === 12 && !["VP8 ", "VP8L", "VP8X"].includes(id)) return false;
     if (id === "EXIF" || id === "XMP ") return false;
+    if (id === "VP8X") {
+      if (at !== 12 || size !== 10 || (b[at + 8] & 0x02) !== 0) return false;
+      canvas = [le24(b, at + 12) + 1, le24(b, at + 15) + 1];
+    }
     if (id === "VP8 " || id === "VP8L") {
-      if (!frameOk(id, b, at + 8, size)) return false;
-      frame = true;
+      if (frame) return false;
+      frame = frameSize(id, b, at + 8, size);
+      if (!frame || (canvas && (canvas[0] !== frame[0] || canvas[1] !== frame[1]))) return false;
     }
     at += 8 + size + (size & 1);
   }
-  return frame && at === end;
+  return frame !== null && at === end;
 }
 
 const SOF = (m: number) => m >= 0xc0 && m <= 0xcf && m !== 0xc4 && m !== 0xc8 && m !== 0xcc; // frame headers

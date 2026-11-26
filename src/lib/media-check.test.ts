@@ -64,6 +64,14 @@ test("a photo with no image in it is refused (Codex re-review)", () => {
   expect(contentOk("image/jpeg", new Uint8Array([0xff, 0xd8, ...sof(), 0xff, 0xda, 0, 2, 1, 2, 3, ...EOI]))).toBe(false); // empty scan header
 });
 
+test("an extended WebP header must be whole, first, still and the size of its frame (Codex re-review)", () => {
+  expect(contentOk("image/webp", webp(vp8x(), vp8l()))).toBe(true); // the canvas (4 x 3) matches either frame
+  expect(contentOk("image/webp", webp(raw("VP8X", [0x10, 0, 0, 0, 3, 0, 0, 2]), vp8()))).toBe(false); // cut short
+  expect(contentOk("image/webp", webp(vp8(), vp8x()))).toBe(false); // not first
+  expect(contentOk("image/webp", webp(raw("VP8X", [0x12, 0, 0, 0, 3, 0, 0, 2, 0, 0]), vp8()))).toBe(false); // animation flag
+  expect(contentOk("image/webp", webp(raw("VP8X", [0x10, 0, 0, 0, 9, 0, 0, 2, 0, 0]), vp8()))).toBe(false); // canvas 10 x 3
+});
+
 test("a frame header a decoder cannot start on is refused (Codex re-review)", () => {
   expect(contentOk("image/webp", webp(raw("VP8L", [0x2f, 0x03, 0x80, 0x00, 0x20, 0, 0, 0])))).toBe(false); // lossless version 1
   const threeParts = sof().map((v, i) => (i === 9 ? 3 : v)); // declares 3 components but describes 1
