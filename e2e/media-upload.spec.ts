@@ -21,13 +21,14 @@ test("upload URLs obey the reservation, write once, and respect the bucket limit
   const post = (path: string, data: object) => request.post(path, { data, headers: { origin } });
   // The browser side: no session, only the upload token.
   const browser = createClient(SUPABASE_URL!, SUPABASE_PUBLISHABLE_KEY!).storage;
-  // A structurally valid WebP of the given total size (RIFF header and one VP8 chunk): Complete checks the bytes.
+  // A structurally valid WebP of the given total size (RIFF header and one VP8 key frame): Complete checks the bytes.
   const webpBytes = (bytes: number) => {
     const b = Buffer.alloc(bytes);
     b.write("RIFF", 0, "latin1");
     b.writeUInt32LE(bytes - 8, 4);
     b.write("WEBPVP8 ", 8, "latin1");
     b.writeUInt32LE(bytes - 20, 16);
+    Buffer.from([0x50, 0x01, 0x00, 0x9d, 0x01, 0x2a, 4, 0, 3, 0]).copy(b, 20); // a 4x3 lossy key frame header
     return b;
   };
   const webp = (bytes: number) => new Blob([webpBytes(bytes)], { type: "image/webp" });
