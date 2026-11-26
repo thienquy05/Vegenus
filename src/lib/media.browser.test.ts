@@ -14,6 +14,7 @@ import {
 } from "mediabunny";
 import { expect, test } from "vitest";
 import { MediaError, processPhoto, processVideo } from "./media";
+import { contentOk } from "./media-check";
 
 const has = async (blob: Blob, text: string) => new TextDecoder("latin1").decode(await blob.arrayBuffer()).includes(text);
 const size = async (blob: Blob) => {
@@ -61,10 +62,42 @@ test("photo: orientation applied, EXIF and location dropped, thumb 480 and displ
     expect(out.type).toBe("image/webp");
     expect(await has(out, "SECRETGPS")).toBe(false);
     expect(await has(out, "Exif")).toBe(false);
+    expect(contentOk(out.type, new Uint8Array(await out.arrayBuffer()))).toBe(true); // what the server checks at Complete
   }
   // Pixels are turned upright (the stored file needs no orientation tag), long side scaled down.
   expect(await size(display)).toEqual([1024, 2048]);
   expect(await size(thumb)).toEqual([240, 480]);
+});
+
+test("photo: the browser's JPEG output, used where WebP is not available, passes the server check", async () => {
+  const canvas = new OffscreenCanvas(64, 48);
+  canvas.getContext("2d")!.fillRect(0, 0, 64, 48);
+  const jpeg = await canvas.convertToBlob({ type: "image/jpeg", quality: 0.8 });
+  expect(contentOk("image/jpeg", new Uint8Array(await jpeg.arrayBuffer()))).toBe(true);
+});
+
+test("photo: where WebP is not available, the JPEG leaves the browser without its encoder's Exif and IPTC blocks", async () => {
+  const source = await cameraJpeg(400, 300);
+  const real = OffscreenCanvas.prototype.convertToBlob;
+  // As Safari: no WebP encoder (PNG comes back), and a JPEG encoder that writes small Exif and IPTC blocks of its own.
+  OffscreenCanvas.prototype.convertToBlob = async function (options) {
+    if (options?.type === "image/webp") return real.call(this, { type: "image/png" });
+    const bytes = new Uint8Array(await (await real.call(this, options)).arrayBuffer());
+    const block = (marker: number, text: string) => [0xff, marker, 0, text.length + 2, ...[...text].map((c) => c.charCodeAt(0))];
+    const extra = [...block(0xe1, "Exif\0\0MM\0*\0\0\0\x08\0\0\0\0\0\0"), ...block(0xed, "Photoshop 3.0\0")];
+    return new Blob([bytes.subarray(0, 2), new Uint8Array(extra), bytes.subarray(2)], { type: "image/jpeg" });
+  };
+  try {
+    const { thumb, display } = await processPhoto(source);
+    for (const out of [thumb, display]) {
+      expect(out.type).toBe("image/jpeg");
+      expect(await has(out, "Exif")).toBe(false);
+      expect(await has(out, "Photoshop")).toBe(false);
+      expect(contentOk("image/jpeg", new Uint8Array(await out.arrayBuffer()))).toBe(true);
+    }
+  } finally {
+    OffscreenCanvas.prototype.convertToBlob = real;
+  }
 });
 
 test("photo: a small image is not enlarged", async () => {

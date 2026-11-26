@@ -257,7 +257,7 @@ export function Upload({ id, onBack, onSignedOut }: Props) {
   async function confirm(row: Row, live: () => boolean) {
     stage(row, "saving");
     const p = row.prepared!;
-    const r = await post("/api/owner/upload/complete", {
+    const r = await post<{ error?: string }>("/api/owner/upload/complete", {
       media_id: row.media_id,
       width: p.width,
       height: p.height,
@@ -277,6 +277,10 @@ export function Upload({ id, onBack, onSignedOut }: Props) {
     if (r.status === 422) {
       cancelReservation(row);
       return stage(row, "large");
+    }
+    if (r.status === 409 && r.body?.error === "invalid_file") {
+      row.media_id = undefined; // the server refused the content and cancelled the upload; a retry would send the same bytes
+      return stage(row, "unsupported");
     }
     if (r.status === 409) return stage(row, "failed"); // not every file arrived: Try again restarts the upload
     stage(row, "notSaved");

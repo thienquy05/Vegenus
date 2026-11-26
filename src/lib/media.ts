@@ -11,6 +11,7 @@ import {
   Output,
   QUALITY_MEDIUM,
 } from "mediabunny";
+import { stripJpegMeta } from "./media-check";
 
 // Browser-side processing before upload (T2.3b). Only these outputs are stored: re-encoding drops EXIF, location and
 // every other tag of the original (FR7, E7). Keys match the upload variants (owner_upload_begin).
@@ -38,7 +39,8 @@ async function image(source: ImageBitmap | HTMLCanvasElement | OffscreenCanvas, 
   for (const quality of [0.82, 0.6, 0.4]) {
     const webp = await canvas.convertToBlob({ type: "image/webp", quality });
     // A browser without a WebP encoder (Safari) returns PNG instead; the buckets take WebP or JPEG.
-    const blob = webp.type === "image/webp" ? webp : await canvas.convertToBlob({ type: "image/jpeg", quality });
+    // Its JPEG encoder may add small Exif and IPTC blocks of its own, which the server refuses: removed here.
+    const blob = webp.type === "image/webp" ? webp : new Blob([stripJpegMeta(new Uint8Array(await (await canvas.convertToBlob({ type: "image/jpeg", quality })).arrayBuffer()))], { type: "image/jpeg" });
     if (blob.size <= maxBytes) return { blob, width: canvas.width, height: canvas.height };
   }
   // A very detailed image is still too big at low quality: fewer pixels (Codex).

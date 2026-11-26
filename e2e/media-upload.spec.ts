@@ -21,7 +21,16 @@ test("upload URLs obey the reservation, write once, and respect the bucket limit
   const post = (path: string, data: object) => request.post(path, { data, headers: { origin } });
   // The browser side: no session, only the upload token.
   const browser = createClient(SUPABASE_URL!, SUPABASE_PUBLISHABLE_KEY!).storage;
-  const webp = (bytes: number) => new Blob([new Uint8Array(bytes)], { type: "image/webp" });
+  // A structurally valid WebP of the given total size (RIFF header and one VP8 chunk): Complete checks the bytes.
+  const webpBytes = (bytes: number) => {
+    const b = Buffer.alloc(bytes);
+    b.write("RIFF", 0, "latin1");
+    b.writeUInt32LE(bytes - 8, 4);
+    b.write("WEBPVP8 ", 8, "latin1");
+    b.writeUInt32LE(bytes - 20, 16);
+    return b;
+  };
+  const webp = (bytes: number) => new Blob([webpBytes(bytes)], { type: "image/webp" });
   const written: { bucket: string; path: string }[] = [];
   try {
     await sql`insert into public.items (id, page_id, kind, lang, title, event_date, date_precision)
@@ -50,7 +59,7 @@ test("upload URLs obey the reservation, write once, and respect the bucket limit
     expect((await browser.from(thumb.bucket).uploadToSignedUrl(thumb.path, thumb.token, webp(1000), { contentType: "image/webp" })).error).toBeNull();
     expect((await post("/api/owner/upload/complete", { media_id: upload.media_id, width: 400, height: 300, duration_ms: null })).status()).toBe(409);
     // As the O6 screen sends it: a plain PUT of the file to the URL Begin returned, with no Supabase client or key.
-    const put = await request.put(display.url, { data: Buffer.alloc(5000), headers: { "content-type": "image/webp", "x-upsert": "false" } });
+    const put = await request.put(display.url, { data: webpBytes(5000), headers: { "content-type": "image/webp", "x-upsert": "false" } });
     expect(put.status()).toBe(200);
     const done = await post("/api/owner/upload/complete", { media_id: upload.media_id, width: 1600, height: 1200, duration_ms: null });
     expect(done.status()).toBe(200);
@@ -96,6 +105,20 @@ test("upload URLs obey the reservation, write once, and respect the bucket limit
     await sql`update public.upload_reservations set created_at = now() - interval '6 minutes' where media_id = ${third.media_id}`;
     const lateMint = await owner.storage.from(third.files[0].bucket).createSignedUploadUrl(third.files[0].path, { upsert: false });
     expect(lateMint.error).not.toBeNull();
+
+    // Bytes that are not the declared type are refused at Complete: the upload fails and its file is queued for
+    // deletion (security gate, Phase 2).
+    const fakeBegun = await post("/api/owner/upload/begin", { item_id: item, kind: "photo", variants: ["thumb", "display"] });
+    expect(fakeBegun.status()).toBe(200);
+    const fake = await fakeBegun.json();
+    written.push(...fake.files);
+    for (const [f, data] of [[fake.files[0], Buffer.alloc(900)], [fake.files[1], webpBytes(900)]]) {
+      expect((await request.put(f.url, { data, headers: { "content-type": "image/webp", "x-upsert": "false" } })).status()).toBe(200);
+    }
+    const refused = await post("/api/owner/upload/complete", { media_id: fake.media_id, width: 400, height: 300, duration_ms: null });
+    expect([refused.status(), await refused.json()]).toEqual([409, { error: "invalid_file" }]);
+    expect((await sql`select state from public.media where id = ${fake.media_id}`)[0].state).toBe("failed");
+    expect(await sql`select 1 from public.storage_deletions where path = any(${fake.files.map((f: { path: string }) => f.path)})`).toHaveLength(2);
 
     // Deleting the finished media queues its files behind the fence (its URLs could still write until then).
     expect((await post("/api/owner/upload/delete", { media_id: upload.media_id })).status()).toBe(200);
