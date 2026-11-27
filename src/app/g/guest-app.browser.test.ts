@@ -129,12 +129,49 @@ test("G1: the photo stack advances on tap, with each photo's alt text in the sho
   mount();
   const stack = () => host.querySelector<HTMLButtonElement>("#photo-stack")!;
   await expect.poll(() => stack()?.querySelector("img")?.getAttribute("alt")).toBe("[ALT_1]");
-  expect(stack().textContent).toContain("Photo 1 of 2");
+  // Guest UI §5 test 1: the counter is announced (a polite status), next and previous wrap.
+  const count = () => host.querySelector('#photo-count[role="status"]')?.textContent;
+  expect(count()).toBe("Photo 1 of 2");
   await userEvent.click(stack());
   expect(stack().querySelector("img")?.getAttribute("alt")).toBe("[ALT_2_VI]");
   expect(stack().querySelector("img")?.getAttribute("lang")).toBe("vi");
-  await userEvent.click(stack());
-  expect(stack().querySelector("img")?.getAttribute("alt")).toBe("[ALT_1]");
+  expect(count()).toBe("Photo 2 of 2");
+  const nav = (label: string) => [...host.querySelectorAll("button")].find((b) => b.getAttribute("aria-label") === label)!;
+  await userEvent.click(nav("Next photo"));
+  expect(count()).toBe("Photo 1 of 2");
+  await userEvent.click(nav("Previous photo"));
+  expect(count()).toBe("Photo 2 of 2");
+  expect(stack().querySelector("img")?.getAttribute("alt")).toBe("[ALT_2_VI]");
+});
+
+test("G1: section shortcuts link to the enabled sections (not Home or Settings) and open them like the menu", async () => {
+  serve({ "/api/guest/list": [ok({ items: [memory(1)] })] });
+  mount();
+  const shortcuts = () => host.querySelector<HTMLElement>('nav[aria-label="Sections"]');
+  await expect.poll(() => shortcuts()).toBeTruthy();
+  const links = [...shortcuts()!.querySelectorAll("a")];
+  expect(links.map((a) => [a.textContent, a.getAttribute("href")])).toEqual([["Memories", "/g/memories"], ["Wishes", "/g/wishes"]]);
+  await userEvent.click(links[0]);
+  await expect.poll(() => heading()?.textContent).toBe("Memories");
+  expect(document.activeElement).toBe(heading());
+  root?.unmount();
+  host.remove();
+  mount({ summary: { ...SUMMARY, sections: ["home"] } });
+  await expect.poll(() => heading()).toBeTruthy();
+  expect(shortcuts()).toBeNull();
+});
+
+test("G1: a published Home without photos or without a note shows the fixed notices (Q83); an unpublished one does not", async () => {
+  serve();
+  mount({ summary: { ...SUMMARY, home: { ...SUMMARY.home!, picks: [], body: null, body_alt: null } } });
+  await expect.poll(() => text()).toContain("Photos will appear here once the owners add them.");
+  expect(text()).toContain("The owners have not added a welcome note yet.");
+  root?.unmount();
+  host.remove();
+  mount({ summary: { ...SUMMARY, home: null } });
+  await expect.poll(() => heading()).toBeTruthy();
+  expect(text()).not.toContain("Photos will appear");
+  expect(text()).not.toContain("welcome note yet");
 });
 
 test("G1: no Home shows the title and greeting only; a future start shows no counter; no photos, no stack", async () => {
@@ -308,7 +345,8 @@ test("Load more keeps focus on its button; the last page moves focus to its firs
   expect(document.activeElement).toBe(buttonNamed("Load more"));
   await userEvent.click(buttonNamed("Load more")!);
   await expect.poll(() => host.querySelectorAll("article").length).toBe(101);
-  expect(document.activeElement).toBe(host.querySelectorAll("article")[100]);
+  // A memory card is a link to its album (G3), so focus goes to that link.
+  expect(document.activeElement).toBe(host.querySelectorAll("article")[100].closest("a"));
 });
 
 test("a read answered not-available means access is gone: the content goes and a neutral notice stays", async () => {
@@ -523,4 +561,247 @@ test("the prompt's badge, help and status text are at least 16 px; the check mar
   expect(size(prompt()!.querySelector('[role="status"]')!)).toBeGreaterThanOrEqual(16);
   const mark = getComputedStyle(radio("c_cozy").closest("label")!, "::after").content;
   expect(mark).toMatch(/^"✓"\s*\/\s*""$/);
+});
+
+// T3.1c G4 Together in Phase 3 (Q150): the place count, a search, milestones and anniversaries as place cards that open a
+// sheet (guest UI §5 test 3 without pins: focus to the sheet heading, Escape and Close return it, previous and next wrap).
+const WITH_TOGETHER: GuestSummary = { ...SUMMARY, sections: ["home", "memories", "together", "guestbook"] };
+const place = (n: number, title: string, more: object = {}) => memory(n, { kind: "milestone", title, body: `[NOTE_${n}]`, ...more });
+
+test("G4: Together in the menu and shortcuts between Memories and Wishes, its own address", async () => {
+  serve({ "/api/guest/list": [ok({ items: [] })] });
+  mount({ summary: WITH_TOGETHER });
+  await expect.poll(() => host.querySelector('nav[aria-label="Sections"]')).toBeTruthy();
+  expect([...host.querySelectorAll('nav[aria-label="Sections"] a')].map((a) => a.textContent)).toEqual(["Memories", "Together", "Wishes"]);
+  await userEvent.click(menu());
+  expect([...host.querySelectorAll("#guest-nav li")].map((li) => li.textContent)).toEqual(["Home", "Memories", "Together", "Wishes", "Settings"]);
+  await userEvent.click(item("Together"));
+  await expect.poll(() => heading()?.textContent).toBe("Together");
+  expect(location.pathname).toBe("/g/together");
+  expect(to("/api/guest/list")[0].body).toEqual({ section: "together" });
+  history.replaceState(null, "", "/");
+});
+
+test("G4: place cards open a sheet; previous and next wrap; Escape and Close return focus to the card", async () => {
+  serve({ "/api/guest/list": [ok({ items: [place(1, "[PLACE_ONE]"), place(2, "[PLACE_TWO]")] })] });
+  mount({ summary: WITH_TOGETHER, section: "together" });
+  await expect.poll(() => text()).toContain("2 places");
+  const card = (title: string) => [...host.querySelectorAll<HTMLButtonElement>("main button")].find((b) => b.textContent?.includes(title))!;
+  const sheet = () => host.querySelector<HTMLDialogElement>("dialog[open]");
+  await userEvent.click(card("[PLACE_ONE]"));
+  expect(sheet()?.querySelector("h2")?.textContent).toBe("[PLACE_ONE]");
+  expect(document.activeElement).toBe(sheet()!.querySelector("h2"));
+  expect(sheet()!.textContent).toContain("[NOTE_1]");
+  const control = (label: string) => [...sheet()!.querySelectorAll("button")].find((b) => b.textContent === label || b.getAttribute("aria-label") === label)!;
+  await userEvent.click(control("Next place"));
+  expect(sheet()!.querySelector("h2")?.textContent).toBe("[PLACE_TWO]");
+  await userEvent.click(control("Next place"));
+  expect(sheet()!.querySelector("h2")?.textContent).toBe("[PLACE_ONE]");
+  await userEvent.click(control("Previous place"));
+  expect(sheet()!.querySelector("h2")?.textContent).toBe("[PLACE_TWO]");
+  await userEvent.keyboard("{Escape}");
+  expect(sheet()).toBeNull();
+  expect(document.activeElement).toBe(card("[PLACE_TWO]"));
+  await userEvent.click(card("[PLACE_ONE]"));
+  await userEvent.click(control("Close"));
+  expect(sheet()).toBeNull();
+  expect(document.activeElement).toBe(card("[PLACE_ONE]"));
+});
+
+test("G4: search finds places by name in either language, without accents; no match says so", async () => {
+  serve({ "/api/guest/list": [ok({ items: [place(1, "Quán cà phê"), place(2, "[PLACE_TWO]", { title_alt: "Bãi biển", lang_alt: "vi" })] })] });
+  mount({ summary: WITH_TOGETHER, section: "together" });
+  const search = () => host.querySelector<HTMLInputElement>('input[type="search"]')!;
+  await expect.poll(() => search()).toBeTruthy();
+  expect(search().labels?.[0]?.textContent ?? search().getAttribute("aria-label")).toBe("Find one of our places");
+  await userEvent.type(search(), "ca phe");
+  expect(host.querySelectorAll("main li")).toHaveLength(1);
+  await userEvent.clear(search());
+  await userEvent.type(search(), "bien");
+  expect(host.querySelectorAll("main li")).toHaveLength(1);
+  await userEvent.clear(search());
+  await userEvent.type(search(), "nowhere");
+  expect(host.querySelectorAll("main li")).toHaveLength(0);
+  expect(text()).toContain("No place with that name.");
+});
+
+// T3.1c G3 memory album (screens G3; editable copy §3.3; Q67, Q68): an opening page with the cover and contents, the
+// message (with its voice note), photo pages of four, a video page; previous and next, a contents list, a photo viewer;
+// video and voice are signed only when played. Own address /g/memories/<id>.
+const media = (n: number, kind: string, more: object = {}) => ({
+  id: `00000000-0000-0000-0000-${String(2000 + n).padStart(12, "0")}`, kind, width: 4, height: 3, duration_ms: null, alt: `[ALT_${n}]`, alt_alt: null, ...more,
+});
+const ALBUM = memory(1, {
+  title: "[TRIP]", body: "[MESSAGE]",
+  media: [1, 2, 3, 4, 5, 6].map((n) => media(n, "photo")).concat([media(7, "video", { duration_ms: 24000 }), media(8, "audio", { alt: "[TRANSCRIPT]" })]),
+});
+const button2 = (label: string) => [...host.querySelectorAll<HTMLButtonElement>("main button")].find((b) => b.textContent === label || b.getAttribute("aria-label") === label)!;
+const pageLabel = () => host.querySelector<HTMLButtonElement>("button[aria-controls='album-contents']")?.textContent;
+
+test("G3: a memory card opens the album at its own address; pages turn; the contents list jumps", async () => {
+  serve({ "/api/guest/list": [ok({ items: [ALBUM] })], "/api/guest/item": [ok({ item: ALBUM })] });
+  mount({ section: "memories" });
+  await expect.poll(() => host.querySelector(`a[href="/g/memories/${M1}"]`)).toBeTruthy();
+  await userEvent.click(host.querySelector(`a[href="/g/memories/${M1}"]`)!);
+  await expect.poll(() => heading()?.textContent).toBe("[TRIP]");
+  await expect.poll(() => document.activeElement).toBe(heading()); // focus moves in an effect after the heading renders
+  expect(location.pathname).toBe(`/g/memories/${M1}`);
+  expect(to("/api/guest/item")[0].body).toEqual({ id: M1 });
+  // Opening, Message, Photos 2-5, Photo 6, Video.
+  expect(pageLabel()).toBe("Page 1 of 5");
+  await userEvent.click(button2("Next page"));
+  expect(pageLabel()).toBe("Page 2 of 5");
+  expect(text()).toContain("[MESSAGE]");
+  expect(document.activeElement).toBe(button2("Next page"));
+  await userEvent.click(button2("Next page"));
+  expect(host.querySelectorAll("main .album-photo")).toHaveLength(4);
+  await userEvent.click(button2("Previous page"));
+  expect(pageLabel()).toBe("Page 2 of 5");
+  await userEvent.click(host.querySelector<HTMLButtonElement>("button[aria-controls='album-contents']")!);
+  const chapters = [...host.querySelectorAll<HTMLButtonElement>("#album-contents button")];
+  expect(chapters.map((c) => c.textContent)).toEqual(["Opening", "Message", "Photos", "Video"]);
+  await userEvent.click(chapters[3]);
+  expect(pageLabel()).toBe("Page 5 of 5");
+  expect(button2("Next page").getAttribute("aria-disabled")).toBe("true");
+  history.replaceState(null, "", "/");
+});
+
+test("G3: the message falls back to the original language with a note (Q67); the voice note signs only on play", async () => {
+  localStorage.setItem("vegenus_prefs", JSON.stringify({ lang: "vi" }));
+  serve({ "/api/guest/item": [ok({ item: ALBUM })], "/api/guest/media": [ok({ urls: {} }), ok({ urls: { [media(8, "audio").id]: "/voice.m4a" } })] });
+  mount({ section: "memories", item: M1 });
+  await expect.poll(() => heading()?.textContent).toBe("[TRIP]");
+  await userEvent.click(button2("Trang sau"));
+  expect(text()).toContain("Hiển thị bằng ngôn ngữ gốc.");
+  expect([...host.querySelectorAll("main p")].find((p) => p.textContent === "[MESSAGE]")?.getAttribute("lang")).toBe("en");
+  expect(text()).toContain("[TRANSCRIPT]");
+  expect(to("/api/guest/media").some((c) => c.body.variant === "audio")).toBe(false);
+  await userEvent.click(button2("Nghe lời nhắn"));
+  await expect.poll(() => host.querySelector("main audio")?.getAttribute("src")).toBe("/voice.m4a");
+  expect(to("/api/guest/media").at(-1)!.body).toMatchObject({ ids: [media(8, "audio").id], variant: "audio" });
+});
+
+test("G3: the photo viewer opens on a photo, wraps, and Escape returns focus to it; video signs only on play", async () => {
+  serve({ "/api/guest/item": [ok({ item: ALBUM })] });
+  mount({ section: "memories", item: M1 });
+  await expect.poll(() => heading()?.textContent).toBe("[TRIP]");
+  await userEvent.click(button2("Next page"));
+  await userEvent.click(button2("Next page"));
+  const photo = host.querySelectorAll<HTMLButtonElement>("main .album-photo")[3];
+  await userEvent.click(photo);
+  const viewer = () => host.querySelector<HTMLDialogElement>("dialog[open]");
+  expect(viewer()?.textContent).toContain("Photo 5 of 6");
+  const control = (label: string) => [...viewer()!.querySelectorAll("button")].find((b) => b.getAttribute("aria-label") === label || b.textContent === label)!;
+  await userEvent.click(control("Next photo"));
+  expect(viewer()?.textContent).toContain("Photo 6 of 6");
+  await userEvent.click(control("Next photo"));
+  expect(viewer()?.textContent).toContain("Photo 1 of 6");
+  await userEvent.keyboard("{Escape}");
+  expect(viewer()).toBeNull();
+  expect(document.activeElement).toBe(photo);
+  await userEvent.click(button2("Next page"));
+  await userEvent.click(button2("Next page"));
+  expect(host.querySelector("main video")).toBeNull();
+  expect(to("/api/guest/media").some((c) => c.body.variant === "video")).toBe(false);
+  await userEvent.click(button2("Play video"));
+  await expect.poll(() => to("/api/guest/media").some((c) => c.body.variant === "video")).toBe(true);
+});
+
+test("G3: a memory that is gone says so, with a way back to Memories", async () => {
+  serve({ "/api/guest/item": [{ status: 404, body: { error: "not_found" } }], "/api/guest/list": [ok({ items: [] })] });
+  mount({ section: "memories", item: M1 });
+  await expect.poll(() => text()).toContain("This memory is no longer available.");
+  await userEvent.click([...host.querySelectorAll("main a")].find((a) => a.textContent === "Back to Memories")!);
+  await expect.poll(() => heading()?.textContent).toBe("Memories");
+});
+
+test("G2: a memory card is a link named by its card (title and date), for screen readers", async () => {
+  serve({ "/api/guest/list": [ok({ items: [memory(1, { title: "[CARD]" })] })] });
+  mount({ section: "memories" });
+  await expect.element(page.getByRole("link", { name: /\[CARD\].*2024/ })).toBeInTheDocument();
+});
+
+// T3.1c review fixes.
+test("G3 review: a photo without alt text, or not loaded yet, is a button named by its place", async () => {
+  const bare = memory(1, { title: "[T]", media: [media(1, "photo", { alt: null }), media(2, "photo", { alt: null })] });
+  serve({ "/api/guest/item": [ok({ item: bare })] });
+  mount({ section: "memories", item: M1 });
+  await expect.element(page.getByRole("button", { name: "Photo 1 of 2" })).toBeInTheDocument();
+});
+
+test("G3 review: an album photo whose URL expired is signed again", async () => {
+  vi.useFakeTimers({ toFake: ["Date"] });
+  const id = media(1, "photo").id;
+  serve({ "/api/guest/item": [ok({ item: ALBUM })], "/api/guest/media": [ok({ urls: { [id]: "/a.webp" } }), ok({ urls: { [id]: "/a2.webp" } })] });
+  mount({ section: "memories", item: M1 });
+  const img = () => host.querySelector<HTMLImageElement>("main .album-photo img");
+  await expect.poll(() => img()?.getAttribute("src")).toBe("/a.webp");
+  vi.setSystemTime(Date.now() + 301_000);
+  img()!.dispatchEvent(new Event("error"));
+  await expect.poll(() => img()?.getAttribute("src")).toBe("/a2.webp");
+});
+
+test("G3 review: Play video can be tried again after its signing failed", async () => {
+  const film = memory(1, { title: "[T]", media: [media(7, "video", { duration_ms: 24000 })] });
+  const vid = media(7, "video").id;
+  serve({ "/api/guest/item": [ok({ item: film })], "/api/guest/media": [ok({ urls: {} }), { status: 503, body: { error: "unavailable" } }, ok({ urls: { [vid]: "/v.mp4" } })] });
+  mount({ section: "memories", item: M1 });
+  await expect.poll(() => heading()?.textContent).toBe("[T]");
+  await userEvent.click(button2("Next page"));
+  await userEvent.click(button2("Play video"));
+  await expect.poll(() => to("/api/guest/media").filter((c) => c.body.variant === "video")).toHaveLength(1);
+  await userEvent.click(button2("Play video"));
+  await expect.poll(() => host.querySelector("main video")?.getAttribute("src")).toBe("/v.mp4");
+});
+
+test("G3 review: Back to Memories goes back through history; the browser Back from an album focuses the list heading", async () => {
+  serve({ "/api/guest/list": [ok({ items: [ALBUM] })], "/api/guest/item": [ok({ item: ALBUM })] });
+  mount({ section: "memories" });
+  const push = vi.spyOn(history, "pushState");
+  await expect.poll(() => host.querySelector(`a[href="/g/memories/${M1}"]`)).toBeTruthy();
+  await userEvent.click(host.querySelector(`a[href="/g/memories/${M1}"]`)!);
+  await expect.poll(() => heading()?.textContent).toBe("[TRIP]");
+  await userEvent.click([...host.querySelectorAll("main a")].find((a) => a.textContent === "Back to Memories")!);
+  await expect.poll(() => heading()?.textContent).toBe("Memories");
+  expect(push).toHaveBeenCalledTimes(1);
+  await expect.poll(() => document.activeElement).toBe(heading());
+  await expect.poll(() => host.querySelector(`a[href="/g/memories/${M1}"]`)).toBeTruthy(); // the list reads its cards again
+  await userEvent.click(host.querySelector(`a[href="/g/memories/${M1}"]`)!);
+  await expect.poll(() => heading()?.textContent).toBe("[TRIP]");
+  history.back();
+  await expect.poll(() => heading()?.textContent).toBe("Memories");
+  await expect.poll(() => document.activeElement).toBe(heading());
+  push.mockRestore();
+  history.replaceState(null, "", "/");
+});
+
+test("G4 review: the no-match notice is a live region present before searching; one place has no previous or next", async () => {
+  serve({ "/api/guest/list": [ok({ items: [place(1, "[ONLY]")] })] });
+  mount({ section: "together" });
+  await expect.poll(() => host.querySelector("main li button")).toBeTruthy();
+  const regions = [...host.querySelectorAll("main [role='status']")];
+  await userEvent.type(host.querySelector<HTMLInputElement>("input[type='search']")!, "nowhere");
+  expect(regions.some((r) => r.isConnected && r.textContent === "No place with that name.")).toBe(true);
+  await userEvent.clear(host.querySelector<HTMLInputElement>("input[type='search']")!);
+  await userEvent.click(host.querySelector<HTMLButtonElement>("main li button")!);
+  await expect.poll(() => host.querySelector("dialog[open] h2")?.textContent).toBe("[ONLY]");
+  expect([...host.querySelectorAll("dialog[open] button")].map((b) => b.getAttribute("aria-label") ?? b.textContent)).toEqual(["Close"]);
+});
+
+test("G1 review: the photo stack is named by its place while its photo is not loaded, even with alt text", async () => {
+  serve();
+  mount();
+  await expect.element(page.getByRole("button", { name: "Photo 1 of 2" })).toBeInTheDocument();
+});
+
+test("G2 review: a list thumbnail whose URL expired is signed again", async () => {
+  vi.useFakeTimers({ toFake: ["Date"] });
+  const id = media(1, "photo").id;
+  serve({ "/api/guest/list": [ok({ items: [memory(1, { media: [media(1, "photo")] })] })], "/api/guest/media": [ok({ urls: { [id]: "/t.webp" } }), ok({ urls: { [id]: "/t2.webp" } })] });
+  mount({ section: "memories" });
+  const img = () => host.querySelector<HTMLImageElement>("main li img");
+  await expect.poll(() => img()?.getAttribute("src")).toBe("/t.webp");
+  vi.setSystemTime(Date.now() + 301_000);
+  img()!.dispatchEvent(new Event("error"));
+  await expect.poll(() => img()?.getAttribute("src")).toBe("/t2.webp");
 });

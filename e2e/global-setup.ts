@@ -40,6 +40,8 @@ export default async function globalSetup() {
     await sql`insert into public.pages (id, theme, default_lang, visibility, timezone, copy_published_at, setup_completed_at, label_a, label_b)
       values (${id}, 'a_dreamy', 'en', 'token_only', 'UTC', now(), now(), 'Partner A', 'Partner B')`;
     await sql`update public.page_sections set enabled = true where page_id = ${id} and section in ('home', ${section})`;
+    // T3.1c: the first page also shows Together (G4).
+    if (id === E2E_PAGE) await sql`update public.page_sections set enabled = true where page_id = ${id} and section = 'together'`;
     await sql`insert into public.guest_tokens (page_id, version, token_hash, request_id)
       values (${id}, 1, sha256(convert_to(${token}, 'UTF8')), gen_random_uuid())`;
   }

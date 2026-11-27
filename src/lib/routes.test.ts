@@ -1,6 +1,6 @@
 import { expect, test } from "vitest";
 import { config as proxyConfig } from "../proxy";
-import { buildProblems, HANDLER_METHODS, ROUTES, safeNext, type BuildEntryPoints } from "./routes";
+import { buildProblems, CRAWL_URLS, HANDLER_METHODS, ROUTES, safeNext, type BuildEntryPoints } from "./routes";
 
 const clean: BuildEntryPoints = {
   appRoutes: { "/page": "/", "/_not-found/page": "/_not-found", "/_global-error/page": "/_global-error" },
@@ -66,6 +66,19 @@ test("a dynamic route is refused until the crawler has a concrete URL for it", (
   ]);
 });
 
+test("a dynamic route with a concrete crawler URL passes (T3.1c, the G3 album)", () => {
+  const built = { ...clean, appRoutes: { ...clean.appRoutes, "/r/[id]/page": "/r/[id]" } };
+  expect(buildProblems(built, { "/": "public", "/r/[id]": "guest" }, {}, { "/r/[id]": "/r/x" })).toEqual([]);
+});
+
+test("every crawler URL is concrete and stands for a dynamic route of the table", () => {
+  for (const [route, url] of Object.entries(CRAWL_URLS)) {
+    expect(Object.hasOwn(ROUTES, route) && route.includes("["), route).toBe(true);
+    expect(url.includes("[") || !url.startsWith(route.slice(0, route.indexOf("["))), url).toBe(false);
+  }
+  expect(Object.keys(ROUTES).filter((route) => route.includes("[") && !Object.hasOwn(CRAWL_URLS, route))).toEqual([]);
+});
+
 test("Pages Router routes beyond the built-in error pages are reported", () => {
   const built = { ...clean, pagesRoutes: [...clean.pagesRoutes, "/_app", "/api/legacy"] };
   expect(buildProblems(built, { "/": "public" })).toEqual(["Pages Router route /api/legacy is not allowed; use the App Router."]);
@@ -85,4 +98,13 @@ test("config rewrites are reported", () => {
 
 test("the landing page is public", () => {
   expect(ROUTES["/"]).toBe("public");
+});
+
+// T3.1c: G4 Together has its own guest address, like the other sections.
+test("the guest section addresses are guest routes", () => {
+  expect(["/g/home", "/g/memories", "/g/together", "/g/wishes"].map((path) => ROUTES[path])).toEqual(["guest", "guest", "guest", "guest"]);
+});
+
+test("the memory album address and its item route are guest routes", () => {
+  expect([ROUTES["/g/memories/[id]"], ROUTES["/api/guest/item"], HANDLER_METHODS["/api/guest/item"]]).toEqual(["guest", "guest", ["POST"]]);
 });

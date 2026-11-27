@@ -126,3 +126,10 @@ export async function guestWishes(token: string, after: { created_at: string; id
   if (error || !data) throw new Error("guest_guestbook_list failed");
   return data as Record<string, unknown>[];
 }
+
+// One published item for G3 (T3.1c), or null when the token, page, section or publication does not admit it.
+export async function guestItem(token: string, id: string) {
+  const { data, error } = await anon().rpc("guest_item", { token, item_id: id });
+  if (error || !data) throw new Error("guest_item failed");
+  return ((data as Record<string, unknown>[])[0] ?? null) as Record<string, unknown> | null;
+}

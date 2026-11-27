@@ -94,3 +94,17 @@ test("stillOpen: the token opens the page and, when asked, the section is still 
   rpc.mockResolvedValue({ data: null, error: null });
   expect(await stillOpen("tok", "memories")).toBe(false);
 });
+
+// T3.1c: G3 reads one item through guest_item; none is null; a failure throws without the token.
+test("guestItem returns the one row or null, and throws without the token", async () => {
+  vi.resetModules();
+  const rpc = vi.fn().mockResolvedValue({ data: [{ id: "i1" }], error: null });
+  vi.doMock("@supabase/supabase-js", () => ({ createClient: () => ({ rpc }) }));
+  const { guestItem } = await import("./guest");
+  expect(await guestItem("tok", "i1")).toEqual({ id: "i1" });
+  expect(rpc).toHaveBeenCalledWith("guest_item", { token: "tok", item_id: "i1" });
+  rpc.mockResolvedValue({ data: [], error: null });
+  expect(await guestItem("tok", "i1")).toBeNull();
+  rpc.mockResolvedValue({ data: null, error: { message: "boom" } });
+  await expect(guestItem("tok", "i1")).rejects.toThrow(/^guest_item failed$/);
+});

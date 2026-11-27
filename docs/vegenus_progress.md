@@ -358,7 +358,7 @@ Security gate (design 7 §6, Q85): Not started. Pass criteria: no open critical 
 
 | Task | Test first | Status |
 |---|---|---|
-| T3.1 Guest views G1-G8, enabled sections only, `copy` returned by the open functions (Q150: T3.1a database and API, T3.1b shell, theme prompt, menu, G1, G2, G5, G8, T3.1c G3 and G4 as a list; one branch `feature/guest-views`, one PR) | E5, E6, E13, E51, E56 | In progress: T3.1a committed; T3.1b GREEN locally (see the T3.1b evidence; theme prompt and G8 Theme group wait for board approval); T3.1c not started |
+| T3.1 Guest views G1-G8, enabled sections only, `copy` returned by the open functions (Q150: T3.1a database and API, T3.1b shell, theme prompt, menu, G1, G2, G5, G8, T3.1c G3 and G4 as a list; one branch `feature/guest-views`, one PR) | E5, E6, E13, E51, E56 | In progress: T3.1a, T3.1b and the theme choice committed; T3.1c committed (see the T3.1c evidence); the one T3.1 PR is open, waiting for CI `gate` and the owner |
 | T3.2 Wishes G5-G7: three paths (token, Member, visitor on a Published page), limits Q75/Q78, moderation O7; device cookie `vegenus_d` (24 h from last use, Q103), also set by the token exchange from then on (deferred from T1.5a, owner 2026-10-29) | E11, E46, E47 | Not started |
 | T3.3 EN and VI, no hard-coded strings, fallback rule Q67 | E12, E13, E54 | Not started |
 | T3.4 Mode selector (Static and Page) | E1, E2 | Not started |
@@ -426,6 +426,33 @@ Acceptance rows due: EN and VI complete with no hard-coded strings; verified on 
 - Not yet: the cross-fade on theme change (motion work); remembering the theme on the guest account (T3.6). The preference key is per device, not per page: a device that opens two different pages gets one prompt (per-page keys with the guest account, T3.6).
 
 - Moved to T3.1c (same PR): G1 section shortcuts, the photo stack's previous control and announced counter (guest UI §5 test 1), the fixed "no photos" and "no welcome note" notices (Q83, editable copy §3.1). Later, with the motion and theme work: loading only the shown theme's token file (theme system §9 step 2), and G8 full motion overriding a device reduce setting (the token files zero durations under the media query). `{count}` in the list intro is the number loaded so far (exact up to 50; a server total when a page needs more).
+
+#### T3.1c evidence (G3 album, G4 Together as a list, moved G1 items, 2026-11-26)
+
+- Scope: G1 section shortcuts (a `Sections` nav of the enabled built sections), the photo stack's previous and next controls around the announced counter, the Q83 fixed notices for no photos and no welcome note. G4 at `/g/together`: the shared list view with the intro, a place count, an accent-insensitive search over both title languages ("No place with that name."), place cards as buttons opening a native modal sheet (heading focused, date, note, previous and next that wrap, Close and Escape return focus to the card); Together sits between Memories and Wishes in the menu (Q150: the map in Phase 4). G3 at `/g/memories/<id>` (own address, pushed from a memory card, back and forward follow it): `/api/guest/item` over `guest_item` ("not_found" while Memories still opens, else the not-available answer), the album as one page at a time (opening with the cover, the message with the Q67 original-language note, its voice note and transcript, photo pages of four, the video page), previous and next keep focus, the page label opens the contents list, a photo opens a full-screen viewer that wraps and returns focus to the photo on Escape; video and voice are signed only when played; a gone memory says so with a way back. Memory cards are links named by their card (`aria-labelledby`: Chromium does not name a link from an article inside it; found by the e2e).
+- Route gate: G3 is the first dynamic route. `CRAWL_URLS` (`src/lib/routes.ts`) gives each dynamic route a concrete URL; the build refuses a dynamic route without one, and the no-credentials crawler (`e2e/routes.spec.ts`, E31) requests it there.
+- RED: G1 items, `npm test` 3 failed, 596 passed (not recorded: harness MCP disconnected). G4, 3 failed, 596 passed (not recorded). Route class of `/g/together`, harness run 126 (1 failed). G3, run 128: 7 failed (`guestItem is not a function`, the item route missing, `/g/memories/[id]` and `/api/guest/item` not in the table, the 4 album browser tests). Crawler URLs: 2 failed (not recorded). Card link name: 1 failed (not recorded).
+- GREEN: `npm test` run 127 (600), then 617 (not recorded: MCP disconnected; the hook let the runs through); typecheck and lint clean; `next build` clean and the route check passes (run here by bundling `scripts/check-routes.ts` with the installed rolldown, since this Node lacks TypeScript support); Playwright Chromium 116 pass: `guest-views` now also opens the album and the place sheet, checks both with axe at 390, 820 and 1440 and reflow at 320 px with 200 % text, and loops all four themes over `/g/home`, `/g/memories`, the album and `/g/together`; `guest-token` and `guest-views` scope their menu links to `#guest-nav` (Home now has shortcut links of the same names). e2e setup enables Together on the first page. WebKit not run here (CI).
+- Visual check (Playwright screenshots, phone and laptop, themes B and C): fixed an album page that spread its few lines over the whole page (`align-content: start`) and a control row that wrapped on phones (previous and next are now arrow buttons with their names as labels, the page label between them).
+- Not in T3.1c (shortcut, in code): one album page at a time at every size, no laptop spread and no page-turn effect (motion work).
+- Review (reviewer subagent, Opus, fresh context): no critical or high. All fixed test-first:
+  - Medium: `get_item` admitted any enabled section, so a Together place opened as an album. New migration `20261201120000_guest_item_memories.sql` limits G3 to Memories. RED: `npx supabase test db`, the new `guest_views` case failed (1 of 33). GREEN: 697.
+  - Medium: a photo button had no name when its alt text was empty or its URL not signed yet. It now falls back to "Photo n of total" (album and Home stack).
+  - Medium: album, viewer, poster, video, voice and sheet media did not re-sign after 5 minutes. They now refresh on error, like Home.
+  - Medium: Play video and Play voice did nothing after a failed signing. `useMedia` gained `retry`.
+  - Low: the album's Back link grew history (it now goes back when the album was pushed), and browser Back never moved focus (it now focuses the heading).
+  - Low: the no-match notice was a live region inserted together with its text (now always mounted).
+  - Low: a single place showed Previous and Next.
+  - RED for the client fixes: `npm test` 5 failed, 617 passed (not recorded: harness MCP disconnected).
+  - GREEN: `npm test` 622 on two runs; typecheck, lint, build and route check clean; Chromium e2e 116.
+  - The first G3 test's focus check is now polled: focus moves in an effect after the heading renders, and an immediate check flaked once.
+- Fix re-review (reviewer subagent, Opus, fix diff only): six fixes confirmed; no critical or high.
+  - Medium, fixed: Home's photo stack still had no name while its photo was unsigned, even with alt text.
+  - Low, fixed: the history test now resets the address.
+  - Also done: list thumbnails (G2, G4) now re-sign on error. Video and voice need no "not ready" state: `item_media` lists ready media only.
+  - RED: `npm test` 2 failed (not recorded). GREEN: 624; typecheck and lint clean; build clean; Chromium guest and routes e2e 55; privacy scan clean.
+- Owner approved the commit on 2026-11-26 and asked for the one T3.1 PR; the owner merges once CI `gate` is green.
+
 
 ### Phase 4: Themes and 3D, Page mode (weeks 10-13)
 

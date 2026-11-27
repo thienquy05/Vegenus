@@ -3,7 +3,7 @@
 -- guest-visible picks; list rows carry their ready media; guest_item reads one item; guest_media returns the
 -- storage paths a guest may see, which the server signs for 5 minutes. Placeholder data only.
 begin;
-select plan(32);
+select plan(33);
 
 -- A: token-only, everything enabled but Zodiac. B: another page, for foreign ids (E6, E56).
 insert into public.pages (id, theme, default_lang, visibility, timezone, label_a, label_b, copy_published_at) values
@@ -94,6 +94,7 @@ select is((select count(*) from public.guest_item('token-a', '00000000-0000-0000
 select is((select count(*) from public.guest_item('token-a', '00000000-0000-0000-0000-0000000000b9')), 0::bigint, 'guest_item: another page''s item is not found (E6, E56)');
 select is((select count(*) from public.guest_item('token-a', gen_random_uuid())), 0::bigint, 'guest_item: a missing id is not found (E56)');
 select is((select count(*) from public.guest_item('token-a', '00000000-0000-0000-0000-0000000000d1')), 0::bigint, 'guest_item: the Home item is read through guest_open only');
+select is((select count(*) from public.guest_item('token-a', '00000000-0000-0000-0000-0000000000b3')), 0::bigint, 'guest_item: G3 is Memories only, a Together place is not found (T3.1c review)');
 select is((select count(*) from public.guest_item('token-a-old', '00000000-0000-0000-0000-0000000000b1')), 0::bigint, 'guest_item: a rotated token reads nothing (E3)');
 select is((select count(*) from public.guest_item('token-b', '00000000-0000-0000-0000-0000000000b1')), 0::bigint, 'guest_item: another page''s token reads nothing (E6)');
 

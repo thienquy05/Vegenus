@@ -2,7 +2,7 @@
 import { type CSSProperties, type ReactNode, useCallback, useEffect, useLayoutEffect, useRef, useState, useSyncExternalStore } from "react";
 import type { GuestSummary } from "@/lib/guest";
 import { say, type CopyKey, type Lang } from "./copy";
-import { HomeView, ListView, useOnline } from "./views";
+import { AlbumView, HomeView, ListView, type Shortcut, useOnline } from "./views";
 import s from "./guest.module.css";
 import "../../../themes/a_dreamy/tokens.css";
 import "../../../themes/b_cosmic/tokens.css";
@@ -14,9 +14,9 @@ import "../../../themes/d_elegant/tokens.css";
 // (`vegenus_prefs`).
 // shortcut: the theme changes without the boards' cross-fade (--dur-fast); it comes with the motion work.
 // ponytail: one icon set for all four themes; the per-theme icon families (theme system §2) come with the scene work.
-export type Section = "home" | "memories" | "guestbook";
-const BUILT: Section[] = ["home", "memories", "guestbook"]; // menu order; Together (T3.1c) and Zodiac (T3.9) later
-const PATHS: Record<Section, string> = { home: "/g/home", memories: "/g/memories", guestbook: "/g/wishes" };
+export type Section = "home" | "memories" | "together" | "guestbook";
+const BUILT: Section[] = ["home", "memories", "together", "guestbook"]; // menu order; Zodiac (T3.9) later
+const PATHS: Record<Section, string> = { home: "/g/home", memories: "/g/memories", together: "/g/together", guestbook: "/g/wishes" };
 const THEMES = ["a_dreamy", "b_cosmic", "c_cozy", "d_elegant"];
 
 type Prefs = { lang?: Lang; theme?: string; motion?: "reduce" | "full"; corner?: "left" | "right" };
@@ -56,6 +56,7 @@ const overlap = (a: DOMRect, b: DOMRect) => a.left < b.right && b.left < a.right
 const ICONS: Record<Section | "settings", ReactNode> = {
   home: <path d="M4 11 12 4l8 7v9h-5v-6H9v6H4z" />,
   memories: <path d="M4 6h16v13H4zM4 15l5-5 4 4 3-3 4 4" />,
+  together: <path d="M12 21s-6-5.5-6-11a6 6 0 0 1 12 0c0 5.5-6 11-6 11zM12 12.5a2.5 2.5 0 1 0 0-5 2.5 2.5 0 0 0 0 5z" />,
   guestbook: <path d="M12 20s-7-4.5-7-10a4 4 0 0 1 7-2.5A4 4 0 0 1 19 10c0 5.5-7 10-7 10z" />,
   settings: <path d="M12 8a4 4 0 1 0 0 8 4 4 0 0 0 0-8zM12 2v3M12 19v3M2 12h3M19 12h3M5 5l2 2M17 17l2 2M5 19l2-2M17 7l2-2" />,
 };
@@ -65,7 +66,11 @@ const icon = (name: Section | "settings") => (
   </svg>
 );
 
-export function GuestApp({ summary, section: initial, token, children }: { summary: GuestSummary; section: Section; token?: string; children?: ReactNode }) {
+const ALBUM = /^\/g\/memories\/([0-9a-f-]{36})$/i; // G3's address
+
+export function GuestApp(props: { summary: GuestSummary; section: Section; item?: string; token?: string; children?: ReactNode }) {
+  const { summary, section: initial, token, children } = props;
+  const [detail, setDetail] = useState<string | null>(props.item ?? null); // the memory open in G3
   const [changed, setChanged] = useState<Prefs | null>(null);
   const [stored, setStored] = useState(canStore);
   const [gone, setGone] = useState(false);
@@ -145,8 +150,12 @@ export function GuestApp({ summary, section: initial, token, children }: { summa
   useEffect(() => {
     if (token) return;
     const back = () => {
-      const found = BUILT.find((x) => PATHS[x] === location.pathname);
+      const album = ALBUM.exec(location.pathname);
+      const found = album ? "memories" : BUILT.find((x) => PATHS[x] === location.pathname);
       if (found) setSection(found);
+      setDetail(album ? album[1] : null);
+      focusHeading.current = !album; // an album focuses its own heading once read
+      setVisits((n) => n + 1);
     };
     addEventListener("popstate", back);
     return () => removeEventListener("popstate", back);
@@ -177,8 +186,14 @@ export function GuestApp({ summary, section: initial, token, children }: { summa
     closeMenu(false);
     focusHeading.current = true;
     setSection(next);
+    setDetail(null);
     setVisits((n) => n + 1); // choosing the section already shown still moves focus to its heading
     if (!token && location.pathname !== PATHS[next]) history.pushState(null, "", PATHS[next]);
+  };
+  // G3 from a memory card: its own address (not in a visit run from memory); the album focuses its heading once read.
+  const openAlbum = (id: string) => {
+    setDetail(id);
+    if (!token) history.pushState({ album: true }, "", `/g/memories/${id}`);
   };
   useEffect(() => {
     if (!focusHeading.current) return;
@@ -286,9 +301,19 @@ export function GuestApp({ summary, section: initial, token, children }: { summa
           {children}
           {!online && <p role="status">{t("state.offline")}</p>}
           {section === "home" ? (
-            <HomeView summary={summary} lang={lang} token={token} t={t} onGone={onGone} />
+            <HomeView
+              summary={summary}
+              lang={lang}
+              token={token}
+              t={t}
+              onGone={onGone}
+              shortcuts={BUILT.filter((x): x is Shortcut["name"] => x !== "home" && summary.sections.includes(x)).map((name) => ({ name, href: PATHS[name] }))}
+              onGo={go}
+            />
+          ) : section === "memories" && detail ? (
+            <AlbumView key={detail} id={detail} summary={summary} lang={lang} token={token} t={t} onGone={onGone} onBack={() => (history.state?.album ? history.back() : go("memories"))} />
           ) : (
-            <ListView key={section} section={section} summary={summary} lang={lang} token={token} t={t} onGone={onGone} />
+            <ListView key={section} section={section} summary={summary} lang={lang} token={token} t={t} onGone={onGone} onOpen={openAlbum} />
           )}
         </main>
       </div>

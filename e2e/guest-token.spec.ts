@@ -19,8 +19,9 @@ test.beforeEach(async ({ page }) => {
 // Which page opened: page A enables Memories, page B does not (its Zodiac section is not built yet).
 async function showsMemories(page: Page, yes: boolean) {
   await page.getByRole("button", { name: "Open menu" }).click();
-  await expect(page.getByRole("link", { name: "Home" })).toBeVisible();
-  await expect(page.getByRole("link", { name: "Memories" })).toHaveCount(yes ? 1 : 0);
+  const menu = page.locator("#guest-nav"); // Home has its own shortcut links too (T3.1c)
+  await expect(menu.getByRole("link", { name: "Home" })).toBeVisible();
+  await expect(menu.getByRole("link", { name: "Memories" })).toHaveCount(yes ? 1 : 0);
   await page.keyboard.press("Escape");
 }
 
