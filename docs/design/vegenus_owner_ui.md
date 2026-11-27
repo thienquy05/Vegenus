@@ -565,6 +565,60 @@ Proposed copy (EN and VI; shipped strings reused as listed in `.design/settings/
 | `settings.leave` | Leave | Rời đi |
 | `home.counterUtc` | Day [N] together (UTC) | Ngày thứ [N] bên nhau (UTC) |
 
+### O9 Published address and the O2 Visibility row for T3.1p (2026-11-26, boards drawn; waiting for the owner's approval)
+
+Boards: OwnerVisibility, OwnerVisibilityTab and OwnerVisibilityLap (O9 revised), OwnerDash, OwnerDashTab and OwnerDashLap (the approved O2 boards with the Visibility row revised) and local copies of the approved O8 boards (only Back changed), in the git-ignored `.design/published/` (brief, copy, checks, rounds). Codex lead design, Claude review and render. Owner decisions (2026-11-26): Q151 (its own unit T3.1p after T3.1), Q155 (`/p/<name>`), Q156 (the name is required in O9), Q157 (Wishes read-only for visitors until T3.2). Claude's defaults 1-59 for sign-off (brief and `prompt3.md`-`prompt9.md` in that folder). Not yet on the canvas.
+
+- **Published is a normal choice** in "Who can open the page", with "Anyone with the address can open the page, and search engines may list it." The retired help `visibility.publishedHelp` ("coming later") goes.
+- **Page address** (only while Published is selected, in the same panel, one Save): label, the visible prefix `https://[HOST]/p/` in the field's description, the input, a "New address" echo of the normalized form (shown only while valid and different from the live saved address), and the hint against full names and dates.
+- **Name rules (client and server, one order):** trim ASCII whitespace (space, tab, LF, CR, VT, FF) and lowercase ASCII; then empty → whitespace, `/`, `:` or `.` inside (a pasted URL, or a line break in a paste) → a character outside `a-z 0-9 -` (accented letters included) → hyphen at an end or doubled → length 3-40. The server answers `400 {error: "invalid_name", reason}` with the same reasons; `409 name_taken` covers current and retired names of other pages. A server rejection stays tied to the slug it rejected until the slug changes or a newer answer resolves it.
+- **Reserved names:** current and retired names stay reserved for their page forever (a `page_vanity_names` table, unique name); only the same page may take a retired name back.
+- **Confirms:** "Make the page public?" (the address; the guest-link sentence depends on the saved state and the link; "People who already have this address can open the page again." when republishing at the kept name) and "Change the page address?" (current and new address, the old one stops at once and stays reserved; the new one may reopen for people who kept it). Focus on Cancel, Escape = Cancel; any newer snapshot that changes visibility, address or link availability closes an open confirm.
+- **Leaving Published:** before Save, "When you save, [address] stops opening. The name stays reserved for this page."; after, "Your page address [NAME] is kept for when you publish again."; Token-only with no link says guests need a guest link, with the Share shortcut.
+- **Saved and Published:** "Saved address" as wrapping text, Open page (new tab, `rel="noopener"`, a visually hidden "(new tab)") and Copy address with the O8 select-and-copy fallback; all three use one absolute URL from the site origin.
+- **Save contract:** `POST /api/owner/visibility {visibility, vanity_name?, base: {visibility, vanity_name, has_link}, request_id, confirm?: true}` (`confirm` for Private and Published, including a rename). Under the page lock: request id first (a committed id returns the current `owner_page()`), then the base (409 `conflict`), then validate and apply. The draft captures its base at the first edit and keeps it through confirms and retries. Answers `200 {page}`; the read stays `200 {page, drafts}` (`{page: null, drafts: null}` without a page). Page fields: version, theme, default_lang, label_a, label_b, timezone, setup_completed, visibility, vanity_name, sections, storage_used_bytes, storage_budget_bytes, link. Published implies a non-null name. 5xx, timeout and network loss are Unconfirmed (Try again, same request id); `wording_not_published` covers Token-only and Published.
+- **O2 Visibility row:** Published with its wrapping address and Change (a contextual bilingual name); Last known only for an accepted snapshot awaiting a fresh read; no page data during 401 recovery; browser Back revalidates like the Back link.
+- **Guest side:** none new. A visitor sees the T3.1 views at `/p/<name>`; an unknown name or a page that is not Published is the ordinary not-found page; Published pages may be indexed, Token-only and Private stay `noindex`.
+- **Checks (2026-11-26):** board logic checks 348 assertions (`.design/published/check-published.cjs`, each fix's check seen failing first); Chromium render of every review state at the board's own size and at 320 px with 200 % text: 834 cases, no sideways scroll, no clipped box, no target under 44 px, no mid-word break outside the address, no axe violation (WCAG 2.2 AA), no console error. WebKit not run locally. Reviews: Claude's screenshot review, 7 Codex design review rounds and round 8 by the `reviewer` subagent after the Codex quota ran out; round 8 left 2 medium and 4 low findings open (`.design/published/review8-findings.txt`), to fix before the owner's approval.
+
+New copy (EN and VI as drawn, for the owner's approval):
+
+| Key | English | Tiếng Việt |
+| --- | --- | --- |
+| `visibility.publicHelp` | Anyone with the address can open the page, and search engines may list it. | Ai có địa chỉ cũng có thể mở trang, và công cụ tìm kiếm có thể liệt kê trang. |
+| `visibility.address` | Page address | Địa chỉ trang |
+| `visibility.addressHint` | 3-40 characters: lowercase letters a-z, numbers and hyphens. Anyone with the address can open the page, so avoid full names or dates. | 3–40 ký tự: chữ thường a-z, chữ số và dấu gạch nối. Ai có địa chỉ cũng có thể mở trang, nên tránh dùng họ tên đầy đủ hoặc ngày tháng. |
+| `visibility.addressSummary` | Check the page address. | Kiểm tra địa chỉ trang. |
+| `visibility.addressEmpty` | Enter a page address. | Nhập địa chỉ trang. |
+| `visibility.addressShort` | Use at least 3 characters. | Dùng ít nhất 3 ký tự. |
+| `visibility.addressLong` | Use at most 40 characters. | Dùng tối đa 40 ký tự. |
+| `visibility.addressCharacters` | Use only letters a-z, numbers and hyphens. | Chỉ dùng chữ cái a-z, chữ số và dấu gạch nối. |
+| `visibility.addressHyphens` | Start and end with a letter or number, with single hyphens only. | Bắt đầu và kết thúc bằng chữ cái hoặc chữ số, và chỉ dùng dấu gạch nối đơn. |
+| `visibility.addressTaken` | This address is already taken. Try another. | Địa chỉ này đã được dùng. Hãy thử địa chỉ khác. |
+| `visibility.publicQuestion` | Make the page public? | Công khai trang? |
+| `visibility.publicBody` | Anyone with the address {address} can open the page, and search engines may list it. | Ai có địa chỉ {address} cũng có thể mở trang, và công cụ tìm kiếm có thể liệt kê trang. |
+| `visibility.addressMayWorkAgain` | If this page used {address} before, people who kept it can open the page again. | Nếu trang này từng dùng {address}, những ai đã lưu địa chỉ đó có thể mở lại trang. |
+| `visibility.addressWorksAgain` | People who already have this address can open the page again. | Những ai đã có địa chỉ này có thể mở lại trang. |
+| `visibility.makePublic` | Make public | Công khai |
+| `visibility.renameQuestion` | Change the page address? | Đổi địa chỉ trang? |
+| `visibility.currentAddress` | Current address | Địa chỉ hiện tại |
+| `visibility.renameBody` | {address} stops working at once and stays reserved for this page. People who saved it will need the new address. | Địa chỉ {address} sẽ ngừng hoạt động ngay và vẫn được dành riêng cho trang này. Ai đã lưu địa chỉ này sẽ cần địa chỉ mới. |
+| `visibility.rename` | Change address | Đổi địa chỉ |
+| `visibility.addressKept` | Your page address {name} is kept for when you publish again. | Địa chỉ trang {name} được giữ lại để dùng khi bạn công khai lại. |
+| `visibility.openPage` | Open page | Mở trang |
+| `visibility.copyAddress` | Copy address | Sao chép địa chỉ |
+| `visibility.addressCopied` | Address copied. | Đã sao chép địa chỉ. |
+| `visibility.savedAddress` | Saved address | Địa chỉ đã lưu |
+| `visibility.newAddress` | New address | Địa chỉ mới |
+| `visibility.addressPart` | Enter only the part after /p/, without spaces. | Chỉ nhập phần sau /p/, không có khoảng trắng. |
+| `visibility.linkKeepsWorking` | Your guest link keeps working. | Liên kết dành cho khách vẫn hoạt động. |
+| `visibility.linkWorksAgain` | Your guest link works again. | Liên kết dành cho khách hoạt động trở lại. |
+| `visibility.unpublish` | When you save, {address} stops opening. The name stays reserved for this page. | Khi bạn lưu, {address} sẽ không mở được nữa. Tên này vẫn được giữ riêng cho trang. |
+| `visibility.openPageNewTab` | (new tab) | (thẻ mới) |
+| `visibility.noGuestLink` | Guests need a guest link to open the page. Create one in Share. | Khách cần có liên kết dành cho khách để mở trang. Hãy tạo liên kết trong mục Chia sẻ. |
+| `visibility.sentMaySave` | The change you already sent may still be saved. | Thay đổi bạn đã gửi vẫn có thể được lưu. |
+| `visibility.sectionsSaved` | Sections saved. | Đã lưu các mục. |
+
 ### Limits and owner preview behavior
 
 - **Confirmed:** wishes 40/500, Q34c; pending hidden, Q34d; wish limits, Q75 and Q78 (per-IP limit 20); guest-account cap 50, Q38; video ≤50 MB and approximately 25 MB target, Q27.

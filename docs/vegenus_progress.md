@@ -358,7 +358,8 @@ Security gate (design 7 §6, Q85): Not started. Pass criteria: no open critical 
 
 | Task | Test first | Status |
 |---|---|---|
-| T3.1 Guest views G1-G8, enabled sections only, `copy` returned by the open functions (Q150: T3.1a database and API, T3.1b shell, theme prompt, menu, G1, G2, G5, G8, T3.1c G3 and G4 as a list; one branch `feature/guest-views`, one PR) | E5, E6, E13, E51, E56 | In progress: T3.1a, T3.1b and the theme choice committed; T3.1c committed (see the T3.1c evidence); the one T3.1 PR is open, waiting for CI `gate` and the owner |
+| T3.1 Guest views G1-G8, enabled sections only, `copy` returned by the open functions (Q150: T3.1a database and API, T3.1b shell, theme prompt, menu, G1, G2, G5, G8, T3.1c G3 and G4 as a list; one branch `feature/guest-views`, one PR) | E5, E6, E13, E51, E56 | Done: PR #87 merged 2026-11-26 (`c716eee`) |
+| T3.1p Published-page route (Q151, Q155-Q157): `/p/<name>` reuses the T3.1 views through `public_*` reads (adds `public_item`, `public_media`), indexable; O9 makes Published selectable with a required vanity name; Wishes read-only until T3.2 | E5, E6, E21, E47 | Design stage on `docs/published-route-design`: boards drawn and reviewed (9 rounds); round-8 findings open; not yet approved |
 | T3.2 Wishes G5-G7: three paths (token, Member, visitor on a Published page), limits Q75/Q78, moderation O7; device cookie `vegenus_d` (24 h from last use, Q103), also set by the token exchange from then on (deferred from T1.5a, owner 2026-10-29) | E11, E46, E47 | Not started |
 | T3.3 EN and VI, no hard-coded strings, fallback rule Q67 | E12, E13, E54 | Not started |
 | T3.4 Mode selector (Static and Page) | E1, E2 | Not started |
@@ -453,6 +454,17 @@ Acceptance rows due: EN and VI complete with no hard-coded strings; verified on 
   - RED: `npm test` 2 failed (not recorded). GREEN: 624; typecheck and lint clean; build clean; Chromium guest and routes e2e 55; privacy scan clean.
 - Owner approved the commit on 2026-11-26 and asked for the one T3.1 PR; PR #87. The owner asked Claude to merge it once CI is green (2026-11-26).
 - CI run 1 on #87: e2e (chromium) failed before any test ran (runner: Docker Hub data limit, database port 54322 already in use). e2e (webkit) hit the 30 s test timeout in the guest-views theme loop (4 themes × 4 pages × 3 sizes in one test); no axe violation. Fix: each theme is its own test sharing per-worker fixtures; Chromium guest-views 5 passed locally (about 3.6 s per theme).
+- CI run 2 on `50cf4d1`: every check green, WebKit included. The owner asked Claude to merge it when green; PR #87 merged 2026-11-26 (`c716eee`).
+
+#### T3.1p design stage (Published address, 2026-11-26, `docs/published-route-design` off `master` `c716eee`)
+
+- Owner decisions (2026-11-26): Q151 (its own unit after T3.1, before T3.2), Q155 (`/p/<name>`), Q156 (the name is required in O9), Q157 (Wishes read-only for visitors until T3.2). Recorded in PRD §12.
+- Found in the repo: `public_open`, `public_list` and `public_guestbook_list` exist (core read path, by vanity name); `public_item` and `public_media` do not; `/api/owner/visibility` refuses Published (409 `not_available`, Q146); nothing sets `vanity_name`.
+- The visitor sees the T3.1 views unchanged, so no new guest boards. Codex (lead designer) drew O9 revised, the O2 Visibility row and local O8 copies in `.design/published/` from `.design/published/BRIEF.md` (same run settings as T2.6: MCP servers and download-capable plugins off, npm offline).
+- Review loop: Claude's own screenshot review (round 2: 4 findings) and 7 Codex review rounds (read-only sandbox, placeholder text only): 9, 9, 7, 5, 6, 7 findings, highs 2, 3, 1, 1, 0, 1. Claude accepted every finding (defaults 10-59 in `prompt3.md`-`prompt9.md`). Each fix's logic check was seen failing first (RED/GREEN per round: 15/81 → 189/0, 189/15 → 204/0, 204/27 → 231/0, 231/30 → 261/0, 261/21 → 282/0, 279/18 → 297/0, 294/18 → 312/0, 309/18 → 327/0, 327/21 → 348/0).
+- Result: `node check-published.cjs` 348 passed, 0 failed; Chromium render of every review state at the board size and at 320 px with 200 % text 834 cases, 0 problems; WebKit not run locally.
+- Codex quota ran out after round 9's fixes; round 8 of the review was done by the `reviewer` subagent (fresh context; owner, 2026-11-26): needs-attention, the round-9 fixes hold, 2 medium and 4 low open (`.design/published/review8-findings.txt`): a save reply with an invalid or missing page is not validated; a 401 after an Unconfirmed save drops the retry and later reports the owner's own change as a conflict; three copy gaps (first publish, search results lingering after unpublish or rename, retiring a kept name when publishing under another); an unknown `invalid_name` reason message.
+- Not yet: fixing the round-8 findings and a further review, the canvas, and the owner's approval of the boards, copy and defaults 1-59. The owner asked to commit and stop here for now (2026-11-26).
 
 
 ### Phase 4: Themes and 3D, Page mode (weeks 10-13)
