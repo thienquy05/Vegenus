@@ -451,7 +451,8 @@ Acceptance rows due: EN and VI complete with no hard-coded strings; verified on 
   - Low, fixed: the history test now resets the address.
   - Also done: list thumbnails (G2, G4) now re-sign on error. Video and voice need no "not ready" state: `item_media` lists ready media only.
   - RED: `npm test` 2 failed (not recorded). GREEN: 624; typecheck and lint clean; build clean; Chromium guest and routes e2e 55; privacy scan clean.
-- Owner approved the commit on 2026-11-26 and asked for the one T3.1 PR; the owner merges once CI `gate` is green.
+- Owner approved the commit on 2026-11-26 and asked for the one T3.1 PR; PR #87. The owner asked Claude to merge it once CI is green (2026-11-26).
+- CI run 1 on #87: e2e (chromium) failed before any test ran (runner: Docker Hub data limit, database port 54322 already in use). e2e (webkit) hit the 30 s test timeout in the guest-views theme loop (4 themes × 4 pages × 3 sizes in one test); no axe violation. Fix: each theme is its own test sharing per-worker fixtures; Chromium guest-views 5 passed locally (about 3.6 s per theme).
 
 
 ### Phase 4: Themes and 3D, Page mode (weeks 10-13)
