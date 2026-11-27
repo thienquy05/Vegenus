@@ -136,8 +136,8 @@ test("the Home read signs each pick's preview and hides the storage path", async
       id: ID,
       version: 2,
       picks: [
-        { media_id: C2, hidden: true, preview: { bucket: "media-thumb", path: "p/c2/thumb" } },
-        { media_id: C1, hidden: false, preview: null },
+        { media_id: C2, preview: { bucket: "media-thumb", path: "p/c2/thumb" } },
+        { media_id: C1, preview: null },
       ],
     },
     error: null,
@@ -149,8 +149,8 @@ test("the Home read signs each pick's preview and hides the storage path", async
       id: ID,
       version: 2,
       picks: [
-        { media_id: C2, hidden: true, preview_url: "https://storage.test/p/c2/thumb?token=t" },
-        { media_id: C1, hidden: false, preview_url: null },
+        { media_id: C2, preview_url: "https://storage.test/p/c2/thumb?token=t" },
+        { media_id: C1, preview_url: null },
       ],
     },
   });

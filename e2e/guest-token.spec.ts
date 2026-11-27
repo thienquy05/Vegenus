@@ -12,7 +12,18 @@ const GUEST_POST = { "content-type": "application/json", "x-vegenus-guest": "1",
 const randomIp = () => `203.0.113.${Math.floor(Math.random() * 250) + 1}`;
 test.beforeEach(async ({ page }) => {
   await page.setExtraHTTPHeaders({ "x-forwarded-for": randomIp() });
+  // A returning guest: a saved theme, so the first-visit theme prompt (guest-views.spec.ts) stays closed.
+  await page.addInitScript(() => localStorage.getItem("vegenus_prefs") ?? localStorage.setItem("vegenus_prefs", '{"theme":"a_dreamy"}'));
 });
+
+// Which page opened: page A enables Memories, page B does not (its Zodiac section is not built yet).
+async function showsMemories(page: Page, yes: boolean) {
+  await page.getByRole("button", { name: "Open menu" }).click();
+  const menu = page.locator("#guest-nav"); // Home has its own shortcut links too (T3.1c)
+  await expect(menu.getByRole("link", { name: "Home" })).toBeVisible();
+  await expect(menu.getByRole("link", { name: "Memories" })).toHaveCount(yes ? 1 : 0);
+  await page.keyboard.press("Escape");
+}
 
 // Every request the page makes, with its Referer, to prove the token travels only in a POST body.
 function recordRequests(page: Page) {
@@ -26,7 +37,7 @@ test("the fragment is exchanged for the guest cookie and removed (E27)", async (
   await page.goto(`/g#${token()}`);
   await expect(page).toHaveURL("/g/home");
   expect(new URL(page.url()).hash).toBe("");
-  await expect(page.getByRole("listitem").filter({ hasText: "memories" })).toBeVisible();
+  await showsMemories(page, true);
 
   const cookie = (await context.cookies()).find((c) => c.name === "vegenus_g");
   expect(cookie?.httpOnly).toBe(true);
@@ -78,7 +89,7 @@ test("overlapping exchanges end with the newest token's cookie and page", async 
   await page.goto(`/g#${token()}`);
   await page.evaluate((b) => (location.hash = b), tokenB);
   await expect(page).toHaveURL("/g/home", { timeout: 10_000 });
-  await expect(page.getByRole("listitem").filter({ hasText: "zodiac" })).toBeVisible();
+  await showsMemories(page, false);
   expect((await context.cookies()).find((c) => c.name === "vegenus_g")?.value).toBe(tokenB);
 });
 
@@ -99,7 +110,7 @@ test("cookies blocked: the visit works in memory with the notice (E30)", async (
   });
   await page.goto(`/g#${token()}`);
   await expect(page.getByRole("status")).toContainText(NOT_REMEMBERED);
-  await expect(page.getByRole("listitem").filter({ hasText: "memories" })).toBeVisible();
+  await showsMemories(page, true);
   expect(new URL(page.url()).pathname).toBe("/g");
   expect(new URL(page.url()).hash).toBe(`#${token()}`);
   expect((await context.cookies()).filter((c) => c.name === "vegenus_g")).toEqual([]);
@@ -110,7 +121,7 @@ test("cookies blocked: the visit works in memory with the notice (E30)", async (
 test("a failed probe clears the fragment and still shows the page", async ({ page, context }) => {
   await page.route("/g/home", (route) => (route.request().resourceType() === "fetch" ? route.abort() : route.continue()));
   await page.goto(`/g#${token()}`);
-  await expect(page.getByRole("listitem").filter({ hasText: "memories" })).toBeVisible();
+  await showsMemories(page, true);
   expect(new URL(page.url()).hash).toBe("");
   await expect(page.getByRole("status")).toHaveCount(0);
   expect((await context.cookies()).filter((c) => c.name === "vegenus_g")).toHaveLength(1);
@@ -153,7 +164,7 @@ test("a retry that finds cookies blocked puts the fragment back", async ({ page,
   await expect(page.getByRole("status")).toContainText(NOT_REMEMBERED);
   expect(new URL(page.url()).hash).toBe(`#${token()}`);
   await page.reload();
-  await expect(page.getByRole("listitem").filter({ hasText: "memories" })).toBeVisible();
+  await showsMemories(page, true);
 });
 
 test("the exchange refuses a missing header or a foreign Origin (CSRF, design 1 §1)", async ({ request }) => {

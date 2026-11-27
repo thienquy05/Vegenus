@@ -644,6 +644,11 @@ export function Item({ id: opened, kind, lang, onBack, onSignedOut, onUpload }: 
               <p className={s.small}>
                 <T k="content.limits" />
               </p>
+              {item?.status === "published" && (
+                <p className={s.small}>
+                  <T k="content.mediaLive" />
+                </p>
+              )}
               {!item && (
                 <p className={s.small}>
                   <T k="content.saveFirst" />

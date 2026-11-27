@@ -4,11 +4,10 @@ import { daysTogether } from "./counter";
 import { safeZone } from "./zone";
 import type { Lang } from "./content";
 
-// One pick of POST /api/owner/home/get: hidden when its memory is unpublished (guests skip it).
+// One pick of POST /api/owner/home/get. Guests see every pick of a published Home (Q152).
 export type Pick = {
   media_id: string;
   item_id: string;
-  hidden: boolean;
   alt: string | null;
   alt_alt: string | null;
   width: number | null;

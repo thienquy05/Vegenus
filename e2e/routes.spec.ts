@@ -1,9 +1,9 @@
 import { expect, test } from "@playwright/test";
-import { HANDLER_METHODS, ROUTES } from "../src/lib/routes";
+import { CRAWL_URLS, HANDLER_METHODS, ROUTES } from "../src/lib/routes";
 
 // E31: with no session and no token, every route in the table gives only its allowed result.
 // Pages are fetched with GET; route handlers with each listed method and one unlisted method.
-// The build refuses dynamic routes until this file gets concrete URLs for them (src/lib/routes.ts).
+// A dynamic route is requested at its concrete URL (CRAWL_URLS, src/lib/routes.ts); the build refuses one without.
 for (const [path, routeClass] of Object.entries(ROUTES)) {
   const methods = HANDLER_METHODS[path];
   if (path === "/api/health") {
@@ -30,10 +30,11 @@ for (const [path, routeClass] of Object.entries(ROUTES)) {
     continue;
   }
   test(`${routeClass} route ${path} without credentials`, async ({ request }) => {
-    const res = await request.get(path, { maxRedirects: 0 });
+    const url = CRAWL_URLS[path] ?? path;
+    const res = await request.get(url, { maxRedirects: 0 });
     if (routeClass === "owner") {
       expect(res.status()).toBe(307);
-      expect(res.headers().location).toBe(`/login?next=${encodeURIComponent(path)}`);
+      expect(res.headers().location).toBe(`/login?next=${encodeURIComponent(url)}`);
     } else if (routeClass === "guest") {
       // No token cookie: back to the tap notice, which reveals nothing (G-E1).
       expect(res.status()).toBe(307);

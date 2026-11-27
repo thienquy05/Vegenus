@@ -1,0 +1,592 @@
+/* Guest shell (T3.1b): theme tokens from themes/<id>/tokens.css on <html data-theme>; guest UI §6 sizes. */
+.shell {
+  min-height: 100dvh;
+  background: var(--bg);
+  background-image: var(--bg-image);
+  background-attachment: fixed;
+  color: var(--text);
+  font-family: var(--font-body);
+  font-size: var(--fs-md);
+  line-height: 1.5;
+  overflow-x: clip;
+}
+.shell :focus-visible {
+  outline: 3px solid var(--focus);
+  outline-offset: 3px;
+}
+.shell h1,
+.shell h2 {
+  font-family: var(--font-display);
+  font-style: var(--display-style);
+  font-weight: var(--display-weight);
+  line-height: 1.2;
+  overflow-wrap: anywhere;
+}
+.shell h1 {
+  font-size: clamp(var(--fs-xl), 8vw, var(--fs-display));
+  margin: 0 0 var(--space-3);
+}
+.shell h1:focus {
+  outline: none;
+}
+
+/* The menu button sits in a reserved 88 px top bar (theme system §2). */
+.menuButton {
+  position: fixed;
+  z-index: 30;
+  top: calc(16px + env(safe-area-inset-top));
+  left: calc(16px + env(safe-area-inset-left));
+  width: 56px;
+  height: 56px;
+  border-radius: 50%;
+  border: 1px solid var(--menu-item-border);
+  background: var(--menu-button-bg);
+  color: var(--menu-button-fg);
+  display: grid;
+  place-items: center;
+  cursor: pointer;
+}
+.menuButton[data-corner="right"] {
+  left: auto;
+  right: calc(16px + env(safe-area-inset-right));
+}
+.menuButton[hidden] {
+  display: none;
+}
+
+/* Open: items on a quarter arc from the button (radius 200 px), each with a labelled chip in its target. */
+.fan ul,
+.list ul {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+.fan li {
+  position: fixed;
+  z-index: 30;
+  top: calc(16px + env(safe-area-inset-top));
+  left: calc(18px + env(safe-area-inset-left));
+  transform: translate(var(--x), var(--y));
+  transition: transform var(--dur-fast) var(--ease-enter);
+}
+.shell[data-corner="right"] .fan li {
+  left: auto;
+  right: calc(18px + env(safe-area-inset-right));
+}
+.item {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  min-height: 52px;
+  color: var(--menu-item-fg);
+  text-decoration: none;
+  background: none;
+  border: 0;
+  padding: 0;
+  font: inherit;
+  cursor: pointer;
+}
+/* In the fan the label sits outward along the radius, 36 px from the bubble's centre (approved menu boards). */
+.fan .item {
+  position: relative;
+  width: 52px;
+}
+.fan .chip {
+  position: absolute;
+  left: calc(26px + 36px * var(--c));
+  top: calc(26px + 36px * var(--s));
+  transform: translate(calc(-50% * (1 - var(--c))), calc(-50% * (1 - var(--s))));
+}
+.shell[data-corner="right"] .fan .chip {
+  left: calc(26px - 36px * var(--c));
+  transform: translate(calc(-50% * (1 + var(--c))), calc(-50% * (1 - var(--s))));
+}
+.bubble {
+  width: 52px;
+  height: 52px;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  background: var(--menu-item-bg);
+  border: 1px solid var(--menu-item-border);
+}
+.chip {
+  padding: var(--space-1) var(--space-3);
+  border-radius: var(--radius-pill);
+  background: var(--menu-item-bg);
+  border: 1px solid var(--menu-item-border);
+  color: var(--text);
+  font-size: 13px;
+  font-weight: 600;
+  white-space: nowrap;
+}
+.item[aria-current="page"] .bubble,
+.item[aria-current="page"] .chip {
+  background: var(--menu-item-active-bg);
+  color: var(--menu-item-active-fg);
+}
+/* Fallback: a labelled list anchored top-left over the page, when the fan does not fit. */
+.list {
+  position: fixed;
+  z-index: 30;
+  inset: calc(88px + env(safe-area-inset-top)) var(--space-4) auto;
+  padding: var(--space-3);
+  border-radius: var(--radius-md);
+  background: var(--menu-item-bg);
+  border: 1px solid var(--menu-item-border);
+  box-shadow: 0 0 0 100vmax var(--scrim);
+}
+.list li + li {
+  margin-top: var(--space-2);
+}
+.list .chip {
+  white-space: normal;
+}
+.closeLayer {
+  position: fixed;
+  inset: 0;
+  z-index: 20;
+}
+
+/* The page steps back: a tilted card on phones, a blur in place on tablet and laptop. */
+.page {
+  min-height: 100dvh; /* the step-back card scales from the screen's corner, not from the end of short content */
+  transition: transform var(--dur-slow) var(--ease), filter var(--dur-slow) var(--ease);
+  transform-origin: 100% 100%;
+}
+.page[data-open] {
+  transform: translate(4%, 2%) scale(0.6) rotate(-3deg);
+  box-shadow: var(--menu-card-shadow);
+  border-radius: var(--radius-md);
+  overflow: hidden;
+}
+@media (min-width: 768px) {
+  .page[data-open] {
+    transform: none;
+    box-shadow: none;
+    filter: blur(6px);
+  }
+}
+:global(html[data-motion="reduce"]) .shell *,
+:global(html[data-motion="reduce"]) .page {
+  transition: none !important;
+  animation: none !important;
+}
+
+.main {
+  padding: calc(88px + env(safe-area-inset-top)) var(--space-4) var(--space-7);
+  max-width: 1120px;
+  margin: 0 auto;
+}
+@media (min-width: 768px) {
+  .main {
+    padding-inline: var(--space-5);
+  }
+}
+@media (min-width: 1200px) {
+  .main {
+    padding-inline: var(--space-6);
+  }
+}
+
+/* G1: phone one column; tablet centred; laptop photo and words side by side. */
+.home {
+  display: grid;
+  gap: var(--space-5);
+}
+.homeHead p {
+  color: var(--text-muted);
+  font-size: var(--fs-lg);
+}
+.stackWrap {
+  margin: 0;
+  display: grid;
+  gap: var(--space-2);
+  justify-items: center;
+}
+.stack {
+  display: grid;
+  gap: var(--space-2);
+  justify-items: center;
+  width: min(100%, 420px);
+  padding: var(--space-3);
+  border-radius: var(--radius-md);
+  border: 1px solid var(--surface-border);
+  background: var(--surface);
+  color: var(--text);
+  font: inherit;
+  cursor: pointer;
+}
+.stack img,
+.photoSlot {
+  display: block;
+  width: 100%;
+  height: auto;
+  max-height: 60dvh;
+  object-fit: contain;
+  border-radius: var(--radius-sm);
+}
+.photoSlot {
+  background: var(--line);
+}
+.note {
+  padding: var(--space-4);
+  border-radius: var(--radius-md);
+  background: var(--surface);
+  border: 1px solid var(--surface-border);
+  white-space: pre-line;
+  overflow-wrap: anywhere;
+}
+@media (min-width: 1200px) {
+  .home {
+    grid-template-columns: 1fr 1fr;
+    align-items: start;
+  }
+  .homeHead {
+    grid-column: 1 / -1;
+  }
+}
+
+/* G2 and G5: one reading column (tablet 720 px), laptop introduction beside the list. */
+.section > header p {
+  color: var(--text-muted);
+}
+.cards {
+  list-style: none;
+  margin: var(--space-4) 0;
+  padding: 0;
+  display: grid;
+  gap: var(--space-4);
+  max-width: 720px;
+}
+.card {
+  padding: var(--space-4);
+  border-radius: var(--radius-md);
+  background: var(--surface);
+  border: 1px solid var(--surface-border);
+  overflow-wrap: anywhere;
+}
+.card p {
+  margin: var(--space-2) 0 0;
+  white-space: pre-line;
+}
+.cardTitle {
+  font-size: var(--fs-lg);
+  margin: 0;
+}
+.thumb {
+  display: block;
+  width: 100%;
+  height: auto;
+  max-height: 240px;
+  object-fit: cover;
+  border-radius: var(--radius-sm);
+  margin-bottom: var(--space-3);
+}
+@media (min-width: 1200px) {
+  .section {
+    display: grid;
+    grid-template-columns: 280px 1fr;
+    column-gap: var(--space-6);
+    align-items: start;
+  }
+  .section > header {
+    position: sticky;
+    top: calc(88px + env(safe-area-inset-top));
+  }
+  .section > :not(header) {
+    grid-column: 2;
+  }
+}
+
+.secondary {
+  min-height: 48px;
+  min-width: 44px;
+  padding: 0 var(--space-4);
+  border-radius: var(--radius-pill);
+  border: 1px solid var(--surface-border);
+  background: var(--surface);
+  color: var(--text);
+  font: inherit;
+  cursor: pointer;
+}
+/* G1: previous, the announced counter, next; then the section shortcuts (links, at least 44 px, no state). */
+.stackControls {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-3);
+}
+.shortcuts {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+  grid-column: 1 / -1;
+}
+.shortcuts a {
+  display: inline-flex;
+  align-items: center;
+  min-height: 48px;
+  padding: 0 var(--space-4);
+  border-radius: var(--radius-pill);
+  border: 1px solid var(--surface-border);
+  background: var(--surface);
+  color: var(--text);
+  text-decoration: none;
+}
+/* G4: the search field and place cards (buttons), the sheet's photo. */
+.search input {
+  width: 100%;
+  min-height: 48px;
+  padding: 0 var(--space-3);
+  border-radius: var(--radius-pill);
+  border: 1px solid var(--surface-border);
+  background: var(--surface);
+  color: var(--text);
+  font: inherit;
+  font-size: 1rem;
+}
+.placeCard {
+  display: grid;
+  gap: var(--space-1);
+  width: 100%;
+  text-align: start;
+  font: inherit;
+  cursor: pointer;
+}
+.sheetPhoto {
+  width: 100%;
+  height: auto;
+  border-radius: var(--radius-sm);
+}
+/* Q68: the menu button hides under any open sheet or dialog. */
+:global(body:has(dialog[open])) .menuButton {
+  visibility: hidden;
+}
+/* G3 album: one page at a time, its controls under it; photo pages in a grid; the viewer fills the screen. */
+.cardLink {
+  display: block;
+  color: inherit;
+  text-decoration: none;
+}
+.back {
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;
+  color: var(--text);
+}
+.album {
+  display: grid;
+  gap: var(--space-4);
+  max-width: 720px;
+  margin: 0 auto;
+}
+.albumPage {
+  display: grid;
+  gap: var(--space-3);
+  padding: var(--space-4);
+  border-radius: var(--radius-md);
+  border: 1px solid var(--surface-border);
+  background: var(--surface);
+  min-height: 50dvh;
+  align-content: start;
+}
+.albumGrid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: var(--space-2);
+}
+.albumPhoto {
+  padding: 0;
+  border: 0;
+  background: none;
+  cursor: zoom-in;
+}
+.albumPhoto img,
+.video img,
+.video video {
+  width: 100%;
+  height: auto;
+  border-radius: var(--radius-sm);
+}
+.albumNav {
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  gap: var(--space-2);
+}
+.albumNav button[aria-disabled="true"] {
+  opacity: 0.5;
+}
+.contents {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: var(--space-2);
+}
+.voice,
+.video {
+  display: grid;
+  gap: var(--space-2);
+}
+.viewer {
+  width: 100vw;
+  max-width: 100vw;
+  height: 100dvh;
+  max-height: 100dvh;
+  margin: 0;
+  padding: var(--space-4);
+  border: 0;
+  background: var(--bg);
+  color: var(--text);
+}
+.viewer img {
+  display: block;
+  max-width: 100%;
+  max-height: 70dvh;
+  margin: var(--space-4) auto;
+  object-fit: contain;
+}
+.primary {
+  min-height: 48px;
+  min-width: 44px;
+  padding: 0 var(--space-4);
+  border-radius: var(--radius-pill);
+  border: 1px solid var(--accent);
+  background: var(--accent);
+  color: var(--text-on-accent);
+  font: inherit;
+  cursor: pointer;
+}
+.actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: var(--space-2);
+  margin-top: var(--space-4);
+}
+/* Theme cards (Q128): each label carries its own data-theme, so it shows that theme's ground, text and display font;
+   the native radio and a check mark mark the choice, never colour alone. */
+.themeCards {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 9rem), 1fr));
+  gap: var(--space-2);
+}
+.themeCard {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-2);
+  min-height: 56px;
+  padding: var(--space-2) var(--space-3);
+  border-radius: var(--radius-md);
+  border: 1px solid var(--surface-border);
+  background-color: var(--bg); /* C and D have no ground image */
+  background-image: var(--bg-image);
+  color: var(--text);
+  cursor: pointer;
+}
+.themeCard input {
+  width: 22px;
+  height: 22px;
+  margin: 0;
+  accent-color: var(--accent);
+}
+.themeCard:has(input:checked) {
+  border: 2px solid var(--accent);
+}
+.themeCard:has(input:checked)::after {
+  content: "✓" / ""; /* visual only: the native checked state names the choice */
+  margin-left: auto;
+}
+.themeCard:has(input:focus-visible) {
+  outline: 2px dashed var(--text);
+  outline-offset: 2px;
+}
+.themeName {
+  font-family: var(--font-display);
+}
+.badge {
+  padding: 0 var(--space-2);
+  border: 1px solid currentColor;
+  border-radius: var(--radius-pill);
+  font-size: 1rem; /* new copy is at least 16 px (theme boards) */
+}
+.note16 {
+  font-size: 1rem;
+  color: var(--text-muted);
+}
+.small {
+  font-size: var(--fs-sm);
+  color: var(--text-muted);
+}
+.visuallyHidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
+/* G8: phone bottom sheet, tablet 560 px and laptop 600 px dialogs (guest UI §9). */
+.sheet {
+  width: min(100%, 600px);
+  max-height: 100dvh;
+  margin: auto auto 0;
+  padding: var(--space-4);
+  border: 1px solid var(--surface-border);
+  border-radius: var(--radius-md) var(--radius-md) 0 0;
+  background: var(--bg);
+  color: var(--text);
+  font-family: var(--font-body);
+  overflow-y: auto;
+}
+.sheet::backdrop {
+  background: var(--scrim);
+}
+@media (min-width: 768px) {
+  .sheet {
+    width: 560px;
+    margin: auto;
+    border-radius: var(--radius-md);
+  }
+}
+@media (min-width: 1200px) {
+  .sheet {
+    width: 600px;
+  }
+}
+.sheetHead {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  align-items: center;
+  gap: var(--space-2);
+}
+.sheetHead h2 {
+  margin: 0;
+}
+.group {
+  border: 0;
+  border-top: 1px solid var(--line);
+  margin: var(--space-3) 0 0;
+  padding: var(--space-3) 0 0;
+}
+.group legend {
+  font-weight: 600;
+  padding: 0;
+}
+.row {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  min-height: 56px;
+  cursor: pointer;
+}
+.row input {
+  width: 24px;
+  height: 24px;
+  margin: 0;
+  accent-color: var(--accent);
+}

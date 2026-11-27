@@ -43,7 +43,7 @@ select is((
 select is((
   select array_agg(p.proname::text order by p.proname) from pg_proc p
   where p.pronamespace = 'public'::regnamespace and has_function_privilege('anon', p.oid, 'execute')
-), array['guest_guestbook_list', 'guest_list', 'guest_open', 'public_guestbook_list', 'public_list', 'public_open'],
+), array['guest_guestbook_list', 'guest_item', 'guest_list', 'guest_media', 'guest_open', 'public_guestbook_list', 'public_list', 'public_open'],
   'anon executes exactly the guest_* and public_* read functions');
 
 select is((

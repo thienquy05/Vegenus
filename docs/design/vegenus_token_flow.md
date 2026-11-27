@@ -102,9 +102,10 @@ All are `SECURITY DEFINER`, take the token as the first argument, re-run the che
 
 | Function | Returns / does | Extra predicates |
 |---|---|---|
-| `guest_open(token)` | Page summary, enabled sections, theme, default language | — |
+| `guest_open(token)` | Page summary: enabled sections, theme, default language; since T3.1a also the partner names, time zone, published wording (`copy`, both languages) and the published Home with its shown picks | — |
 | `guest_list(token, section, cursor)` | Published items of an enabled section | `status = published`, section enabled |
-| `guest_media_url(token, media_id)` | One signed URL, expiry 5 min (Q29) | Media belongs to a published item in an enabled section |
+| `guest_item(token, item_id)` (T3.1a) | One published item with its ready media (G3) | `status = published`, section enabled, not Home |
+| `guest_media(token, ids, variant)` (T3.1a; was `guest_media_url`) | The admitted `{bucket, path}` per media id, at most 100 ids; the server signs them for 5 min (Q29, Q149) | Ready media of a published item in an enabled section, or a shown Home pick; never the full-size original |
 | `guest_guestbook_list(token, cursor)` | Approved entries | `status = approved` |
 | `guest_guestbook_post(token, submission_id, device_key, ip_key, display_name, body, lang)` | Inserts a `pending` entry with `token_version`. Server-only (`vegenus_server`), canonical signature in data model §3.9 | Name 1–40 chars, body 1–500 chars (Q34c); device, IP and page buckets (Q75, Q78) enforced atomically inside the function; `submission_id` makes a retry idempotent |
 
@@ -114,7 +115,7 @@ Every read function in all three contracts also requires the page's wording to b
 
 | Contract | Caller | Authorization checked on every call | Allowed |
 |---|---|---|---|
-| `public_*` (`public_open`, `public_list`, `public_guestbook_list`, `public_media_url`) | Anyone, no credential | Page `visibility = published`; section enabled; item `published` / entry `approved`; media belongs to such an item | Read only through these functions. A wish goes through the separate server-only `public_guestbook_post` (§10.2), never through `public_*`. Media URLs 5 min (Q29) |
+| `public_*` (`public_open`, `public_list`, `public_guestbook_list`, `public_media` (Q151)) | Anyone, no credential | Page `visibility = published`; section enabled; item `published` / entry `approved`; media belongs to such an item | Read only through these functions. A wish goes through the separate server-only `public_guestbook_post` (§10.2), never through `public_*`. Media URLs 5 min (Q29) |
 | `guest_*` (above) | Holder of the current token | Active token, current version, page visibility ≠ private, plus the same publication predicates | Read; post to the queue |
 | `account_*` (`account_open`, `account_list`, `account_guestbook_list`, `account_media_url`, `account_guestbook_post`, `account_profile_get/set`; `account_guestbook_list` and `account_media_url` added 2026-10-23, found missing while specifying a G1 draft) | Signed-in guest account | Validated identity (`auth.uid()`), an **active** `guest_accounts` row bound to one page, page visibility ≠ private, plus the publication predicates | Read; post to the queue under the account's attribution; read/write own profile and email preferences only |
 

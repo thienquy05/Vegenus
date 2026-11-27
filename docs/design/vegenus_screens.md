@@ -80,7 +80,7 @@ Rules for every screen: phone-first, one-hand use, touch targets ≥ 44 px, all 
 
 ## What this tells the data model (input to design 3)
 
-- Home needs a single `home` item per page: no title (the partner names), counter start date (counted in the page time zone), welcome note, and up to seven photos picked from published memories; the first guest-visible pick is the cover (Q144; design 3 §3.3).
+- Home needs a single `home` item per page: no title (the partner names), counter start date (counted in the page time zone), welcome note, and up to seven photos picked from published memories; the first pick is the cover (Q152: every pick is guest-visible) (Q144; design 3 §3.3).
 - Memory needs title, date (with precision: day/month/year), text + language, optional second-language text, ordered media.
 - Milestones and anniversaries need a date and a recurrence flag for anniversaries.
 - Guestbook entries need display name, text, language, status, author kind (token, account or visitor), token version, created time.

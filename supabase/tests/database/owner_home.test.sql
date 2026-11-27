@@ -1,7 +1,8 @@
 -- Home item for O17 and the O2 Home card (T2.4; owner UI "O17 Home editor"; PRD Q144; design 3 §3.3; E14, E15,
 -- E53, E56). Home has no title; its note is at most 600 characters per language; its photos are up to seven picks
 -- of ready photos from the page's memories, in order. Publish copies the picks' order for guests, Unpublish clears
--- it; a deleted photo drops out; a pick whose memory is unpublished stays, marked hidden. Home cannot be deleted.
+-- it; a deleted photo drops out; a pick whose memory is unpublished stays, and guests still see it (Q152). Home
+-- cannot be deleted.
 -- The two-session first create is in owner_home_race.test.sql. Placeholder data only.
 begin;
 select plan(52);
@@ -82,7 +83,7 @@ select is(public.owner_home_get() ->> 'start_date', '2020-02-29', 'and keeps its
 select is(public.owner_home_get() ->> 'timezone', 'Asia/Ho_Chi_Minh', 'the read names the page time zone the counter uses (Q115)');
 select is(pg_temp.picks(), to_jsonb(pg_temp.ids(2, 1)), 'the picks read in the order saved');
 select is(public.owner_home_get() -> 'picks' -> 1,
-  '{"media_id": "00000000-0000-0000-0000-0000000000c1", "item_id": "00000000-0000-0000-0000-0000000000b1", "hidden": false,
+  '{"media_id": "00000000-0000-0000-0000-0000000000c1", "item_id": "00000000-0000-0000-0000-0000000000b1",
     "alt": "A beach", "alt_alt": "Bãi biển", "width": 1600, "height": 1200,
     "preview": {"bucket": "media-thumb", "path": "p/a1/c1/thumb"}}'::jsonb,
   'a pick carries its memory, alt text, size and thumbnail');
@@ -92,8 +93,8 @@ select is(pg_temp.save(1, 'Welcome', '2020-02-29', pg_temp.ids(3, 4, 6, 9, 1, 5)
   'a save with ineligible picks is accepted');
 select is(pg_temp.picks(), to_jsonb(pg_temp.ids(1, 5)),
   'and keeps only the ready photos of memories (no video, unfinished photo, milestone photo or other page''s photo)');
-select is(public.owner_home_get() -> 'picks' -> 1 -> 'hidden', 'true'::jsonb,
-  'a pick whose memory is unpublished stays, marked hidden');
+select is(public.owner_home_get() -> 'picks' -> 1 ? 'hidden', false,
+  'a pick whose memory is unpublished stays, with no hidden mark: guests see it (Q152)');
 select throws_ok($$ select pg_temp.save(2, 'Welcome', null, array(select gen_random_uuid() from generate_series(1, 8))) $$,
   '22023', null, 'more than seven picks are refused');
 select throws_ok($$ select pg_temp.save(2, 'Welcome', null, pg_temp.ids(1, 1)) $$, '22023', null, 'a repeated pick is refused');

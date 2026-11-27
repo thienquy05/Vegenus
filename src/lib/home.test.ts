@@ -49,8 +49,8 @@ test("a rejected zone counts in UTC across a UTC day boundary, flagged", () => {
 const ID = HOME.id;
 const C1 = "00000000-0000-0000-0000-0000000000c1";
 const C2 = "00000000-0000-0000-0000-0000000000c2";
-const pick = (media_id: string, hidden = false) => ({ media_id, item_id: "00000000-0000-0000-0000-0000000000b1", hidden, alt: null, alt_alt: null, width: 4, height: 3, preview_url: null });
-const SAVED: Home = { ...HOME, lang_alt: "vi", body_alt: "Chào", picks: [pick(C1), pick(C2, true)] };
+const pick = (media_id: string) => ({ media_id, item_id: "00000000-0000-0000-0000-0000000000b1", alt: null, alt_alt: null, width: 4, height: 3, preview_url: null });
+const SAVED: Home = { ...HOME, lang_alt: "vi", body_alt: "Chào", picks: [pick(C1), pick(C2)] };
 
 test("the working copy starts from the saved Home, or empty in the page language; a save body mirrors the route", () => {
   const fresh = homeDraftOf(null, "vi");
@@ -67,7 +67,7 @@ test("the working copy starts from the saved Home, or empty in the page language
 
 test("dirty compares what a save would send", () => {
   expect(homeDirty(homeDraftOf(SAVED, "vi"), SAVED)).toBe(false);
-  expect(homeDirty({ ...homeDraftOf(SAVED, "vi"), picks: [pick(C2, true), pick(C1)] }, SAVED)).toBe(true);
+  expect(homeDirty({ ...homeDraftOf(SAVED, "vi"), picks: [pick(C2), pick(C1)] }, SAVED)).toBe(true);
   expect(homeDirty(homeDraftOf(null, "vi"), null)).toBe(false);
   expect(homeDirty({ ...homeDraftOf(null, "vi"), start_date: "2020-01-01" }, null)).toBe(true);
   // A new Home whose only change is its main language is a change (reviewer, T2.4b).
@@ -94,7 +94,7 @@ test("an unconfirmed write landed only when the re-read shows it (Q144 default 2
   expect(landed({ op: "save", body, publish: false }, SAVED)).toBe(false);
   expect(landed({ op: "save", body, publish: false }, { ...after, body: "Other" })).toBe(false);
   // The database leaves out a photo deleted meanwhile; the save still landed.
-  expect(landed({ op: "save", body, publish: false }, { ...after, picks: [pick(C2, true)] })).toBe(true);
+  expect(landed({ op: "save", body, publish: false }, { ...after, picks: [pick(C2)] })).toBe(true);
   expect(landed({ op: "save", body: { ...body, expected_version: null }, publish: false }, null)).toBe(false);
   expect(landed({ op: "publish", version: 3 }, { ...SAVED, version: 4 })).toBe(true);
   expect(landed({ op: "publish", version: 3 }, { ...SAVED, version: 4, unpublished_changes: true })).toBe(false);

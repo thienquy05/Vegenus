@@ -1,7 +1,8 @@
 // Route table, deny by default (design 1 §9, layer 1). Every route the build contains
 // needs a class here; `npm run build` fails otherwise (scripts/check-routes.ts, E32).
-// The class names the handler check the route starts with: requireGuest(), requireOwner()
-// or requireMachine(); `public` routes need none.
+// The class names the handler check the route starts with: requireOwner(), requireMachine(), and for guest
+// pages requireGuest() (a guest route handler checks the token itself, since requireGuest() redirects);
+// `public` routes need none.
 export type RouteClass = "public" | "guest" | "owner" | "machine";
 
 export const ROUTES: Record<string, RouteClass> = {
@@ -11,10 +12,20 @@ export const ROUTES: Record<string, RouteClass> = {
   // The guest shell shows G-E1 or exchanges the fragment; the guest pages need the token cookie.
   "/g": "public",
   "/g/home": "guest",
+  "/g/memories": "guest",
+  "/g/memories/[id]": "guest",
+  "/g/together": "guest",
+  "/g/wishes": "guest",
   // Login, logout and the token exchange check Origin themselves; logout without a session only clears cookies.
   "/api/owner/login": "public",
   "/api/owner/logout": "public",
   "/api/guest/session": "public",
+  // Check Origin and the guest header, then the token (cookie, or the body when cookies are blocked); the database
+  // checks the token (guest_media, guest_list, guest_guestbook_list).
+  "/api/guest/media": "guest",
+  "/api/guest/list": "guest",
+  "/api/guest/wishes": "guest",
+  "/api/guest/item": "guest",
   // Checks Origin, then the owner session; the database checks the page owner.
   "/api/owner/token": "owner",
   "/api/owner/token/shown": "owner",
@@ -49,6 +60,10 @@ export const HANDLER_METHODS: Record<string, string[]> = {
   "/api/owner/login": ["POST"],
   "/api/owner/logout": ["POST"],
   "/api/guest/session": ["POST"],
+  "/api/guest/media": ["POST"],
+  "/api/guest/list": ["POST"],
+  "/api/guest/wishes": ["POST"],
+  "/api/guest/item": ["POST"],
   "/api/owner/token": ["POST"],
   "/api/owner/token/shown": ["POST"],
   "/api/owner/visibility": ["POST"],
@@ -81,6 +96,12 @@ export function safeNext(next: string | undefined): string {
   return next && Object.hasOwn(ROUTES, next) && ROUTES[next] === "owner" && !Object.hasOwn(HANDLER_METHODS, next) ? next : "/app";
 }
 
+// A concrete URL per dynamic route, so the no-credentials crawler (e2e/routes.spec.ts, E31) can request it. The build
+// refuses a dynamic route without one.
+export const CRAWL_URLS: Record<string, string> = {
+  "/g/memories/[id]": "/g/memories/00000000-0000-0000-0000-000000000000",
+};
+
 // Every request entry point the build emits, read from the .next manifests. The proxy is not listed:
 // src/proxy.ts only refreshes the owner session, and a unit test keeps its matcher on owner routes.
 export type BuildEntryPoints = {
@@ -94,15 +115,15 @@ export type BuildEntryPoints = {
 const FRAMEWORK_ROUTES = ["/_not-found", "/_global-error"];
 const FRAMEWORK_PAGES = ["/_app", "/_document", "/_error", "/404", "/500"];
 
-// ponytail: dynamic routes, server actions and rewrites are refused outright; each gets its own
-// classification and crawler cases when the first one lands
-export function buildProblems(built: BuildEntryPoints, table = ROUTES, methods = HANDLER_METHODS): string[] {
+// ponytail: server actions and rewrites are refused outright; each gets its own classification and crawler cases when
+// the first one lands. A dynamic route needs a crawler URL (CRAWL_URLS).
+export function buildProblems(built: BuildEntryPoints, table = ROUTES, methods = HANDLER_METHODS, crawl = CRAWL_URLS): string[] {
   const problems: string[] = [];
   for (const [file, route] of Object.entries(built.appRoutes)) {
     if (FRAMEWORK_ROUTES.includes(route)) continue;
     if (!Object.hasOwn(table, route)) problems.push(`Route ${route} is not in the route table (src/lib/routes.ts).`);
     else if (file.endsWith("/route") && !Object.hasOwn(methods, route)) problems.push(`Route handler ${route} has no methods in HANDLER_METHODS (src/lib/routes.ts).`);
-    else if (route.includes("[")) problems.push(`Dynamic route ${route} is not supported yet: add a concrete crawler URL first.`);
+    else if (route.includes("[") && !Object.hasOwn(crawl, route)) problems.push(`Dynamic route ${route} is not supported yet: add a concrete crawler URL first.`);
   }
   for (const page of built.pagesRoutes) {
     if (!FRAMEWORK_PAGES.includes(page)) problems.push(`Pages Router route ${page} is not allowed; use the App Router.`);
