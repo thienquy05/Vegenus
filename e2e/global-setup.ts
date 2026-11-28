@@ -85,6 +85,9 @@ export default async function globalSetup() {
     await sql`insert into public.memberships (page_id, user_id, role)
       select ${id}, u.id, 'owner' from auth.users u where u.email = ${`owner-${name}@example.test`}`;
   }
+  // Each run deletes and recreates its pages, which retires their addresses forever (retired_vanity_names); on this
+  // local test database only, start each run with none, so the specs can publish their fixed addresses again.
+  await sql`truncate public.retired_vanity_names`;
   await sql.end();
 
   // Teardown: back to the migration's state (roles outlive `supabase db reset`; the schema lint checks it).

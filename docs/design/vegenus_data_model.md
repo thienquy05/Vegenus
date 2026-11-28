@@ -46,7 +46,7 @@ Types are PostgreSQL. `tstz` = `timestamptz` (stored in UTC). Every table also h
 | `label_a`, `label_b` | text | 1–40 chars, NFC; how the page names the two partners; fill `{partner_a}` / `{partner_b}` (§3.12). Required before setup can finish |
 | `copy_draft_rev`, `copy_published_rev`, `copy_published_at` | int, int, tstz null | wording revisions and first-publication time (§3.12); `copy_published_at` null keeps every guest read closed |
 | `timezone` | text | IANA name, required. O3 fills it from the owner's browser and lets them change it. Used by the counter and reminders (E14) |
-| `vanity_name` | text null, unique | Only routed while `visibility = published`; kept but inert otherwise |
+| `vanity_name` | text null, unique | Only routed while `visibility = published`; kept but inert otherwise. Every name a page has used stays reserved for it in `page_vanity_names` (T3.1p, Q155-Q157); when the page is deleted each leaves only a SHA-256 fingerprint in `retired_vanity_names` (no `page_id`), so no other page can ever take it (Q159) |
 | `setup_completed_at` | tstz null | Null = O2 shows "Set up your page" |
 | `version`, `updated_at` | int, tstz | §1.6 |
 
@@ -540,6 +540,7 @@ Pagination is keyset (cursor = last `(sort_order, id)` or `(created_at, id)`), n
 | `pending_registrations` | `pending` until the earlier of its 30-minute window and invite deadline; `confirming` or `cancelled` until the account is finished or cleanup is durable (§3.8) | Daily job and a check at consumption or re-registration |
 | `invite_codes` | `open` / `reserved` until used, revoked or the page is deleted; `redeemed` and `revoked` rows for 90 days (owner audit), then deleted | Daily job |
 | `email_subscriptions` | `pending`: 24 hours; `active` until unsubscribed; `unsubscribed`: address deleted after 30 days, its hash stays in `email_suppressions` so it is not re-added by mistake | Daily job; page deletion cascades |
+| `retired_vanity_names` | Forever: a SHA-256 fingerprint of each address of a deleted page, no readable name and no page link, so an old link never opens someone else's page (Q159). Unkeyed, unlike the HMACs above: the cascade that writes it cannot reach the server secret, and every name was public while Published; a fingerprint confirms a guessed address but lists none | Never (the readable names go with the page) |
 | `rate_limit_hits` | 24 hours | Daily job |
 | `email_log` | 90 days | Daily job (Q45) |
 | `job_runs` | 30 days | Daily job (Q45) |

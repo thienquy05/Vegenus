@@ -142,3 +142,24 @@ test("requireVisitor: a Published page by its exact name, else the ordinary not-
   for (const name of ["Our-Page", "a b", "x", "-our-page"]) await expect(requireVisitor(name)).rejects.toThrow();
   expect(rpc).toHaveBeenCalledTimes(2);
 });
+
+// Owner decision 2026-11-27: a name typed with capitals or spaces (/p/Our-Page) goes to its normalized address, whether
+// or not a page has it, so the redirect says nothing about the name; anything that does not normalize to a valid name
+// is the not-found.
+test("requireVisitor sends a name that normalizes to a valid one to its normalized address, keeping the rest", async () => {
+  vi.resetModules();
+  const rpc = vi.fn(async () => ({ data: null, error: null }));
+  vi.doMock("@supabase/supabase-js", () => ({ createClient: () => ({ rpc }) }));
+  const { requireVisitor } = await import("./guest");
+  const where = async (name: string, rest?: string) => {
+    try {
+      await requireVisitor(name, rest);
+    } catch (e) {
+      return String((e as { digest?: string }).digest ?? e);
+    }
+  };
+  expect(await where("Our-Page", "/memories")).toMatch(/NEXT_REDIRECT;\w+;\/p\/our-page\/memories;308/);
+  expect(await where("%20OUR-PAGE%20")).toMatch(/NEXT_REDIRECT;\w+;\/p\/our-page;308/);
+  expect(await where("Our Page")).toMatch(/404/);
+  expect(rpc).not.toHaveBeenCalled();
+});

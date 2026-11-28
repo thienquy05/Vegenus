@@ -3,7 +3,7 @@ begin;
 select plan(11);
 
 select tables_are('public', array['pages', 'page_sections', 'memberships', 'guest_tokens', 'items', 'guestbook_entries', 'rate_limit_hits',
-  'copy_keys', 'page_copy', 'item_tombstones', 'media', 'media_variants', 'upload_reservations', 'storage_deletions', 'home_picks', 'job_runs', 'settings_saves', 'page_vanity_names'], 'the T1.3, T1.4, T2.7, T2.2, T2.3a, T2.4, T2.5, T2.6 and T3.1p tables exist');
+  'copy_keys', 'page_copy', 'item_tombstones', 'media', 'media_variants', 'upload_reservations', 'storage_deletions', 'home_picks', 'job_runs', 'settings_saves', 'page_vanity_names', 'retired_vanity_names'], 'the T1.3, T1.4, T2.7, T2.2, T2.3a, T2.4, T2.5, T2.6 and T3.1p tables exist');
 
 select ok(exists (
   select 1 from pg_roles where rolname = 'vegenus_server'
@@ -18,12 +18,13 @@ select is((
 -- Tables without page_id must be on design 3 §1's exception list; later units add theirs here.
 -- `pages` is the tenant itself: its `id` is the page id. `rate_limit_hits` is operational (design 3 §1).
 -- `copy_keys` is reference data shared by every page (design 3 §3.12). `job_runs` is operational: the daily job runs for
--- every page at once (design 3 §3.9, Q145).
+-- every page at once (design 3 §3.9, Q145). `retired_vanity_names` outlives the page it came from (only fingerprints of
+-- deleted pages' addresses, owner decision 2026-11-27).
 select is((
   select array_agg(c.relname::text order by c.relname) from pg_class c
   where c.relnamespace = 'public'::regnamespace and c.relkind in ('r', 'p')
     and not exists (select 1 from pg_attribute a where a.attrelid = c.oid and a.attname = 'page_id' and not a.attisdropped)
-    and c.relname <> all (array['pages', 'rate_limit_hits', 'copy_keys', 'job_runs']::name[])
+    and c.relname <> all (array['pages', 'rate_limit_hits', 'copy_keys', 'job_runs', 'retired_vanity_names']::name[])
 ), null, 'every table has page_id or is a listed exception');
 
 select is((

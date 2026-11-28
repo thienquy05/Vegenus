@@ -677,3 +677,37 @@ test("a return read answering 401 draws no page data while sign-in takes over", 
   await expect.poll(() => has("visibility-card") || has("visibility-back")).toBe(false);
   expect(host.textContent).not.toContain("[PARTNER_A]");
 });
+
+// CHECKS line 6: on reconnect O2 revalidates; the kept snapshot says Last known until the fresh read settles, so values
+// read before going offline never look current.
+test("reconnecting on O2 revalidates it, with Last known until the read settles", async () => {
+  const pending = later();
+  serve({ "/api/owner/page": [page(), pending.reply] });
+  owner();
+  await shown("visibility-change");
+  offline(true);
+  await expect.poll(() => byId("visibility-card").textContent).toContain("Last known");
+  offline(false);
+  await expect.poll(() => to("/api/owner/page").length).toBe(2);
+  await expect.poll(() => byId("visibility-change").getAttribute("aria-disabled")).toBe("true");
+  expect(byId("visibility-card").textContent).toContain("Last known");
+  pending.release(page({ visibility: "published", vanity_name: "our-page" }));
+  await expect.poll(() => byId("visibility-card").textContent).toContain("Published");
+  expect(byId("visibility-card").textContent).not.toContain("Last known");
+});
+
+// Review (follow-ups): the opener kept through a failed Back read is not used by a later background re-read once the
+// owner has moved focus.
+test("a reconnect re-read after a failed Back read leaves focus where the owner moved it", async () => {
+  serve({ "/api/owner/page": [page(), page(), page({ visibility: "private" })] });
+  owner();
+  await openVisibility();
+  offline(true);
+  await userEvent.click(byId("visibility-back"));
+  await shown("dashboard-retry");
+  byId("visibility-card-title").focus();
+  offline(false);
+  await expect.poll(() => byId("visibility-card").textContent).toContain("Private");
+  await new Promise((r) => setTimeout(r, 50));
+  expect(document.activeElement?.id).toBe("visibility-card-title");
+});
