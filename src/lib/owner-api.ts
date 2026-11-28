@@ -46,6 +46,10 @@ export async function signPreviews<T extends { preview: Preview }>(auth: Client,
   }));
 }
 
+// A created_at the database returned, echoed back as a cursor: an ISO timestamp with a zone, nothing looser.
+export const isTimestamp = (value: unknown) =>
+  typeof value === "string" && /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(\.\d{1,6})?(Z|[+-]\d{2}:\d{2})$/.test(value);
+
 export const isUuid =(value: unknown) => typeof value === "string" && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(value);
 
 // What the database's refusals mean to an owner route: 42501 not the page's owner, and these codes bad input

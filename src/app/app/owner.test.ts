@@ -168,3 +168,17 @@ test("Home card: offline, its action and Try again are disabled with the reason"
   expect(hasTag(card({ state: "ready", home: HOME }, true), "<button", "disabled", 'aria-describedby="offline-reason"', 'id="home-action"')).toBe(true);
   expect(hasTag(card({ state: "error" }, true), "<button", "disabled", 'aria-describedby="offline-reason"', 'id="home-retry"')).toBe(true);
 });
+
+// T3.2 (owner UI O2 → O7): the pending-wish count from owner_page and the way to O7, only where Wishes can exist.
+test("Wishes card: the pending count and Review wishes; none without Wishes and nothing pending", () => {
+  const onWishes = vi.fn();
+  const html = render({ state: "done", page: { ...PAGE, pending_wishes: 3 }, onWishes });
+  expect(html).toContain('id="wishes-card"');
+  expect(html).toContain('<span lang="en">3 waiting for approval</span> / 3 lời chúc chờ duyệt');
+  expect(html).toContain("Review wishes");
+  expect(render({ state: "done", page: { ...PAGE, pending_wishes: 0 }, onWishes })).toContain("0 waiting for approval");
+  expect(render({ state: "done", page: { ...PAGE, sections: [], pending_wishes: 0 }, onWishes })).not.toContain('id="wishes-card"');
+  // A page that turned Wishes off still shows what is waiting, so nothing is left unseen.
+  expect(render({ state: "done", page: { ...PAGE, sections: [], pending_wishes: 2 }, onWishes })).toContain("2 waiting for approval");
+  expect(render({ state: "done", page: { ...PAGE, pending_wishes: 3 } })).not.toContain('id="wishes-card"');
+});

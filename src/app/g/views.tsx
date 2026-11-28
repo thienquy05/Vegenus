@@ -1,5 +1,5 @@
 "use client";
-import { useCallback, useEffect, useRef, useState, useSyncExternalStore } from "react";
+import { useCallback, useEffect, useRef, useState, useSyncExternalStore, type ChangeEvent, type FormEvent } from "react";
 import { counter } from "@/lib/home";
 import type { Cred, GuestMediaRef, GuestSummary, GuestVariant } from "@/lib/guest";
 import { pickLang, type CopyKey, type Lang } from "./copy";
@@ -14,12 +14,14 @@ export const baseOf = (cred?: Cred) => (typeof cred === "object" ? `/p/${cred.pa
 // A 404 is the not-available answer: the token no longer opens the page (token flow §6).
 export class Gone extends Error {}
 export class NotFound extends Error {} // the item is gone while the page and section still open
-async function guestPost<R>(path: string, body: object, cred?: Cred): Promise<R> {
-  const res = await fetch(path, {
+const send = (path: string, body: object, cred?: Cred) =>
+  fetch(path, {
     method: "POST",
     headers: { "content-type": "application/json", "x-vegenus-guest": "1" },
     body: JSON.stringify(cred === undefined ? body : typeof cred === "string" ? { ...body, token: cred } : { ...body, page: cred.page }),
   });
+async function guestPost<R>(path: string, body: object, cred?: Cred): Promise<R> {
+  const res = await send(path, body, cred);
   if (res.status === 404) throw (await res.json().catch(() => null))?.error === "not_found" ? new NotFound() : new Gone();
   if (!res.ok) throw new Error(String(res.status));
   return res.json();
@@ -79,13 +81,16 @@ function useMedia(ids: string[], variant: GuestVariant, cred: Cred | undefined, 
 }
 
 // The couple's published wording in the shown language, else the other one, with its tokens filled.
-function wording({ summary, lang }: Props, key: string, vars: Record<string, string | number> = {}) {
+function wordText({ summary, lang }: Pick<Props, "summary" | "lang">, key: string, vars: Record<string, string | number> = {}) {
   const entry = summary.copy[key] ?? {};
   const found = pickLang(lang, [["en", entry.en], ["vi", entry.vi]]);
   if (!found) return null;
   const all = { partner_a: summary.names[0] ?? "", partner_b: summary.names[1] ?? "", ...vars };
-  const text = Object.entries(all).reduce((x, [name, value]) => x.replaceAll(`{${name}}`, String(value)), found.text);
-  return <p lang={found.lang}>{text}</p>;
+  return { lang: found.lang, text: Object.entries(all).reduce((x, [name, value]) => x.replaceAll(`{${name}}`, String(value)), found.text) };
+}
+function wording(props: Props, key: string, vars: Record<string, string | number> = {}) {
+  const found = wordText(props, key, vars);
+  return found && <p lang={found.lang}>{found.text}</p>;
 }
 
 const altOf = (m: GuestMediaRef, lang: Lang) => pickLang(lang, [[m.lang, m.alt], [m.lang_alt, m.alt_alt]]);
@@ -175,7 +180,7 @@ function guestDate(date: string, precision: "day" | "month" | "year", lang: Lang
   return new Intl.DateTimeFormat(lang === "vi" ? "vi-VN" : "en-GB", { ...(parts as Intl.DateTimeFormatOptions), timeZone: "UTC" }).format(new Date(`${date}T00:00:00Z`));
 }
 
-// G2 Memories and G5 Wishes (read-only in T3.1b; Leave a wish comes with T3.2): newest page first, Load more after a
+// G2 Memories and G5 Wishes (with Leave a wish, G6, since T3.2b): newest page first, Load more after a
 // full page, a failure keeps what is loaded and offers Try again (guest UI §6 common states, §7). The footer button
 // stays in place while it reads, so focus stays on it; when it goes, focus moves to the first new card, else the heading.
 // shortcut: {count} in the intro is the number loaded so far (exact up to 50); a server total when a page needs more.
@@ -200,6 +205,16 @@ export function ListView(props: Props & { section: "memories" | "together" | "gu
   const clicked = useRef(false);
   const firstNew = useRef<number | null>(null);
   const root = useRef<HTMLDivElement>(null);
+  const [writing, setWriting] = useState(false); // G6 open
+  const [draft, setDraft] = useState(NO_DRAFT); // kept in memory while the sheet is closed by View the wishes
+  const wishButton = useRef<HTMLButtonElement>(null);
+  const wasWriting = useRef(false);
+  // The sheet gives focus back to Leave a wish once it is gone (it is inert while the sheet is open).
+  useEffect(() => {
+    if (wasWriting.current && !writing) wishButton.current?.focus();
+    wasWriting.current = writing;
+  }, [writing]);
+  const leave = wordText(props, "wishes.button");
 
   useEffect(() => {
     let live = true;
@@ -269,6 +284,11 @@ export function ListView(props: Props & { section: "memories" | "together" | "gu
       <header>
         <h1 tabIndex={-1}>{t(`nav.${section}`)}</h1>
         {(rows.length > 0 || state === "ready") && word(`${copyKey}.intro`, { count: rows.length })}
+        {wishes && (
+          <button ref={wishButton} type="button" className={s.primary} lang={leave?.lang} onClick={() => setWriting(true)}>
+            {leave?.text ?? t("wish.leave")}
+          </button>
+        )}
         {together && rows.length > 0 && <p className={s.small}>{rows.length === 1 ? t("together.one") : t("together.count", { n: rows.length })}</p>}
         {together && rows.length > 0 && (
           <label className={s.search}>
@@ -327,7 +347,267 @@ export function ListView(props: Props & { section: "memories" | "together" | "gu
           onClose={closeSheet}
         />
       )}
+      {writing && (
+        <WishSheet
+          {...props}
+          draft={draft}
+          setDraft={setDraft}
+          onClose={(keep) => {
+            if (!keep) setDraft(NO_DRAFT);
+            setWriting(false);
+          }}
+        />
+      )}
     </div>
+  );
+}
+
+// G6 Leave a wish and G7 sent (guest UI §8; T3.2b). One submission_id per composed wish: sending again after an
+// uncertain answer reuses it, so the server answers the first result and counts it once (Q73); any edit makes a new
+// wish. Nothing is resent by itself and nothing is stored on the device.
+type Draft = { name: string; body: string; sub: string | null };
+const NO_DRAFT: Draft = { name: "", body: "", sub: null };
+const graphemes = new Intl.Segmenter(undefined, { granularity: "grapheme" });
+const lines = (text: string) => text.replace(/\r\n?/g, "\n"); // as the server stores line breaks
+// What the server counts (Q73): line breaks as one, NFC, trimmed, in user-perceived characters.
+const perceived = (text: string) => [...graphemes.segment(lines(text).normalize("NFC").trim())].length;
+// What wish_text refuses (controls, bidi controls, line separators); a line break only in the wish.
+const REFUSED = /[\0-\x09\x0b-\x1f\x7f-\x9f\u061c\u200e\u200f\u202a-\u202e\u2066-\u2069\u2028\u2029]/;
+const FIELDS = {
+  name: { cap: 40, required: "wish.nameRequired", long: "wish.nameLong" },
+  body: { cap: 500, required: "wish.bodyRequired", long: "wish.bodyLong" },
+} as const;
+type Field = keyof typeof FIELDS;
+const problemOf = (field: Field, value: string): CopyKey | undefined => {
+  const n = perceived(value);
+  const text = lines(value);
+  if (n === 0) return FIELDS[field].required;
+  const kept = text.trim(); // wish_text trims exactly this set (JavaScript's \s) before it checks
+  if (REFUSED.test(kept) || (field === "name" && kept.includes("\n"))) return "wish.characters";
+  return n > FIELDS[field].cap ? FIELDS[field].long : undefined;
+};
+
+function WishSheet(props: Props & { draft: Draft; setDraft: (draft: Draft) => void; onClose: (keep: boolean) => void }) {
+  const { summary, lang, cred, t, onGone, draft, setDraft, onClose } = props;
+  const online = useOnline();
+  const dialog = useRef<HTMLDialogElement>(null);
+  const [panel, setPanel] = useState<"form" | "discard" | "sent">("form");
+  const [errors, setErrors] = useState<Partial<Record<Field, CopyKey>>>({});
+  const [sending, setSending] = useState(false);
+  const [problem, setProblem] = useState<CopyKey | null>(null);
+  const [limit, setLimit] = useState<{ now: number; wait: number; shared: boolean } | null>(null);
+  const focusTo = useRef<string | null>("#wish-name"); // where focus goes once the next render is in
+  const live = useRef(true); // a late answer after the sheet is gone never touches a newer draft
+  useEffect(() => {
+    live.current = true;
+    return () => {
+      live.current = false;
+    };
+  }, []);
+  useEffect(() => {
+    const d = dialog.current;
+    if (d && !d.open) d.showModal();
+  }, []);
+  useEffect(() => {
+    if (!focusTo.current) return;
+    dialog.current?.querySelector<HTMLElement>(focusTo.current)?.focus();
+    focusTo.current = null;
+  });
+  const show = (next: typeof panel, focus: string) => {
+    focusTo.current = focus;
+    setPanel(next);
+  };
+  const close = () => {
+    if (panel === "discard") show("form", "#wish-body");
+    else if (panel === "form" && (draft.name.trim() || draft.body.trim())) show("discard", "[data-keep]");
+    else onClose(false);
+  };
+  const edit = (field: Field, value: string) => {
+    setDraft({ ...draft, [field]: value, sub: null });
+    setErrors((old) => ({ ...old, [field]: undefined }));
+    setProblem(null);
+  };
+  const submit = async (event: FormEvent) => {
+    event.preventDefault();
+    if (sending || !online) return;
+    const found = { name: problemOf("name", draft.name), body: problemOf("body", draft.body) };
+    setErrors(found);
+    if (found.name || found.body) return dialog.current?.querySelector<HTMLElement>(found.name ? "#wish-name" : "#wish-body")?.focus();
+    const sub = draft.sub ?? crypto.randomUUID();
+    setDraft({ ...draft, sub });
+    setSending(true);
+    setProblem(null);
+    let res: Response;
+    try {
+      res = await send("/api/guest/wish", { submission_id: sub, display_name: draft.name, body: draft.body, lang }, cred);
+    } catch {
+      if (!live.current) return;
+      setSending(false);
+      return setProblem("wish.uncertain");
+    }
+    const r = await res.json().catch(() => null);
+    if (!live.current) return;
+    setSending(false);
+    // G7 only for the server's own "sent"; any other success shape is unconfirmed.
+    if (res.ok) {
+      if (r?.status !== "sent") return setProblem("wish.uncertain");
+      setDraft(NO_DRAFT);
+      return show("sent", "h2");
+    }
+    if (res.status === 404) return onGone();
+    // A 429 without a wait is not ours (a platform limit): nothing was stored.
+    if (res.status === 429 && Number(r?.retry_after) > 0) return setLimit({ now: Date.now(), wait: Number(r.retry_after), shared: r.shared === true });
+    if (res.status === 429) return setProblem("wish.notSent");
+    // A refused request stored nothing; anything else (503, a proxy error) may have.
+    setProblem(res.status === 400 || res.status === 403 ? "wish.notSent" : "wish.uncertain");
+  };
+  const leave = wordText(props, "wishes.button");
+  const owner = summary.names.filter(Boolean).join(" & ");
+  const sent = wordText(props, "wishes.sent");
+  const sentBody = wordText(props, "wishes.sentBody", { owner });
+  const back = wordText(props, "wishes.back");
+  const field = (name: Field, label: CopyKey, placeholder: string) => {
+    const n = perceived(draft[name]);
+    const id = `wish-${name}`;
+    const Tag = name === "name" ? "input" : "textarea";
+    return (
+      <div className={s.field}>
+        <label htmlFor={id}>{t(label)}</label>
+        <Tag
+          id={id}
+          value={draft[name]}
+          placeholder={wordText(props, placeholder)?.text}
+          autoComplete={name === "name" ? "nickname" : "off"}
+          readOnly={sending}
+          aria-required="true"
+          aria-invalid={errors[name] ? true : undefined}
+          aria-describedby={`${id}-error ${id}-count`}
+          onChange={(event: ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => edit(name, event.target.value)}
+        />
+        <span id={`${id}-count`} className={s.small}>
+          {n}/{FIELDS[name].cap}
+        </span>
+        {errors[name] && (
+          <p id={`${id}-error`} className={s.error}>
+            {t(errors[name])}
+          </p>
+        )}
+      </div>
+    );
+  };
+  return (
+    <dialog
+      ref={dialog}
+      className={s.sheet}
+      aria-labelledby="wish-title"
+      onCancel={(event) => {
+        event.preventDefault();
+        close();
+      }}
+      // The browser may close it without asking (a second back gesture): keep the draft and let it open again.
+      onClose={() => onClose(true)}
+    >
+      <div className={s.sheetHead}>
+        <h2 id="wish-title" tabIndex={-1} lang={(panel === "sent" ? sent : leave)?.lang}>
+          {panel === "sent" ? (sent?.text ?? t("wish.sent")) : (leave?.text ?? t("wish.leave"))}
+        </h2>
+        <button type="button" className={s.secondary} onClick={close}>
+          {t("settings.close")}
+        </button>
+      </div>
+      {panel === "sent" && (
+        <>
+          <p lang={sentBody?.lang}>{sentBody?.text ?? t("wish.sentBody", { owner })}</p>
+          <button type="button" className={s.primary} lang={back?.lang} onClick={() => onClose(false)}>
+            {back?.text ?? t("wish.back")}
+          </button>
+        </>
+      )}
+      {panel === "discard" && (
+        <>
+          <p>{t("wish.discardText")}</p>
+          <div className={s.actions}>
+            <button type="button" className={s.primary} data-keep onClick={() => show("form", "#wish-body")}>
+              {t("wish.keep")}
+            </button>
+            <button type="button" className={s.secondary} onClick={() => onClose(false)}>
+              {t("wish.discard")}
+            </button>
+          </div>
+        </>
+      )}
+      {panel === "form" && (
+        <form className={s.wishForm} noValidate onSubmit={submit}>
+          {field("name", "wish.name", "wishes.namePlaceholder")}
+          {field("body", "wish.body", "wishes.messagePlaceholder")}
+          <p className={s.small}>{t("wish.privacy")}</p>
+          {!online && <p role="status">{t("wish.offline")}</p>}
+          {problem && <p role="alert">{t(problem)}</p>}
+          <button type="submit" className={s.primary} aria-disabled={sending || !online || undefined}>
+            {t(sending ? "wish.sending" : "wish.send")}
+          </button>
+        </form>
+      )}
+      {limit && (
+        <LimitNotice
+          {...limit}
+          lang={lang}
+          t={t}
+          onOk={() => {
+            focusTo.current = "[type=submit], [data-keep]"; // the form, or the discard question if Close came first
+            setLimit(null);
+          }}
+          onView={() => onClose(true)}
+        />
+      )}
+    </dialog>
+  );
+}
+
+// The daily-limit notice (canvas page 14, Q75): kind wording and the exact come-back time from the latest-expiring
+// exceeded limit, no rule numbers; the shared-network line when the IP limit was the one reached (Q78).
+function LimitNotice(props: { now: number; wait: number; shared: boolean; lang: Lang; t: T; onOk: () => void; onView: () => void }) {
+  const { now, wait, shared, lang, t, onOk, onView } = props;
+  const dialog = useRef<HTMLDialogElement>(null);
+  useEffect(() => {
+    const d = dialog.current;
+    if (d && !d.open) d.showModal();
+  }, []);
+  const until = new Date(Math.ceil((now + wait * 1000) / 60_000) * 60_000); // rounded up: never a minute too early
+  const time = until.toLocaleTimeString(lang === "vi" ? "vi-VN" : "en-GB", { hour: "2-digit", minute: "2-digit", hourCycle: "h23" });
+  const minutes = Math.ceil(wait / 60);
+  return (
+    <dialog
+      ref={dialog}
+      role="alertdialog"
+      className={s.sheet}
+      aria-labelledby="limit-title"
+      aria-describedby="limit-description limit-return"
+      // React passes these up to the sheet's own handlers: stop them, so one Escape closes the notice only.
+      onCancel={(event) => {
+        event.preventDefault();
+        event.stopPropagation();
+        onOk();
+      }}
+      onClose={(event) => {
+        event.stopPropagation();
+        onOk();
+      }}
+    >
+      <h2 id="limit-title">{t("limit.title")}</h2>
+      <p id="limit-description">{t(shared ? "limit.textShared" : "limit.text")}</p>
+      <p id="limit-return">{t(until.toDateString() === new Date(now).toDateString() ? "limit.at" : "limit.atNextDay", { time })}</p>
+      <p className={s.small}>{t("limit.in", { h: Math.floor(minutes / 60), m: minutes % 60 })}</p>
+      {shared && <p>{t("limit.shared")}</p>}
+      <div className={s.actions}>
+        <button type="button" className={s.primary} onClick={onOk}>
+          {t("limit.ok")}
+        </button>
+        <button type="button" className={s.secondary} onClick={onView}>
+          {t("limit.view")}
+        </button>
+      </div>
+    </dialog>
   );
 }
 

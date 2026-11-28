@@ -8,7 +8,7 @@ vi.mock("postgres", () => ({
   default: () => (_strings: TemplateStringsArray, ...values: unknown[]) => (calls.push(values), [{ ok: true }]),
 }));
 process.env.VEGENUS_HMAC_SECRET = "test-secret";
-const { loginAllowed } = await import("./server-db");
+const { loginAllowed, postWish } = await import("./server-db");
 
 const from = (ip: string) => new Request("http://localhost/api/owner/login", { headers: { "x-forwarded-for": ip } });
 const addressKey = async (ip: string, email: string) => {
@@ -24,7 +24,7 @@ test("the address budget is kept per client IP", async () => {
 });
 
 // Design 3 §3.9: the vegenus_server connection is used only by the server routes listed here.
-const ALLOWED = ["src/app/api/cron/storage/route.ts", "src/app/api/guest/session/route.ts", "src/app/api/health/route.ts", "src/app/api/owner/login/route.ts"];
+const ALLOWED = ["src/app/api/cron/storage/route.ts", "src/app/api/guest/session/route.ts", "src/app/api/guest/wish/route.ts", "src/app/api/health/route.ts", "src/app/api/owner/login/route.ts"];
 
 test("only the listed routes import server-db", () => {
   const files = readdirSync("src", { recursive: true, encoding: "utf8" })
@@ -32,4 +32,26 @@ test("only the listed routes import server-db", () => {
     .filter((f) => /\.(ts|tsx)$/.test(f) && !f.endsWith(".test.ts") && f !== join("src", "lib", "server-db.ts"));
   const importers = files.filter((f) => /from\s+["'][^"']*server-db["']|import\s+["'][^"']*server-db["']/.test(readFileSync(f, "utf8")));
   expect(importers.sort()).toEqual(ALLOWED);
+});
+
+// T3.2a (design 3 §3.9): a wish reaches the database with HMAC keys only, never the raw device id or IP; the device key
+// follows the cookie, the IP key the client address.
+test("a wish carries keyed device and IP values, not the raw ones", async () => {
+  const wish = { submission_id: "00000000-0000-0000-0000-000000000101", display_name: "[GUEST]", body: "[WISH_TEXT]", lang: "en" as const };
+  const keys = async (device: string, ip: string) => {
+    await postWish({ page: "our-page" }, wish, device, from(ip));
+    const values = calls.at(-1)!;
+    expect(values).toContain("our-page");
+    expect(values.join("|")).not.toContain(device);
+    expect(values.join("|")).not.toContain(ip);
+    return values.filter((v) => Buffer.isBuffer(v)) as Buffer[];
+  };
+  const [d1, i1] = await keys("D".repeat(43), "192.0.2.1");
+  const [d2, i2] = await keys("E".repeat(43), "192.0.2.1");
+  const [d3, i3] = await keys("D".repeat(43), "192.0.2.9");
+  expect(d1).toHaveLength(32);
+  expect(d2).not.toEqual(d1);
+  expect(i2).toEqual(i1);
+  expect(d3).toEqual(d1);
+  expect(i3).not.toEqual(i1);
 });

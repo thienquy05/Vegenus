@@ -15,6 +15,7 @@ import { VisibilityView } from "./visibility";
 import { SettingsView } from "./settings";
 import { AttentionLine, Spoken, UsageCard, UsageView, useUsage } from "./usage";
 import { Wizard } from "./wizard";
+import { Wishes } from "./wishes";
 import s from "./owner.module.css";
 
 // O2 dashboard (owner UI "O2 and O3 revision for T2.1b"; E55). It reads the saved page in the browser, so loading,
@@ -48,7 +49,8 @@ type View =
   | { name: "usage" }
   | { name: "share"; from: View | null; back?: boolean }
   | { name: "visibility"; from: View | null; back?: boolean }
-  | { name: "settings" };
+  | { name: "settings" }
+  | { name: "wishes" };
 
 type Props = {
   state: State;
@@ -74,11 +76,13 @@ type Props = {
   onShare?: (opener: string) => void;
   onVisibility?: () => void;
   onSettings?: () => void;
+  // T3.2 (O2 → O7): the pending-wish count and the way to moderation.
+  onWishes?: () => void;
   // T3.1p: the return read after O8 or O9 (or a back-forward restore) is running, or failed with the snapshot kept.
   stale?: "pending" | "failed" | null;
 };
 
-export function Dashboard({ state, page, offline, onSetup, onRetry, onContent, status, headingRef, focused = false, home, now, onHome, onHomeRetry, attention, usageCard, said, onShare, onVisibility, onSettings, stale = null }: Props) {
+export function Dashboard({ state, page, offline, onSetup, onRetry, onContent, status, headingRef, focused = false, home, now, onHome, onHomeRetry, attention, usageCard, said, onShare, onVisibility, onSettings, onWishes, stale = null }: Props) {
   const h2 = headingRef as RefObject<HTMLHeadingElement | null> | undefined;
   const message = headingRef as RefObject<HTMLParagraphElement | null> | undefined;
   const reason = offline ? "offline-reason" : undefined;
@@ -86,7 +90,7 @@ export function Dashboard({ state, page, offline, onSetup, onRetry, onContent, s
   return (
     <div className={s.page}>
       <header className={s.topbar}>
-        <h1 className={s.topbarText}>
+        <h1 id="dashboard-title" className={s.topbarText} tabIndex={-1}>
           <T k="dashboard.overview" />
         </h1>
       </header>
@@ -223,6 +227,19 @@ export function Dashboard({ state, page, offline, onSetup, onRetry, onContent, s
                 </button>
               )}
             </section>
+            {onWishes && (page.sections.includes("guestbook") || (page.pending_wishes ?? 0) > 0) && (
+              <section id="wishes-card" className={s.surface} aria-labelledby="wishes-card-title">
+                <h3 id="wishes-card-title" tabIndex={-1}>
+                  <T k="sections.guestbook" />
+                </h3>
+                <p>
+                  <T k="wishes.waiting" vars={{ n: page.pending_wishes ?? 0 }} />
+                </p>
+                <button id="wishes-open" type="button" className={s.secondary} disabled={offline} aria-describedby={reason} onClick={onWishes}>
+                  <L k="wishes.review" />
+                </button>
+              </section>
+            )}
             {onSettings && (
               <section id="settings-card" className={s.surface} aria-labelledby="settings-card-title">
                 <h3 id="settings-card-title" tabIndex={-1}>
@@ -452,7 +469,8 @@ export default function Owner() {
       // Only while nothing else holds focus: a late (background) re-read never takes focus the owner moved.
       const now = document.activeElement;
       if (!now || now === document.body || !now.isConnected)
-        (document.getElementById(opener.current[0]) ?? document.getElementById(opener.current[1]))?.focus();
+        // The opener's card may be gone (O7 emptied the queue of a page with Wishes off): then O2's heading.
+        (document.getElementById(opener.current[0]) ?? document.getElementById(opener.current[1]) ?? document.getElementById("dashboard-title"))?.focus();
       opener.current = null;
     }
     if (usageOpener.current && view.name === "dashboard") {
@@ -663,6 +681,18 @@ export default function Owner() {
       />
     );
   }
+  // O7: Back returns to O2, whose return read draws the new pending count before focus goes back to Review wishes.
+  if (view.name === "wishes") {
+    return (
+      <Wishes
+        onSignedOut={signedOut}
+        onBack={() => {
+          opener.current = ["wishes-open", "wishes-card-title"];
+          back(null);
+        }}
+      />
+    );
+  }
   if (view.name === "upload") {
     return <Upload id={view.id} onSignedOut={signedOut} onBack={() => setView({ name: "item", id: view.id, kind: view.kind, section: view.section })} />;
   }
@@ -692,6 +722,10 @@ export default function Owner() {
       onSettings={() => {
         opener.current = ["settings-change", "settings-card-title"];
         leave({ name: "settings" });
+      }}
+      onWishes={() => {
+        opener.current = ["wishes-open", "wishes-card-title"];
+        leave({ name: "wishes" });
       }}
       said={<Spoken said={usage.said} />}
       attention={

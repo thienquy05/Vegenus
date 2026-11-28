@@ -1,6 +1,6 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { sameOrigin } from "@/lib/auth";
-import { GUEST_COOKIE, guestCookieOptions, guestOpen, isToken } from "@/lib/guest";
+import { GUEST_COOKIE, deviceId, guestCookieOptions, guestOpen, isToken, setDevice } from "@/lib/guest";
 import { exchangeAllowed } from "@/lib/server-db";
 
 // Token exchange (design 1 §4 step 3-5; T1.5a). The token arrives only in this POST body and leaves only
@@ -20,5 +20,6 @@ export async function POST(request: NextRequest) {
 
   const res = NextResponse.json(summary);
   res.cookies.set(GUEST_COOKIE, token, guestCookieOptions(request.nextUrl.protocol === "https:"));
+  setDevice(res, deviceId(request), request); // T3.2: the wish limit's device (deferred from T1.5a)
   return res;
 }

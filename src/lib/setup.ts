@@ -25,6 +25,8 @@ export type Page = {
   vanity_name?: string | null;
   storage_used_bytes?: number;
   storage_budget_bytes?: number;
+  // T3.2: wishes waiting for O7.
+  pending_wishes?: number;
 };
 export type Link = { version: number; created_at: string; shown_at: string | null };
 // What owner_copy_drafts() returns: key -> language -> text.

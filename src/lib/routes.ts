@@ -33,7 +33,11 @@ export const ROUTES: Record<string, RouteClass> = {
   "/api/guest/list": "guest",
   "/api/guest/wishes": "guest",
   "/api/guest/item": "guest",
+  // A wish (T3.2): the same checks, by token or by a Published page's name; the database applies the limits.
+  "/api/guest/wish": "guest",
   // Checks Origin, then the owner session; the database checks the page owner.
+  "/api/owner/wishes": "owner",
+  "/api/owner/wishes/moderate": "owner",
   "/api/owner/token": "owner",
   "/api/owner/token/shown": "owner",
   "/api/owner/visibility": "owner",
@@ -71,6 +75,9 @@ export const HANDLER_METHODS: Record<string, string[]> = {
   "/api/guest/list": ["POST"],
   "/api/guest/wishes": ["POST"],
   "/api/guest/item": ["POST"],
+  "/api/guest/wish": ["POST"],
+  "/api/owner/wishes": ["POST"],
+  "/api/owner/wishes/moderate": ["POST"],
   "/api/owner/token": ["POST"],
   "/api/owner/token/shown": ["POST"],
   "/api/owner/visibility": ["POST"],

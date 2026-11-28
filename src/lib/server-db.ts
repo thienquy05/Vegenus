@@ -2,6 +2,7 @@
 // credentials are server-only; src/lib/server-db.test.ts fails if a module outside the routes that need it imports this.
 import { createHmac } from "node:crypto";
 import postgres from "postgres";
+import type { Cred, Lang } from "./guest";
 
 // prepare: false because the Supabase pooler runs in transaction mode.
 const sql = postgres(process.env.VEGENUS_SERVER_DB_URL!, { max: 1, prepare: false });
@@ -24,6 +25,26 @@ export async function loginAllowed(request: Request, email: string): Promise<boo
   const ip = clientIp(request);
   const [row] = await sql`select public.login_attempt(${hmac(`ip:${ip}`)}, ${hmac(`email:${ip}:${email}`)}) as ok`;
   return row.ok;
+}
+
+// A wish (T3.2a; design 3 §3.9): by token or by a Published page's name, keyed by the device cookie and the client IP.
+// The database applies every rule; null is the one not-available answer. A refusal of the text throws with code 22023.
+export type Wish = { submission_id: string; display_name: string; body: string; lang: Lang };
+export type WishResult = { status: "sent" } | { status: "rate_limited"; retry_after: number; shared: boolean } | null;
+export async function postWish(cred: Cred, w: Wish, device: string, request: Request): Promise<WishResult> {
+  const d = hmac(`device:${device}`);
+  const i = hmac(`ip:${clientIp(request)}`);
+  const [row] =
+    typeof cred === "string"
+      ? await sql`select public.guest_guestbook_post(${cred}, ${w.submission_id}::uuid, ${d}, ${i}, ${w.display_name}, ${w.body}, ${w.lang}::public.lang) as r`
+      : await sql`select public.public_guestbook_post(${cred.page}, ${w.submission_id}::uuid, ${d}, ${i}, ${w.display_name}, ${w.body}, ${w.lang}::public.lang) as r`;
+  return row.r;
+}
+
+// Q45: rejected wishes 30 days after the decision, run by the daily job.
+export async function purgeWishes(): Promise<number> {
+  const [row] = await sql`select public.worker_purge_wishes() as n`;
+  return row.n;
 }
 
 // The daily storage job (T2.3c; design 3 §3.4). Deletion ids are Postgres bigints, kept as strings.
