@@ -1,5 +1,5 @@
 import { expect, test } from "vitest";
-import { browserLang, checkName, dashState, finishOutcome, nameErrors, proposeZone, resumeStep, saveBody, saveOutcome, stepDirty, zoneFlagged, type Draft } from "./setup";
+import { browserLang, checkName, dashState, finishOutcome, nameErrors, proposeZone, resumeStep, saveBody, saveOutcome, stepDirty, validPage, zoneFlagged, type Draft } from "./setup";
 
 // The O2/O3 rules that do not need a browser (owner UI "O2 and O3 revision for T2.1b"; Q114, Q121, Q125).
 const PAGE = {
@@ -114,4 +114,29 @@ test("a saved UTC zone is flagged whatever this session knew; another zone never
   expect(zoneFlagged({ timezone: "Asia/Tokyo" }, true)).toBe(false);
   expect(zoneFlagged(null, true)).toBe(true);
   expect(zoneFlagged(null, false)).toBe(false);
+});
+
+// T3.1p (owner UI "O9 Published address"; CHECKS.md "Server needs"): O9 and O2 check every page they receive with one
+// validator; vanity_name must be present, null or a valid name, and Published needs one.
+test("a page is valid only with the full owner_page() shape and a sound address", () => {
+  const page = {
+    version: 1, theme: null, default_lang: "en", label_a: "[PARTNER_A]", label_b: "[PARTNER_B]", timezone: "UTC",
+    visibility: "token_only", vanity_name: null, setup_completed: true, sections: ["home"], storage_used_bytes: 0,
+    storage_budget_bytes: 1, link: null,
+  };
+  expect(validPage(page)).toBe(true);
+  expect(validPage({ ...page, visibility: "published", vanity_name: "our-page" })).toBe(true);
+  expect(validPage({ ...page, vanity_name: "kept-name" })).toBe(true);
+  expect(validPage({ ...page, link: { version: 2, created_at: "2026-01-01T00:00:00.000Z", shown_at: null } })).toBe(true);
+  const missing: Record<string, unknown> = { ...page };
+  delete missing.vanity_name;
+  for (const bad of [
+    null, missing, { ...page, visibility: "published" }, { ...page, vanity_name: "Our-Page" }, { ...page, vanity_name: "a--b" },
+    { ...page, vanity_name: "ab" }, { ...page, vanity_name: 3 }, { ...page, visibility: "public" }, { ...page, version: 0 },
+    { ...page, sections: ["home", "elsewhere"] }, { ...page, link: { version: 1, created_at: "soon", shown_at: null } },
+    { ...page, storage_used_bytes: -1 }, { ...page, label_a: null },
+  ]) {
+    expect(validPage(bad), JSON.stringify(bad)).toBe(false);
+  }
+  expect(validPage({ ...page, setup_completed: false, label_a: null })).toBe(true);
 });

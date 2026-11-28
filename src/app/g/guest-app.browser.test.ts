@@ -302,7 +302,7 @@ test("a visit run from memory (cookies blocked) sends the token with every read 
   const token = "T".repeat(43);
   serve({ "/api/guest/list": [ok({ items: [] })] });
   history.replaceState(null, "", "/g");
-  mount({ token });
+  mount({ cred: token });
   await expect.poll(() => to("/api/guest/media")).toHaveLength(1);
   expect(to("/api/guest/media")[0].body.token).toBe(token);
   await userEvent.click(menu());
@@ -804,4 +804,28 @@ test("G2 review: a list thumbnail whose URL expired is signed again", async () =
   vi.setSystemTime(Date.now() + 301_000);
   img()!.dispatchEvent(new Event("error"));
   await expect.poll(() => img()?.getAttribute("src")).toBe("/t2.webp");
+});
+
+// T3.1pc (Q155): the same views for a visitor at /p/<name>: every read names the page instead of sending a token, and
+// the addresses follow /p/<name>, with the browser's Back as for /g.
+test("a visitor at /p/<name>: reads name the page, menu, cards and Back follow /p/<name>", async () => {
+  serve({ "/api/guest/list": [ok({ items: [ALBUM] })], "/api/guest/item": [ok({ item: ALBUM })] });
+  history.replaceState(null, "", "/p/our-page");
+  mount({ cred: { page: "our-page" } });
+  await expect.poll(() => to("/api/guest/media").length).toBeGreaterThan(0);
+  expect(to("/api/guest/media")[0].body).toMatchObject({ page: "our-page" });
+  expect(to("/api/guest/media")[0].body).not.toHaveProperty("token");
+  await userEvent.click(menu());
+  expect(item("Memories").getAttribute("href")).toBe("/p/our-page/memories");
+  await userEvent.click(item("Memories"));
+  expect(location.pathname).toBe("/p/our-page/memories");
+  expect(to("/api/guest/list")[0].body).toEqual({ section: "memories", page: "our-page" });
+  await expect.poll(() => host.querySelector(`a[href="/p/our-page/memories/${M1}"]`)).toBeTruthy();
+  await userEvent.click(host.querySelector(`a[href="/p/our-page/memories/${M1}"]`)!);
+  expect(location.pathname).toBe(`/p/our-page/memories/${M1}`);
+  await expect.poll(() => heading()?.textContent).toBe("[TRIP]");
+  expect(to("/api/guest/item")[0].body).toEqual({ id: M1, page: "our-page" });
+  history.back();
+  await expect.poll(() => heading()?.textContent).toBe("Memories");
+  history.replaceState(null, "", "/");
 });

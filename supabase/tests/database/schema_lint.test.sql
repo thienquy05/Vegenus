@@ -3,7 +3,7 @@ begin;
 select plan(11);
 
 select tables_are('public', array['pages', 'page_sections', 'memberships', 'guest_tokens', 'items', 'guestbook_entries', 'rate_limit_hits',
-  'copy_keys', 'page_copy', 'item_tombstones', 'media', 'media_variants', 'upload_reservations', 'storage_deletions', 'home_picks', 'job_runs', 'settings_saves'], 'the T1.3, T1.4, T2.7, T2.2, T2.3a, T2.4, T2.5 and T2.6 tables exist');
+  'copy_keys', 'page_copy', 'item_tombstones', 'media', 'media_variants', 'upload_reservations', 'storage_deletions', 'home_picks', 'job_runs', 'settings_saves', 'page_vanity_names'], 'the T1.3, T1.4, T2.7, T2.2, T2.3a, T2.4, T2.5, T2.6 and T3.1p tables exist');
 
 select ok(exists (
   select 1 from pg_roles where rolname = 'vegenus_server'
@@ -43,7 +43,7 @@ select is((
 select is((
   select array_agg(p.proname::text order by p.proname) from pg_proc p
   where p.pronamespace = 'public'::regnamespace and has_function_privilege('anon', p.oid, 'execute')
-), array['guest_guestbook_list', 'guest_item', 'guest_list', 'guest_media', 'guest_open', 'public_guestbook_list', 'public_list', 'public_open'],
+), array['guest_guestbook_list', 'guest_item', 'guest_list', 'guest_media', 'guest_open', 'public_guestbook_list', 'public_item', 'public_list', 'public_media', 'public_open'],
   'anon executes exactly the guest_* and public_* read functions');
 
 select is((

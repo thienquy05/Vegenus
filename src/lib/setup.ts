@@ -1,3 +1,5 @@
+import { normalizeVanity, vanityReason } from "./vanity";
+
 // The setup rules the dashboard (O2) and wizard (O3) share, kept free of the browser so they can be unit tested
 // (owner UI "O2 and O3 revision for T2.1b"; Q114, Q121, Q125, Q126).
 
@@ -19,12 +21,36 @@ export type Page = {
   sections: readonly string[];
   // The active guest link's metadata (T2.6a; never the token): null before Create; shown_at null until O8 confirms.
   link?: Link | null;
+  // T3.1p: the page address, null until the first publish; kept (reserved) after leaving Published.
+  vanity_name?: string | null;
+  storage_used_bytes?: number;
+  storage_budget_bytes?: number;
 };
 export type Link = { version: number; created_at: string; shown_at: string | null };
 // What owner_copy_drafts() returns: key -> language -> text.
 export type Drafts = Record<string, Record<string, string>>;
 // The wizard's unsaved choices; names as typed.
 export type Draft = Pick<Page, "theme" | "default_lang" | "timezone"> & { label_a: string; label_b: string; sections: readonly string[] };
+
+const isDate = (value: unknown) => typeof value === "string" && Number.isFinite(Date.parse(value));
+const isName = (value: unknown) => typeof value === "string" && vanityReason(value) === null && normalizeVanity(value) === value;
+// T3.1p (CHECKS.md "Server needs"): the one check O2 and O9 apply to every owner_page() they receive (the read and both
+// saves); a page that fails it is unreadable.
+export function validPage(page: unknown): page is Page {
+  const p = page as Record<string, unknown> | null;
+  const link = p?.link as Record<string, unknown> | null | undefined;
+  return !!p && typeof p.setup_completed === "boolean" && ["en", "vi"].includes(p.default_lang as string)
+    && (p.theme === null || (THEMES as readonly unknown[]).includes(p.theme))
+    && ["private", "token_only", "published"].includes(p.visibility as string)
+    && Array.isArray(p.sections) && p.sections.every((x) => ["home", ...SECTIONS, "zodiac"].includes(x))
+    && Object.hasOwn(p, "vanity_name") && (p.vanity_name === null ? p.visibility !== "published" : isName(p.vanity_name))
+    && Number.isInteger(p.version) && (p.version as number) > 0
+    && [p.storage_used_bytes, p.storage_budget_bytes].every((n) => Number.isInteger(n) && (n as number) >= 0)
+    && typeof p.timezone === "string"
+    && [p.label_a, p.label_b].every((x) => typeof x === "string" || (!p.setup_completed && x === null))
+    && (link === null || (!!link && Number.isInteger(link.version) && (link.version as number) > 0 && isDate(link.created_at)
+      && (link.shown_at === null || isDate(link.shown_at))));
+}
 
 export const dashState = (page: Page | null) => (!page ? "empty" : page.setup_completed ? "done" : "resumed");
 

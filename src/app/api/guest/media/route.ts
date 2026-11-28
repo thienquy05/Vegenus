@@ -12,10 +12,10 @@ export async function POST(request: NextRequest) {
   const ids: unknown = req.body?.ids;
   const variant: unknown = req.body?.variant;
   if (!Array.isArray(ids) || ids.length > 100 || !ids.every(isUuid) || !GUEST_VARIANTS.includes(variant as GuestVariant)) return answer(null, 400);
-  if (!req.token) return answer({ error: "not_available" }, 404);
+  if (!req.cred) return answer({ error: "not_available" }, 404);
   try {
-    const urls = await guestMedia(req.token, ids, variant as GuestVariant);
-    if (ids.length && !Object.keys(urls).length && !(await stillOpen(req.token))) return answer({ error: "not_available" }, 404);
+    const urls = await guestMedia(req.cred, ids, variant as GuestVariant);
+    if (ids.length && !Object.keys(urls).length && !(await stillOpen(req.cred))) return answer({ error: "not_available" }, 404);
     return answer({ urls }, 200);
   } catch {
     return answer({ error: "unavailable" }, 503);

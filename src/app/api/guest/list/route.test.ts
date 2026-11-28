@@ -57,6 +57,23 @@ test("the first page, then the page after a cursor; cookies blocked sends the to
   expect(guestList).toHaveBeenLastCalledWith(other, "together", { sort: 2.5, id: ID });
 });
 
+// T3.1pc: a visitor at /p/<name> sends the page's name instead of a token; it wins over any old cookie, and a name that is
+// not a normalized valid one is the not-available answer, never the cookie's page.
+test("a visitor names the Published page; an invalid name is not available", async () => {
+  expect((await ask({ section: "memories", page: "our-page" })).status).toBe(200);
+  expect(guestList).toHaveBeenLastCalledWith({ page: "our-page" }, "memories", null);
+  vi.mocked(guestList).mockClear();
+  for (const page of ["Our-Page", "a b", 7]) expect((await ask({ section: "memories", page })).status).toBe(404);
+  expect(guestList).not.toHaveBeenCalled();
+});
+
+// Review T3.1pc: a body that names a page at all decides the reader; a bad or empty name never falls back to the
+// body token or the cookie's page.
+test.each([[{ page: null, token: TOKEN }], [{ page: "Bad", token: TOKEN }], [{ page: "" }]])("%j reads nothing", async (extra) => {
+  expect((await ask({ section: "memories", ...extra })).status).toBe(404);
+  expect(guestList).not.toHaveBeenCalled();
+});
+
 test("a database failure is a retryable 503", async () => {
   vi.mocked(guestList).mockRejectedValue(new Error("guest_list failed"));
   expect((await ask({ section: "memories" })).status).toBe(503);

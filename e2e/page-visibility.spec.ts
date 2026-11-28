@@ -18,12 +18,18 @@ async function signIn(page: Page, project: string) {
   await expect(page).toHaveURL("/app");
 }
 
-const setVisibility = (owner: Page, data: object) =>
-  owner.request.post("/api/owner/visibility", { data: { request_id: randomUUID(), ...data }, headers: { origin: ORIGIN } });
 const snapshot = async (owner: Page) =>
   (await (await owner.request.post("/api/owner/page", { headers: { origin: ORIGIN } })).json()).page;
+// T3.1p (Q155): every save names the saved values it was drafted against; by default a fresh snapshot.
+const baseOf = (page: { visibility: string; vanity_name: string | null; link: unknown }) =>
+  ({ visibility: page.visibility, vanity_name: page.vanity_name, has_link: page.link !== null });
+const setVisibility = async (owner: Page, data: object) =>
+  owner.request.post("/api/owner/visibility", {
+    data: { request_id: randomUUID(), base: baseOf(await snapshot(owner)), ...data },
+    headers: { origin: ORIGIN },
+  });
 
-test("Private stops an open guest on the next request; Token-only lets the token back in, Published waits for Phase 3 (E4, E47, Q146)", async ({ page, browser }, info) => {
+test("Private stops an open guest on the next request; Token-only lets the token back in; Published saves an address (E4, E47, Q155)", async ({ page, browser }, info) => {
   await signIn(page, info.project.name);
   expect((await setVisibility(page, { visibility: "token_only" })).status()).toBe(200);
   const res = await page.request.post("/api/owner/token", {
@@ -63,20 +69,51 @@ test("Private stops an open guest on the next request; Token-only lets the token
   await guest.goto(link);
   await expect(guest).toHaveURL("/g/home");
   // A retry of the committed Private save (its answer lost) answers the snapshot and does not apply again (Q146 35).
-  const retry = await setVisibility(page, { visibility: "private", confirm: true, request_id: privateId });
+  // Its base (Private) is stale now, so only a request-id-first check answers 200 rather than conflict (T3.1p).
+  const retry = await setVisibility(page, {
+    visibility: "private", confirm: true, request_id: privateId, base: { visibility: "private", vanity_name: null, has_link: true },
+  });
+  expect(retry.status()).toBe(200);
   expect((await retry.json()).page.visibility).toBe("token_only");
   await guest.reload();
   await expect(guest).toHaveURL("/g/home");
 
-  // Published waits for the Phase 3 public route (Q146): refused, nothing changes, the token keeps working.
-  const published = await setVisibility(page, { visibility: "published", confirm: true });
-  expect(published.status()).toBe(409);
-  expect(await published.json()).toEqual({ error: "not_available" });
-  expect((await snapshot(page)).visibility).toBe("token_only");
-  await guest.reload();
-  await expect(guest).toHaveURL("/g/home");
+  // T3.1p: a stale base is a conflict and changes nothing (Q155).
+  const stale = await setVisibility(page, { visibility: "token_only", base: { visibility: "private", vanity_name: null, has_link: true } });
+  expect(stale.status()).toBe(409);
+  expect(await stale.json()).toEqual({ error: "conflict" });
 
-  expect((await setVisibility(page, { visibility: "token_only" })).status()).toBe(200);
+  // Published needs a valid address; the API normalizes it and Token-only keeps it reserved (Q155-Q157).
+  const address = `e2e-${info.project.name}`;
+  const bad = await setVisibility(page, { visibility: "published", vanity_name: "https://[HOST]/p/x", confirm: true });
+  expect(bad.status()).toBe(400);
+  expect(await bad.json()).toEqual({ error: "invalid_name", reason: "format" });
+  const published = await setVisibility(page, { visibility: "published", vanity_name: ` ${address.toUpperCase()} `, confirm: true });
+  expect(published.status()).toBe(200);
+  expect((await published.json()).page).toMatchObject({ visibility: "published", vanity_name: address });
+  // T3.1pc: a visitor with no credential opens it at /p/<name>: the guest views, indexable, never cached or a referrer.
+  const visitor = await (await browser.newContext()).newPage();
+  const open = await visitor.goto(`/p/${address}`);
+  expect(open?.status()).toBe(200);
+  expect(open?.headers()["x-robots-tag"]).toBeUndefined();
+  expect(open?.headers()["referrer-policy"]).toBe("no-referrer");
+  expect(open?.headers()["cache-control"]).toContain("no-store");
+  await expect(visitor.locator("main h1")).toBeVisible();
+  expect((await visitor.request.get(`/p/${address.toUpperCase()}`)).status()).toBe(404);
+  const back = await setVisibility(page, { visibility: "token_only" });
+  expect(back.status()).toBe(200);
+  expect((await back.json()).page).toMatchObject({ visibility: "token_only", vanity_name: address });
+  // Token-only: the address is a 404 again, the same as a name nobody has (nonce and name aside), so it reveals nothing.
+  const gone = await visitor.request.get(`/p/${address}`);
+  const nobody = await visitor.request.get("/p/nobody-has-this");
+  expect([gone.status(), nobody.status()]).toEqual([404, 404]);
+  const plain = async (res: { text(): Promise<string> }, name: string) =>
+    (await res.text()).replace(/(nonce=|nonce\\":\\)"[^"\\]*/g, '$1"').replaceAll(name, "[NAME]");
+  expect(await plain(gone, address)).toBe(await plain(nobody, "nobody-has-this"));
+  await visitor.context().close();
+  const shown = await guest.reload();
+  await expect(guest).toHaveURL("/g/home");
+  expect(shown?.headers()["x-robots-tag"]).toBe("noindex");
   await guest.context().close();
 });
 

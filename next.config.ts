@@ -18,6 +18,10 @@ const GUEST_HEADERS = [
   { key: "Cache-Control", value: "no-store" },
 ];
 
+// A Published page at /p/<name> (T3.1pc, Q155): no referrer and never cached like the guest routes, but indexable, so
+// no X-Robots-Tag; Token-only and Private pages are only ever shown under /g, which stays noindex.
+const VISITOR_HEADERS = GUEST_HEADERS.filter((h) => h.key !== "X-Robots-Tag");
+
 const config: NextConfig = {
   poweredByHeader: false,
   // Later entries win for the same header, so the guest Referrer-Policy overrides the baseline.
@@ -26,6 +30,7 @@ const config: NextConfig = {
       { source: "/:path*", headers: BASELINE },
       { source: "/api/:path*", headers: API_CSP },
       ...["/g", "/g/:path*", "/api/guest/:path*"].map((source) => ({ source, headers: GUEST_HEADERS })),
+      { source: "/p/:path*", headers: VISITOR_HEADERS },
     ];
   },
 };

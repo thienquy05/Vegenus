@@ -20,6 +20,7 @@ const UNSHOWN = { version: 2, created_at: CREATED, shown_at: null };
 const PAGE = {
   version: 2, theme: "a_dreamy", default_lang: "en", label_a: "[PARTNER_A]", label_b: "[PARTNER_B]",
   timezone: "Asia/Ho_Chi_Minh", visibility: "token_only", setup_completed: true, sections: ["home"], link: null as unknown,
+  vanity_name: null, storage_used_bytes: 0, storage_budget_bytes: 1,
 };
 const page = (fields: Partial<typeof PAGE> = {}) => ok({ page: { ...PAGE, ...fields }, drafts: null });
 

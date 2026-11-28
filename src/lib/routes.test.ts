@@ -108,3 +108,11 @@ test("the guest section addresses are guest routes", () => {
 test("the memory album address and its item route are guest routes", () => {
   expect([ROUTES["/g/memories/[id]"], ROUTES["/api/guest/item"], HANDLER_METHODS["/api/guest/item"]]).toEqual(["guest", "guest", ["POST"]]);
 });
+
+// T3.1pc (Q155): the Published page's addresses need no credential; the page reads only a Published page by its name and
+// is the ordinary not-found otherwise, which the crawler checks at an unknown name.
+test("the Published page addresses are visitor routes with crawler URLs", () => {
+  const paths = ["/p/[name]", "/p/[name]/memories", "/p/[name]/memories/[id]", "/p/[name]/together", "/p/[name]/wishes"];
+  expect(paths.map((path) => ROUTES[path])).toEqual(paths.map(() => "visitor"));
+  for (const path of paths) expect(CRAWL_URLS[path]).toMatch(/^\/p\/no-such-page(\/|$)/);
+});

@@ -9,11 +9,11 @@ export async function POST(request: NextRequest) {
   if (!req) return answer(null, 403);
   const id: unknown = req.body?.id;
   if (!isUuid(id)) return answer(null, 400);
-  if (!req.token) return answer({ error: "not_available" }, 404);
+  if (!req.cred) return answer({ error: "not_available" }, 404);
   try {
-    const item = await guestItem(req.token, id as string);
+    const item = await guestItem(req.cred, id as string);
     if (item) return answer({ item }, 200);
-    return answer({ error: (await stillOpen(req.token, "memories")) ? "not_found" : "not_available" }, 404);
+    return answer({ error: (await stillOpen(req.cred, "memories")) ? "not_found" : "not_available" }, 404);
   } catch {
     return answer({ error: "unavailable" }, 503);
   }

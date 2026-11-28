@@ -3,6 +3,11 @@
 -- owner_page() returns the caller's page or null. Placeholder data only.
 begin;
 select plan(42);
+-- T3.1p: the save takes the draft's base; build it from the caller's current snapshot.
+create function pg_temp.cur() returns jsonb language sql as $cur$
+  select jsonb_build_object('visibility', p -> 'visibility', 'vanity_name', p -> 'vanity_name',
+    'has_link', p -> 'link' <> 'null'::jsonb) from public.owner_page() p
+$cur$;
 
 insert into auth.users (id, email) values
   ('00000000-0000-0000-0000-0000000000f1', 'owner@example.test'),
@@ -48,7 +53,7 @@ select is(public.owner_save_page(null, 'b_cosmic', 'vi', null, null, 'Asia/Ho_Ch
   'the first save creates the page and returns its version');
 select is(public.owner_page(), jsonb_build_object(
     'version', 1, 'theme', 'b_cosmic', 'default_lang', 'vi', 'label_a', null, 'label_b', null,
-    'timezone', 'Asia/Ho_Chi_Minh', 'visibility', 'private', 'setup_completed', false,
+    'timezone', 'Asia/Ho_Chi_Minh', 'visibility', 'private', 'vanity_name', null, 'setup_completed', false,
     'sections', jsonb_build_array('home', 'memories'),
     'storage_used_bytes', 0, 'storage_budget_bytes', 943718400, 'link', null),
   'owner_page returns the saved choices, Home always on, and the storage the page uses of its budget');
@@ -74,7 +79,7 @@ select is(public.owner_save_page(1, 'a_dreamy', 'en', 'Partner A', 'Partner B', 
   'a save naming the current version updates the page and returns the next one');
 select is(public.owner_page(), jsonb_build_object(
     'version', 2, 'theme', 'a_dreamy', 'default_lang', 'en', 'label_a', 'Partner A', 'label_b', 'Partner B',
-    'timezone', 'UTC', 'visibility', 'private', 'setup_completed', false,
+    'timezone', 'UTC', 'visibility', 'private', 'vanity_name', null, 'setup_completed', false,
     'sections', jsonb_build_array('home', 'together', 'guestbook'),
     'storage_used_bytes', 0, 'storage_budget_bytes', 943718400, 'link', null),
   'owner_page returns the updated choices');
@@ -139,7 +144,7 @@ select is((select array_agg(s.section::text order by s.sort_order) from public.p
 
 -- Guests see nothing of an unfinished page (E55, design 3 §3.12).
 select pg_temp.act_as('00000000-0000-0000-0000-0000000000f6');
-select throws_ok($$ select public.owner_set_visibility('token_only', gen_random_uuid()) $$, '55000', null,
+select throws_ok($$ select public.owner_set_visibility('token_only', null, pg_temp.cur(), gen_random_uuid()) $$, '55000', null,
   'the new page cannot leave Private before its wording is published');
 select is(public.guest_open(public.owner_rotate_token(gen_random_uuid(), null) ->> 'token'), null,
   'a guest link made for the unfinished page opens nothing (E55)');

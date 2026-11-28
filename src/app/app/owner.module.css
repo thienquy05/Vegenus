@@ -1142,3 +1142,8 @@ a.secondary {
     grid-column: 1;
   }
 }
+
+/* T3.1p: page addresses wrap anywhere, only themselves. */
+.address {
+  overflow-wrap: anywhere;
+}

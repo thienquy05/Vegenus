@@ -15,7 +15,7 @@ test.afterAll(async () => {
 async function start(page: Page, project: keyof typeof PAGES) {
   const id = PAGES[project];
   await sql`delete from public.guest_tokens where page_id = ${id}`;
-  await sql`update public.pages set visibility = 'token_only' where id = ${id}`;
+  await sql`update public.pages set visibility = 'token_only', vanity_name = null where id = ${id}`;
   await sql`update public.page_sections set enabled = section = 'home' where page_id = ${id}`;
   await sql`update public.pages set label_a = 'Partner A', label_b = 'Partner B', default_lang = 'en', timezone = 'UTC', theme = 'a_dreamy' where id = ${id}`;
   await page.setExtraHTTPHeaders({ "x-forwarded-for": `198.51.104.${Math.floor(Math.random() * 250) + 1}` });
@@ -78,14 +78,14 @@ test("the owner changes sections and visibility on O9, each panel saved on its o
   await page.locator("#visibility-change").click();
   await expect(page.locator("#visibility-title")).toBeFocused();
   await expect(page.locator("#vis-token_only")).toBeChecked();
-  await expect(page.locator("#vis-published")).toBeDisabled();
+  await expect(page.locator("#vis-published")).toBeEnabled();
   await checkSizes(page, "O9");
 
   await page.locator("#section-together").check();
   await expect(page.locator("#sections-status")).toContainText("Changes not saved");
   await checkSizes(page, "O9 with unsaved sections");
   await page.locator("#save-sections").click();
-  await expect(page.getByRole("status")).toContainText("Saved");
+  await expect(page.getByRole("status")).toContainText("Sections saved.");
   const enabled = await sql`select section from public.page_sections where page_id = ${id} and enabled order by section`;
   expect(enabled.map((r) => r.section)).toEqual(["home", "together"]);
 
@@ -103,6 +103,27 @@ test("the owner changes sections and visibility on O9, each panel saved on its o
   await expect(page.locator("#visibility-change")).toBeFocused();
   await expect(page.locator("#visibility-card")).toContainText("Private");
   expect((await sql`select visibility from public.pages where id = ${id}`)[0].visibility).toBe("private");
+
+  // T3.1p (Q155-Q157): Published with a page address, confirmed, saved and offered as Open page and Copy address.
+  const address = `share-${info.project.name}`;
+  await page.locator("#visibility-change").click();
+  await page.locator("#vis-published").check();
+  await page.locator("#page-address").fill(address.toUpperCase());
+  await expect(page.locator("#address-echo")).toHaveText(`localhost:3000/p/${address}`);
+  await checkSizes(page, "O9 Published address");
+  await page.locator("#save-visibility").click();
+  await expect(page.locator("#visibility-dialog")).toContainText("Make the page public?");
+  await checkSizes(page, "O9 make public confirm");
+  await page.locator("#dialog-act").click();
+  await expect(page.getByRole("status")).toContainText("Saved");
+  expect((await sql`select visibility, vanity_name from public.pages where id = ${id}`)[0]).toEqual({ visibility: "published", vanity_name: address });
+  await expect(page.locator("#saved-address")).toHaveText(`http://localhost:3000/p/${address}`);
+  await expect(page.locator("#open-page")).toHaveAttribute("target", "_blank");
+  await checkSizes(page, "O9 Published saved");
+  await page.locator("#visibility-back").click();
+  await expect(page.locator("#visibility-card")).toContainText("Published");
+  await expect(page.locator("#visibility-address")).toHaveText(`localhost:3000/p/${address}`);
+  await checkSizes(page, "O2 Published row");
 });
 
 // O19 Page settings (owner UI "O19 Page settings"; PRD Q115): each panel saved on its own, O2's card shows the result.

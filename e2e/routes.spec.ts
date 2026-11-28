@@ -59,4 +59,9 @@ test("guessed paths are the generic not-found", async ({ request }) => {
     expect(res.status(), path).toBe(404);
     expect(await body(res), path).toBe(await body(unknown));
   }
+  // T3.1pc: a name that is no Published page is a 404 too (Next streams it from the page, so its body is not the static
+  // one); that it says nothing about the name is checked against a real page in page-visibility.spec.ts.
+  for (const path of ["/p/no-such-page", "/p/no-such-page/memories", "/p/NOT-A-NAME"]) {
+    expect((await request.get(path, { maxRedirects: 0 })).status(), path).toBe(404);
+  }
 });
