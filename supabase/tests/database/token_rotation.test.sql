@@ -52,8 +52,8 @@ select results_eq($$ select version, active, created_by, shown_at, token_hash fr
   'version 1 is active, stores only the hash, and is not marked shown yet');
 
 -- A pending wish posted with version 1 (design 1 §6).
-insert into public.guestbook_entries (page_id, display_name, body, lang, submission_id, author_kind, token_version) values
-  ('00000000-0000-0000-0000-00000000000a', '[GUEST]', 'Pending before rotation', 'en', gen_random_uuid(), 'token', 1);
+insert into public.guestbook_entries (page_id, display_name, body, lang, submission_id, author_kind, token_version, consent_version) values
+  ('00000000-0000-0000-0000-00000000000a', '[GUEST]', 'Pending before rotation', 'en', gen_random_uuid(), 'token', 1, 1);
 
 -- Create again, or Rotate naming a version that is not the active one: "changed", nothing happens (Q146 10).
 select is(public.owner_rotate_token(gen_random_uuid(), null), '{"error": "changed"}'::jsonb, 'Create with a link already active is "changed"');

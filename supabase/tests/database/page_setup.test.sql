@@ -53,7 +53,7 @@ select is(public.owner_save_page(null, 'b_cosmic', 'vi', null, null, 'Asia/Ho_Ch
   'the first save creates the page and returns its version');
 select is(public.owner_page(), jsonb_build_object(
     'version', 1, 'theme', 'b_cosmic', 'default_lang', 'vi', 'label_a', null, 'label_b', null,
-    'timezone', 'Asia/Ho_Chi_Minh', 'visibility', 'private', 'vanity_name', null, 'setup_completed', false,
+    'timezone', 'Asia/Ho_Chi_Minh', 'visibility', 'private', 'vanity_name', null, 'setup_completed', false, 'pending_wishes', 0,
     'sections', jsonb_build_array('home', 'memories'),
     'storage_used_bytes', 0, 'storage_budget_bytes', 943718400, 'link', null),
   'owner_page returns the saved choices, Home always on, and the storage the page uses of its budget');
@@ -79,7 +79,7 @@ select is(public.owner_save_page(1, 'a_dreamy', 'en', 'Partner A', 'Partner B', 
   'a save naming the current version updates the page and returns the next one');
 select is(public.owner_page(), jsonb_build_object(
     'version', 2, 'theme', 'a_dreamy', 'default_lang', 'en', 'label_a', 'Partner A', 'label_b', 'Partner B',
-    'timezone', 'UTC', 'visibility', 'private', 'vanity_name', null, 'setup_completed', false,
+    'timezone', 'UTC', 'visibility', 'private', 'vanity_name', null, 'setup_completed', false, 'pending_wishes', 0,
     'sections', jsonb_build_array('home', 'together', 'guestbook'),
     'storage_used_bytes', 0, 'storage_budget_bytes', 943718400, 'link', null),
   'owner_page returns the updated choices');

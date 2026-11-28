@@ -1147,3 +1147,10 @@ a.secondary {
 .address {
   overflow-wrap: anywhere;
 }
+
+/* O7: the guest's words as sent, line breaks kept, long words wrapped. */
+.wishBody {
+  margin: 0;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}

@@ -1,6 +1,7 @@
 // Guest token (design 1 §3, §4; T1.5a). The cookie carries the token itself, HttpOnly, and the database
 // re-checks it on every call through guest_open, so a rotated token or a Private page fails on the next request.
 import { createClient } from "@supabase/supabase-js";
+import { randomBytes } from "node:crypto";
 import { cookies } from "next/headers";
 import { notFound, permanentRedirect, redirect } from "next/navigation";
 import { NextResponse, type NextRequest } from "next/server";
@@ -16,6 +17,17 @@ export const guestCookieOptions = (secure: boolean) =>
 
 // 32 random bytes, base64url without padding.
 export const isToken = (value: unknown): value is string => typeof value === "string" && /^[A-Za-z0-9_-]{43}$/.test(value);
+
+// The wish-limit device (design 3 §3.8, privacy design §2): a random id in its own HttpOnly cookie, set by the token
+// exchange and by a wish, and kept 24 hours from its last use (Q103). It identifies nothing outside this site; the
+// database sees only its HMAC.
+export const DEVICE_COOKIE = "vegenus_d";
+export const deviceId = (request: NextRequest) => {
+  const id = request.cookies.get(DEVICE_COOKIE)?.value;
+  return isToken(id) ? id : randomBytes(32).toString("base64url");
+};
+export const setDevice = (res: NextResponse, id: string, request: NextRequest) =>
+  res.cookies.set(DEVICE_COOKIE, id, { ...guestCookieOptions(request.nextUrl.protocol === "https:"), maxAge: 24 * 60 * 60 });
 
 // What guest_open returns (T3.1a): only published content. copy: {key: {en?, vi?}}; home null when unpublished or off.
 export type Lang = "en" | "vi";

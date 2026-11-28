@@ -12,6 +12,7 @@ const db = vi.hoisted(() => ({
   dueDeletions: vi.fn(),
   deletionDone: vi.fn(),
   jobRecord: vi.fn(),
+  purgeWishes: vi.fn(),
 }));
 const storage = vi.hoisted(() => ({ removeObjects: vi.fn() }));
 vi.mock("@/lib/server-db", () => db);
@@ -33,6 +34,7 @@ beforeEach(() => {
   db.deletionDone.mockReset().mockResolvedValue(true);
   storage.removeObjects.mockReset().mockResolvedValue(true);
   db.jobRecord.mockReset().mockResolvedValue(undefined);
+  db.purgeWishes.mockReset().mockResolvedValue(2);
 });
 
 const noWork = () => {
@@ -40,6 +42,7 @@ const noWork = () => {
   expect(db.dueDeletions).not.toHaveBeenCalled();
   expect(storage.removeObjects).not.toHaveBeenCalled();
   expect(db.jobRecord).not.toHaveBeenCalled();
+  expect(db.purgeWishes).not.toHaveBeenCalled();
 };
 
 test("without the secret, with a wrong one, or with no secret configured, it refuses and does nothing", async () => {
@@ -57,7 +60,7 @@ test("with the secret it expires, reconciles, deletes per bucket and marks each 
   const res = await run("Bearer cron-test-secret");
   expect(res.status).toBe(200);
   expect(res.headers.get("cache-control")).toBe("no-store");
-  expect(await res.json()).toEqual({ expired: 1, orphans: 0, resized: 0, deleted: 3, failed: 0 });
+  expect(await res.json()).toEqual({ expired: 1, orphans: 0, resized: 0, deleted: 3, failed: 0, wishes_purged: 2 });
   expect(storage.removeObjects).toHaveBeenCalledWith("media-thumb", ["pages/p/media/m/thumb", "pages/p/media/n/thumb"]);
   expect(storage.removeObjects).toHaveBeenCalledWith("media-display", ["pages/p/media/m/display"]);
   expect(db.deletionDone.mock.calls.map((c) => c[0]).sort()).toEqual(["1", "2", "3"]);
@@ -177,4 +180,23 @@ test("only the storage cron route and the guest media signer import storage-admi
     .filter((f) => /\.(ts|tsx)$/.test(f) && !f.endsWith(".test.ts") && f !== join("src", "lib", "storage-admin.ts"));
   const importers = files.filter((f) => /from\s+["'][^"']*storage-admin["']/.test(readFileSync(f, "utf8")));
   expect(importers.sort()).toEqual([join("src", "app", "api", "cron", "storage", "route.ts"), join("src", "lib", "guest.ts")]);
+});
+
+// T3.2a (Q45, design 3 §7): the same daily run deletes rejected wishes 30 days after the decision (the database
+// decides which); the run record keeps its storage counts.
+test("the run purges old rejected wishes and reports how many", async () => {
+  expect(await (await run("Bearer cron-test-secret")).json()).toMatchObject({ wishes_purged: 2 });
+  expect(db.purgeWishes).toHaveBeenCalledOnce();
+  expect(db.jobRecord.mock.calls[0][2]).not.toHaveProperty("wishes_purged");
+});
+
+test("a failed wish purge never stops the storage work: it runs after, is logged, and reports null", async () => {
+  vi.spyOn(console, "error").mockImplementation(() => {});
+  db.purgeWishes.mockRejectedValue(new Error("lock timeout"));
+  const res = await run("Bearer cron-test-secret");
+  expect(res.status).toBe(200);
+  expect(await res.json()).toMatchObject({ deleted: 3, wishes_purged: null });
+  expect(db.jobRecord.mock.calls[0][1]).toBe("200");
+  expect(db.purgeWishes.mock.invocationCallOrder[0]).toBeGreaterThan(db.jobRecord.mock.invocationCallOrder[0]);
+  expect(console.error).toHaveBeenCalledWith("wish purge failed", expect.any(Error));
 });

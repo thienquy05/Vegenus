@@ -1,4 +1,5 @@
 "use client";
+import { PREFS_KEY } from "@/lib/privacy";
 import { type CSSProperties, type ReactNode, useCallback, useEffect, useLayoutEffect, useRef, useState, useSyncExternalStore } from "react";
 import type { Cred, GuestSummary } from "@/lib/guest";
 import { say, type CopyKey, type Lang } from "./copy";
@@ -22,7 +23,6 @@ const pathOf = (base: string, x: Section) => (x === "home" && base !== "/g" ? ba
 const THEMES = ["a_dreamy", "b_cosmic", "c_cozy", "d_elegant"];
 
 type Prefs = { lang?: Lang; theme?: string; motion?: "reduce" | "full"; corner?: "left" | "right" };
-const PREFS = "vegenus_prefs";
 const REDUCE = "(prefers-reduced-motion: reduce)";
 const noop = () => () => {};
 const watchMotion = (onChange: () => void) => {
@@ -33,7 +33,7 @@ const watchMotion = (onChange: () => void) => {
 // Only values this build knows: anything else saved on the device is ignored.
 function readPrefs(): Prefs {
   try {
-    const raw = JSON.parse(localStorage.getItem(PREFS) ?? "{}") ?? {};
+    const raw = JSON.parse(localStorage.getItem(PREFS_KEY) ?? "{}") ?? {};
     return {
       lang: ["en", "vi"].includes(raw.lang) ? raw.lang : undefined,
       theme: THEMES.includes(raw.theme) ? raw.theme : undefined,
@@ -46,8 +46,8 @@ function readPrefs(): Prefs {
 }
 function canStore() {
   try {
-    localStorage.setItem(`${PREFS}_probe`, "1");
-    localStorage.removeItem(`${PREFS}_probe`);
+    localStorage.setItem(`${PREFS_KEY}_probe`, "1");
+    localStorage.removeItem(`${PREFS_KEY}_probe`);
     return true;
   } catch {
     return false;
@@ -143,7 +143,7 @@ export function GuestApp(props: { summary: GuestSummary; section: Section; item?
     const merged = { ...prefs, ...next };
     setChanged(merged);
     try {
-      localStorage.setItem(PREFS, JSON.stringify(merged));
+      localStorage.setItem(PREFS_KEY, JSON.stringify(merged));
       setStored(true);
     } catch {
       setStored(false);

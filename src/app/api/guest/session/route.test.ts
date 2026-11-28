@@ -40,3 +40,14 @@ test("a guest_open failure is a 503 with no cookie", async () => {
   expect(res.status).toBe(503);
   expect(res.headers.get("set-cookie")).toBeNull();
 });
+
+// T3.2a (deferred from T1.5a, owner 2026-10-29): the exchange also issues the wish-limit device cookie, 24 h from its
+// last use (Q103), reusing a valid one.
+test("a good token gets the guest cookie and the device cookie", async () => {
+  vi.mocked(guestOpen).mockResolvedValue({ sections: [] } as never);
+  const res = await exchange();
+  expect(res.status).toBe(200);
+  const cookies = res.headers.getSetCookie();
+  expect(cookies.some((c) => c.startsWith("vegenus_g="))).toBe(true);
+  expect(cookies.find((c) => c.startsWith("vegenus_d="))).toMatch(/^vegenus_d=[A-Za-z0-9_-]{43};.*Max-Age=86400/);
+});
