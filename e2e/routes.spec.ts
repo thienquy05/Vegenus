@@ -59,9 +59,14 @@ test("guessed paths are the generic not-found", async ({ request }) => {
     expect(res.status(), path).toBe(404);
     expect(await body(res), path).toBe(await body(unknown));
   }
+  // A capitalized name redirects whether or not a page has it, so the redirect reveals nothing either.
+  const capital = await request.get("/p/No-Such-Page", { maxRedirects: 0 });
+  expect([capital.status(), capital.headers().location]).toEqual([308, "/p/no-such-page"]);
+  // A bad album id is the not-found before any redirect, so only a well-formed id is carried over.
+  expect((await request.get(`/p/No-Such-Page/memories/not-a-uuid`, { maxRedirects: 0 })).status()).toBe(404);
   // T3.1pc: a name that is no Published page is a 404 too (Next streams it from the page, so its body is not the static
   // one); that it says nothing about the name is checked against a real page in page-visibility.spec.ts.
-  for (const path of ["/p/no-such-page", "/p/no-such-page/memories", "/p/NOT-A-NAME"]) {
+  for (const path of ["/p/no-such-page", "/p/no-such-page/memories", "/p/not%20a%20name", "/p/x"]) {
     expect((await request.get(path, { maxRedirects: 0 })).status(), path).toBe(404);
   }
 });

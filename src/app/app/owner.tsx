@@ -449,7 +449,10 @@ export default function Owner() {
       focusRetry.current = false;
       document.getElementById("dashboard-retry")?.focus();
     } else if (stale !== "failed" && opener.current && view.name === "dashboard" && !returning.current) {
-      (document.getElementById(opener.current[0]) ?? document.getElementById(opener.current[1]))?.focus();
+      // Only while nothing else holds focus: a late (background) re-read never takes focus the owner moved.
+      const now = document.activeElement;
+      if (!now || now === document.body || !now.isConnected)
+        (document.getElementById(opener.current[0]) ?? document.getElementById(opener.current[1]))?.focus();
       opener.current = null;
     }
     if (usageOpener.current && view.name === "dashboard") {
@@ -474,7 +477,9 @@ export default function Owner() {
   // T3.1p (owner UI O2 Visibility row): a kept snapshot says Last known while this read runs, and beside Try again when it
   // fails; any other answer (a page, none, 403, 401) is applied as usual, so no stale page outlives it.
   const kept = state === "done" && !!data.page;
-  const revalidate = () => {
+  // focus: the owner came back from O8 or O9 (or pressed Try again), so a failure focuses Try again; a reconnect or a
+  // back-forward restore is not the owner's action and never moves focus.
+  const revalidate = (focus = true) => {
     returning.current = true;
     setStale(kept ? "pending" : null);
     const n = ++pageRead.current;
@@ -482,7 +487,7 @@ export default function Owner() {
       if (n !== pageRead.current) return;
       returning.current = false;
       if (r.state === "error" && kept) {
-        focusRetry.current = true;
+        focusRetry.current = focus;
         return setStale("failed");
       }
       setStale(null);
@@ -495,8 +500,14 @@ export default function Owner() {
   };
   const restore = useRef<() => void>(() => {});
   useEffect(() => {
-    restore.current = onDashboard ? revalidate : () => {}; // a restore of another view is that view's own
+    restore.current = onDashboard ? () => revalidate(false) : () => {}; // a restore of another view is that view's own
   });
+  // Reconnecting on O2 revalidates it too (CHECKS line 6), so values read before going offline never look current.
+  const wasOnline = useRef(online);
+  useEffect(() => {
+    if (online && !wasOnline.current) restore.current();
+    wasOnline.current = online;
+  }, [online]);
   useEffect(() => {
     const shown = (e: PageTransitionEvent) => e.persisted && restore.current();
     addEventListener("pageshow", shown);

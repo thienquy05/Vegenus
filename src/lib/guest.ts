@@ -2,7 +2,7 @@
 // re-checks it on every call through guest_open, so a rotated token or a Private page fails on the next request.
 import { createClient } from "@supabase/supabase-js";
 import { cookies } from "next/headers";
-import { notFound, redirect } from "next/navigation";
+import { notFound, permanentRedirect, redirect } from "next/navigation";
 import { NextResponse, type NextRequest } from "next/server";
 import { sameOrigin } from "./auth";
 import { signObjects } from "./storage-admin";
@@ -69,9 +69,17 @@ export async function requireGuest(): Promise<GuestSummary> {
 }
 
 // Every /p/<name> page starts with this: a Published page by its exact name, else the ordinary not-found (owner UI
-// "Guest side"; an unknown name and a page that is not Published look the same).
-export async function requireVisitor(name: string): Promise<GuestSummary> {
-  const summary = isPageName(name) ? await guestOpen({ page: name }) : null;
+// "Guest side"; an unknown name and a page that is not Published look the same). A name typed with capitals, spaces or
+// escapes goes to its normalized address first (owner decision 2026-11-27), before any lookup, so the redirect says
+// nothing about the name; rest is the part of the address after the name.
+export async function requireVisitor(name: string, rest = ""): Promise<GuestSummary> {
+  let fixed = "";
+  try {
+    fixed = normalizeVanity(decodeURIComponent(name));
+  } catch {} // a broken escape is no name
+  if (!isPageName(fixed)) notFound();
+  if (fixed !== name) permanentRedirect(`/p/${fixed}${rest}`);
+  const summary = await guestOpen({ page: name });
   if (!summary) notFound();
   return summary;
 }

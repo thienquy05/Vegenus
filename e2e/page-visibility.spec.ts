@@ -99,7 +99,10 @@ test("Private stops an open guest on the next request; Token-only lets the token
   expect(open?.headers()["referrer-policy"]).toBe("no-referrer");
   expect(open?.headers()["cache-control"]).toContain("no-store");
   await expect(visitor.locator("main h1")).toBeVisible();
-  expect((await visitor.request.get(`/p/${address.toUpperCase()}`)).status()).toBe(404);
+  // A name typed with capitals goes to the normalized address (308), the rest of the path kept.
+  const typed = await visitor.request.get(`/p/${address.toUpperCase()}/memories`, { maxRedirects: 0 });
+  expect(typed.status()).toBe(308);
+  expect(typed.headers().location).toBe(`/p/${address}/memories`);
   const back = await setVisibility(page, { visibility: "token_only" });
   expect(back.status()).toBe(200);
   expect((await back.json()).page).toMatchObject({ visibility: "token_only", vanity_name: address });
