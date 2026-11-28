@@ -2,10 +2,12 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import type { GuestSummary } from "@/lib/guest";
 import { MIN_TARGET_PX } from "@/lib/ui";
-import { GuestApp } from "./guest-app";
+import { chooseLang, say } from "./copy";
+import { GuestApp, readPrefs } from "./guest-app";
 
-// G-E1: the same screen for no token, a wrong, rotated or private one (design 1 §4, E47).
-const TAP = "Tap the tag or scan the QR code to see this page.";
+// No page is known yet (screens §"standalone route"): the language saved in G8 on this device, else the phone's,
+// else English. Called only after the first render, in the browser.
+const entryLang = () => chooseLang(readPrefs().lang, navigator.languages, ["en", "vi"], "en");
 
 // token: only for a visit run from memory (cookies blocked), which sends it with every read.
 type View = { summary: GuestSummary; remembered: boolean; token?: string };
@@ -88,17 +90,20 @@ export function GuestEntry() {
   }, [exchange]);
 
   if (state === "loading") return <main lang="en" aria-busy="true" />;
+  // G-E1: the same screen for no token, a wrong, rotated or private one (design 1 §4, E47).
   if (state === "tap") {
+    const lang = entryLang();
     return (
-      <main lang="en">
-        <p>{TAP}</p>
+      <main lang={lang}>
+        <p>{say("entry.tap", lang)}</p>
       </main>
     );
   }
   if (state === "retry") {
+    const lang = entryLang();
     return (
-      <main lang="en">
-        <p role="alert">Couldn’t open the page. Check your connection.</p>
+      <main lang={lang}>
+        <p role="alert">{say("entry.failed", lang)}</p>
         <button
           type="button"
           style={{ minHeight: MIN_TARGET_PX, minWidth: MIN_TARGET_PX }}
@@ -107,15 +112,13 @@ export function GuestEntry() {
             exchange();
           }}
         >
-          Try again
+          {say("state.retry", lang)}
         </button>
       </main>
     );
   }
   // Cookies blocked: the visit runs from memory and every read carries the token (E30).
   return (
-    <GuestApp summary={state.summary} section="home" cred={state.token}>
-      {!state.remembered && <p role="status" lang="en">This visit won’t be remembered. Tap the tag again next time.</p>}
-    </GuestApp>
+    <GuestApp summary={state.summary} section="home" cred={state.token} memoryOnly={!state.remembered} />
   );
 }
