@@ -774,6 +774,7 @@ function PlaceSheet(props: { item: Item; count: number; lang: Lang; cred?: Cred;
       {/* eslint-disable-next-line @next/next/no-img-element -- a short-lived signed URL; the image optimizer would cache it */}
       {photo && urls[photo.id] && <img className={s.sheetPhoto} src={urls[photo.id]} alt={alt?.text ?? ""} lang={alt?.lang} width={photo.width ?? undefined} height={photo.height ?? undefined} onError={refresh} />}
       {item.event_date && item.date_precision && <p className={s.small}>{guestDate(item.event_date, item.date_precision, lang)}</p>}
+      {[title, note].some((x) => x && x.lang !== lang) && <p className={s.small}>{t("detail.original")}</p>}
       {note && <p lang={note.lang}>{note.text}</p>}
       {count > 1 && (
         <div className={s.actions}>
@@ -909,13 +910,15 @@ export function AlbumView(props: Props & { id: string; onBack: () => void }) {
           {title?.text}
         </h1>
         {item.event_date && item.date_precision && <p className={s.small}>{guestDate(item.event_date, item.date_precision, lang)}</p>}
+        {title && title.lang !== lang && <p className={s.small}>{t("detail.original")}</p>}
       </header>
       <section className={s.albumPage} aria-label={chapterName[here.k]}>
         {here.k === "open" && photos[0] && photoButton(photos[0], 0)}
         {here.k === "msg" && (
           <>
             <h2>{t("detail.message")}</h2>
-            {note && note.lang !== lang && <p className={s.small}>{t("detail.original")}</p>}
+            {/* One note per screen: the header's, shown on every page, already says it when the title fell back. */}
+            {note && note.lang !== lang && title?.lang === lang && <p className={s.small}>{t("detail.original")}</p>}
             {note && <p lang={note.lang}>{note.text}</p>}
             {voice && (
               <div className={s.voice}>

@@ -1,6 +1,10 @@
 // Fixed guest strings (T3.1b), [English, Vietnamese]: guest UI §6 common states, §7, §9 and theme system §2. The
 // couple's own words come from the published wording (`copy` in guest_open), not from here.
 export const COPY = {
+  // G-E1 and the entry screens (screens G-E1, G-E3; guest UI §7 "No access"), shown before the page is known.
+  "entry.tap": ["Tap the tag or scan the QR code to see this page.", "Chạm thẻ hoặc quét mã QR để xem trang này."],
+  "entry.failed": ["Couldn’t open the page. Check your connection.", "Chưa mở được trang. Hãy kiểm tra kết nối mạng."],
+  "entry.memoryOnly": ["This visit won’t be remembered. Tap the tag again next time.", "Lần truy cập này sẽ không được ghi nhớ. Lần sau hãy chạm thẻ lại."],
   "menu.open": ["Open menu", "Mở menu"],
   "menu.close": ["Close menu", "Đóng menu"],
   "nav.home": ["Home", "Trang chủ"],
@@ -71,7 +75,7 @@ export const COPY = {
   "detail.playVoice": ["Play voice note", "Nghe lời nhắn"],
   "detail.playVideo": ["Play video", "Phát video"],
   "detail.transcript": ["Transcript", "Bản chép lời"],
-  "detail.original": ["Shown in the original language.", "Hiển thị bằng ngôn ngữ gốc."],
+  "detail.original": ["Shown in the original language.", "Đang hiển thị ngôn ngữ gốc."],
   "detail.gone": ["This memory is no longer available.", "Kỷ niệm này không còn nữa."],
   "detail.back": ["Back to Memories", "Về Kỷ niệm"],
   "home.prev": ["Previous photo", "Ảnh trước"],
@@ -82,6 +86,10 @@ export const COPY = {
   "home.photo": ["Photo {n} of {total}", "Ảnh {n}/{total}"],
   "settings.close": ["Close", "Đóng"],
   "settings.language": ["Language", "Ngôn ngữ"],
+  // T3.3 (editable copy §4 "Language availability"; the G8 language-not-set-up board).
+  "settings.notSetUp": ["not set up", "chưa thiết lập"],
+  "settings.langNotSetEn": ["English hasn't been set up by the owner yet.", "Chủ trang chưa thiết lập tiếng Anh."],
+  "settings.langNotSetVi": ["Vietnamese hasn't been set up by the owner yet.", "Chủ trang chưa thiết lập tiếng Việt."],
   "settings.motion": ["Reduce motion", "Giảm chuyển động"],
   "settings.usingDevice": ["Using device setting", "Theo cài đặt thiết bị"],
   "settings.useDevice": ["Use device setting", "Dùng cài đặt thiết bị"],
@@ -107,8 +115,15 @@ export type Lang = "en" | "vi";
 export const say = (key: CopyKey, lang: Lang, vars: Record<string, string | number> = {}) =>
   Object.entries(vars).reduce<string>((text, [name, value]) => text.replaceAll(`{${name}}`, String(value)), COPY[key][lang === "en" ? 0 : 1]);
 
+// T3.3 (editable copy §4): the wanted language is the saved G8 choice, else the first phone language that is one of
+// ours; it is shown only when the page offers it (all its wording published), else the page default, which always is.
+export function chooseLang(saved: Lang | undefined, phone: readonly string[], offered: readonly Lang[], fallback: Lang): Lang {
+  const wanted = saved ?? phone.map((l) => l.split("-")[0].toLowerCase()).find((l): l is Lang => l === "en" || l === "vi");
+  return wanted && offered.includes(wanted) ? wanted : fallback;
+}
+
 // Text with two languages (the wording, a note, a title, alt text): the shown language if it has text, else the
-// other with its own `lang`, else nothing (owner UI "Guest Home states"; Q67 fallback in full with T3.3).
+// other with its own `lang`, else nothing (owner UI "Guest Home states"; Q67).
 export function pickLang(lang: Lang, options: [Lang | null | undefined, string | null | undefined][]) {
   const found = options.find(([l, t]) => l === lang && t) ?? options.find(([l, t]) => l && t);
   return found ? { text: found[1] as string, lang: found[0] as Lang } : null;

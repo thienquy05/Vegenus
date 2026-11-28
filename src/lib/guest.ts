@@ -41,6 +41,7 @@ export type GuestSummary = {
   sections: string[];
   names: [string | null, string | null];
   timezone: string;
+  languages_ready: Lang[]; // the languages whose wording is all published (T3.3, E54); the default is always one
   copy: Record<string, Partial<Record<Lang, string>>>;
   home: {
     lang: Lang; body: string | null; lang_alt: Lang | null; body_alt: string | null; start_date: string | null;

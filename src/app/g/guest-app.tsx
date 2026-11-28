@@ -2,7 +2,7 @@
 import { PREFS_KEY } from "@/lib/privacy";
 import { type CSSProperties, type ReactNode, useCallback, useEffect, useLayoutEffect, useRef, useState, useSyncExternalStore } from "react";
 import type { Cred, GuestSummary } from "@/lib/guest";
-import { say, type CopyKey, type Lang } from "./copy";
+import { chooseLang, say, type CopyKey, type Lang } from "./copy";
 import { AlbumView, baseOf, HomeView, ListView, type Shortcut, useOnline } from "./views";
 import s from "./guest.module.css";
 import "../../../themes/a_dreamy/tokens.css";
@@ -31,7 +31,7 @@ const watchMotion = (onChange: () => void) => {
   return () => media.removeEventListener("change", onChange);
 };
 // Only values this build knows: anything else saved on the device is ignored.
-function readPrefs(): Prefs {
+export function readPrefs(): Prefs {
   try {
     const raw = JSON.parse(localStorage.getItem(PREFS_KEY) ?? "{}") ?? {};
     return {
@@ -69,8 +69,9 @@ const icon = (name: Section | "settings") => (
 );
 
 
-export function GuestApp(props: { summary: GuestSummary; section: Section; item?: string; cred?: Cred; children?: ReactNode }) {
-  const { summary, section: initial, cred, children } = props;
+// memoryOnly: cookies are blocked, so this visit is not remembered (E30).
+export function GuestApp(props: { summary: GuestSummary; section: Section; item?: string; cred?: Cred; memoryOnly?: boolean }) {
+  const { summary, section: initial, cred, memoryOnly } = props;
   const remembered = typeof cred === "string"; // a visit run from memory: the address stays /g
   const base = baseOf(cred);
   const PATHS = Object.fromEntries(BUILT.map((x) => [x, pathOf(base, x)])) as Record<Section, string>;
@@ -99,7 +100,7 @@ export function GuestApp(props: { summary: GuestSummary; section: Section; item?
   const prefs = changed ?? (browser ? readPrefs() : null);
   const ready = prefs !== null;
 
-  const lang: Lang = prefs?.lang ?? summary.default_lang;
+  const lang = chooseLang(prefs?.lang, browser ? navigator.languages : [], summary.languages_ready, summary.default_lang);
   const suggested = summary.theme && THEMES.includes(summary.theme) ? summary.theme : "a_dreamy";
   // Q128: no theme saved on this device (or for this visit) yet means the first-visit prompt, over Home.
   const prompting = prefs !== null && !prefs.theme;
@@ -303,7 +304,7 @@ export function GuestApp(props: { summary: GuestSummary; section: Section; item?
       {menuOpen && !listMode && <div className={s.closeLayer} aria-hidden="true" onClick={() => closeMenu(true)} />}
       <div className={s.page} data-open={menuOpen || undefined} inert={menuOpen || undefined}>
         <main className={s.main}>
-          {children}
+          {memoryOnly && <p role="status">{t("entry.memoryOnly")}</p>}
           {!online && <p role="status">{t("state.offline")}</p>}
           {section === "home" ? (
             <HomeView
@@ -329,14 +330,26 @@ export function GuestApp(props: { summary: GuestSummary; section: Section; item?
             {t("settings.close")}
           </button>
         </div>
-        <fieldset className={s.group}>
+        {/* A language whose wording is not all published is shown disabled, with the notice (E54). */}
+        <fieldset className={s.group} aria-describedby={summary.languages_ready.length < 2 ? "lang-notice" : undefined}>
           <legend>{t("settings.language")}</legend>
-          {(["en", "vi"] as const).map((l) => (
-            <label key={l} className={s.row}>
-              <input id={`lang-${l}`} type="radio" name="lang" checked={lang === l} onChange={() => change({ lang: l })} />
-              <span lang={l}>{l === "en" ? "English" : "Tiếng Việt"}</span>
-            </label>
-          ))}
+          {(["en", "vi"] as const).map((l) => {
+            const off = !summary.languages_ready.includes(l);
+            return (
+              <label key={l} className={s.row}>
+                <input id={`lang-${l}`} type="radio" name="lang" disabled={off} checked={lang === l} onChange={() => change({ lang: l })} />
+                <span>
+                  <span lang={l}>{l === "en" ? "English" : "Tiếng Việt"}</span>
+                  {off && ` · ${t("settings.notSetUp")}`}
+                </span>
+              </label>
+            );
+          })}
+          {summary.languages_ready.length < 2 && (
+            <p id="lang-notice" className={s.small}>
+              {t(summary.languages_ready.includes("en") ? "settings.langNotSetVi" : "settings.langNotSetEn")}
+            </p>
+          )}
         </fieldset>
         <div className={s.group}>
           <label className={s.row}>

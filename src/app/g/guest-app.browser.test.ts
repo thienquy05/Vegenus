@@ -20,6 +20,7 @@ const SUMMARY: GuestSummary = {
   sections: ["home", "memories", "guestbook"],
   names: ["[PARTNER_A]", "[PARTNER_B]"],
   timezone: "UTC",
+  languages_ready: ["en", "vi"],
   copy: {
     "home.greeting": word("Hello from {partner_a} and {partner_b}.", "Chào từ {partner_a} và {partner_b}."),
     "home.days": word("Together for {days} days.", "Bên nhau {days} ngày."),
@@ -100,7 +101,9 @@ afterEach(() => {
   document.documentElement.removeAttribute("data-motion");
   vi.useRealTimers();
   delete (navigator as { onLine?: boolean }).onLine;
+  delete (navigator as { languages?: readonly string[] }).languages;
 });
+const phone = (...languages: string[]) => Object.defineProperty(navigator, "languages", { configurable: true, get: () => languages });
 const text = () => host.textContent ?? "";
 const menu = () => host.querySelector<HTMLButtonElement>("#guest-menu")!;
 const item = (label: string) => [...host.querySelectorAll<HTMLElement>("#guest-nav a, #guest-nav button")].find((a) => a.textContent?.includes(label))!;
@@ -288,6 +291,57 @@ test("G8: language applies at once and is saved on this device; menu corner and 
   expect(menu().hidden).toBe(false);
   expect(menu().dataset.corner).toBe("right");
   expect(document.activeElement).toBe(menu());
+});
+
+// T3.3 (editable copy §4 "Language availability", E54): the saved choice, else the phone language, used only when the
+// page offers it (all its wording published), else the page default; G8 shows the other option disabled with a notice.
+test("first visit: the phone language when the page offers it, else the page default", async () => {
+  serve();
+  phone("fr-FR", "vi-VN");
+  mount();
+  await expect.poll(() => menu()?.getAttribute("aria-label")).toBe("Mở menu");
+  expect(document.documentElement.lang).toBe("vi");
+  root?.unmount();
+  host.remove();
+  mount({ summary: { ...SUMMARY, languages_ready: ["en"] } });
+  await expect.poll(() => menu()?.getAttribute("aria-label")).toBe("Open menu");
+  expect(document.documentElement.lang).toBe("en");
+});
+
+test("a saved language the page no longer offers falls back to the page default", async () => {
+  serve();
+  localStorage.setItem("vegenus_prefs", JSON.stringify({ lang: "en" }));
+  mount({ summary: { ...SUMMARY, default_lang: "vi", languages_ready: ["vi"] } });
+  await expect.poll(() => text()).toContain("Chào từ [PARTNER_A] và [PARTNER_B].");
+  expect(document.documentElement.lang).toBe("vi");
+});
+
+test("G8: a language the owner has not set up is shown disabled with its notice; the choice cannot move to it", async () => {
+  serve();
+  mount({ summary: { ...SUMMARY, languages_ready: ["en"] } });
+  await expect.poll(() => menu()).toBeTruthy();
+  await userEvent.click(menu());
+  await userEvent.click(item("Settings"));
+  const dialog = () => host.querySelector("dialog[open]")!;
+  await expect.poll(() => dialog()).toBeTruthy();
+  const vi_ = dialog().querySelector<HTMLInputElement>("#lang-vi")!;
+  expect(vi_.disabled).toBe(true);
+  expect(vi_.closest("label")?.textContent).toBe("Tiếng Việt · not set up");
+  const group = vi_.closest("fieldset")!;
+  const notice = document.getElementById(group.getAttribute("aria-describedby") ?? "");
+  expect(notice?.textContent).toBe("Vietnamese hasn't been set up by the owner yet.");
+  expect(dialog().querySelector<HTMLInputElement>("#lang-en")!.checked).toBe(true);
+  // Both offered: no notice, nothing disabled.
+  await userEvent.keyboard("{Escape}");
+  root?.unmount();
+  host.remove();
+  mount();
+  await expect.poll(() => menu()).toBeTruthy();
+  await userEvent.click(menu());
+  await userEvent.click(item("Settings"));
+  await expect.poll(() => dialog()).toBeTruthy();
+  expect(dialog().querySelector<HTMLInputElement>("#lang-vi")!.disabled).toBe(false);
+  expect(dialog().querySelector("#lang-vi")!.closest("fieldset")?.hasAttribute("aria-describedby")).toBe(false);
 });
 
 test("G8: when the device cannot store settings they apply to this visit only", async () => {
@@ -507,6 +561,7 @@ test("the prompt in Vietnamese, and with storage blocked it still applies and sa
   vi.spyOn(Storage.prototype, "setItem").mockImplementation(() => {
     throw new DOMException("blocked", "SecurityError");
   });
+  phone("fr-FR"); // neither of ours: the page default (T3.3)
   mount({ firstVisit: true, summary: { ...SUMMARY, default_lang: "vi" } });
   await expect.poll(() => prompt()).toBeTruthy();
   expect(prompt()!.textContent).toContain("Chọn giao diện");
@@ -614,6 +669,22 @@ test("G4: place cards open a sheet; previous and next wrap; Escape and Close ret
   expect(document.activeElement).toBe(card("[PLACE_ONE]"));
 });
 
+test("G4 (Q67, T3.3): a place in the other language shows its own text, marked, with the note; an own-language one has none", async () => {
+  localStorage.setItem("vegenus_prefs", JSON.stringify({ lang: "vi" }));
+  serve({ "/api/guest/list": [ok({ items: [place(1, "[PLACE_ONE]"), place(2, "[PLACE_TWO]", { title_alt: "[NƠI_HAI]", body_alt: "[GHI_CHÚ]", lang_alt: "vi" })] })] });
+  mount({ summary: WITH_TOGETHER, section: "together" });
+  const card = (title: string) => [...host.querySelectorAll<HTMLButtonElement>("main button")].find((b) => b.textContent?.includes(title))!;
+  const sheet = () => host.querySelector<HTMLDialogElement>("dialog[open]");
+  await expect.poll(() => card("[PLACE_ONE]")).toBeTruthy();
+  await userEvent.click(card("[PLACE_ONE]"));
+  expect(sheet()!.querySelector("h2")?.getAttribute("lang")).toBe("en");
+  expect(sheet()!.textContent).toContain("Đang hiển thị ngôn ngữ gốc.");
+  await userEvent.keyboard("{Escape}");
+  await userEvent.click(card("[NƠI_HAI]"));
+  expect(sheet()!.querySelector("h2")?.textContent).toBe("[NƠI_HAI]");
+  expect(sheet()!.textContent).not.toContain("Đang hiển thị ngôn ngữ gốc.");
+});
+
 test("G4: search finds places by name in either language, without accents; no match says so", async () => {
   serve({ "/api/guest/list": [ok({ items: [place(1, "Quán cà phê"), place(2, "[PLACE_TWO]", { title_alt: "Bãi biển", lang_alt: "vi" })] })] });
   mount({ summary: WITH_TOGETHER, section: "together" });
@@ -677,8 +748,12 @@ test("G3: the message falls back to the original language with a note (Q67); the
   serve({ "/api/guest/item": [ok({ item: ALBUM })], "/api/guest/media": [ok({ urls: {} }), ok({ urls: { [media(8, "audio").id]: "/voice.m4a" } })] });
   mount({ section: "memories", item: M1 });
   await expect.poll(() => heading()?.textContent).toBe("[TRIP]");
+  // The title fell back too: the note sits under it on the opening page (guest UI §6 "Missing translation").
+  expect(heading()?.getAttribute("lang")).toBe("en");
+  expect(host.querySelector("main header")?.textContent).toContain("Đang hiển thị ngôn ngữ gốc.");
   await userEvent.click(button2("Trang sau"));
-  expect(text()).toContain("Hiển thị bằng ngôn ngữ gốc.");
+  // One note per screen: the header's already covers the message (T3.3 review).
+  expect(host.querySelector("main")?.textContent?.split("Đang hiển thị ngôn ngữ gốc.").length).toBe(2);
   expect([...host.querySelectorAll("main p")].find((p) => p.textContent === "[MESSAGE]")?.getAttribute("lang")).toBe("en");
   expect(text()).toContain("[TRANSCRIPT]");
   expect(to("/api/guest/media").some((c) => c.body.variant === "audio")).toBe(false);

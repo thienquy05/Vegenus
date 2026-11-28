@@ -76,7 +76,7 @@ select is(public.guest_open('token-unknown'), null, 'unknown token: empty result
 select is(public.guest_open('token-a-old'), null, 'rotated token: empty result (E3)');
 select is(public.guest_open('token-c'), null, 'private page: empty result (E4)');
 select is(public.guest_open('token-d'), null, 'wording never published: empty result (Q82)');
-select is(public.guest_open('token-a') - '{names,timezone,copy,home}'::text[], '{"theme": "a_dreamy", "default_lang": "en", "sections": ["memories", "guestbook"]}'::jsonb,
+select is(public.guest_open('token-a') - '{names,timezone,languages_ready,copy,home}'::text[], '{"theme": "a_dreamy", "default_lang": "en", "sections": ["memories", "guestbook"]}'::jsonb,
   'valid token: page summary with enabled sections only (E5)');
 
 -- guest_list: published items of an enabled section of the token's page only (E5, E6, E28).
@@ -98,7 +98,7 @@ select is((select array_agg(k order by k) from public.guest_guestbook_list('toke
   'entries carry an explicit column list, no internal column (E28)');
 
 -- public_*: Published pages with published wording only (E31, E36, E47).
-select is(public.public_open('page-b') - '{names,timezone,copy,home}'::text[], '{"theme": "b_cosmic", "default_lang": "vi", "sections": ["memories", "guestbook"]}'::jsonb,
+select is(public.public_open('page-b') - '{names,timezone,languages_ready,copy,home}'::text[], '{"theme": "b_cosmic", "default_lang": "vi", "sections": ["memories", "guestbook"]}'::jsonb,
   'published page: page summary');
 select is(public.public_open('page-a'), null, 'token-only page: empty result (E47)');
 select is(public.public_open('page-c'), null, 'private page: empty result');
