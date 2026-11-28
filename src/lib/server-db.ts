@@ -29,15 +29,20 @@ export async function loginAllowed(request: Request, email: string): Promise<boo
 
 // A wish (T3.2a; design 3 §3.9): by token or by a Published page's name, keyed by the device cookie and the client IP.
 // The database applies every rule; null is the one not-available answer. A refusal of the text throws with code 22023.
-export type Wish = { submission_id: string; display_name: string; body: string; lang: Lang };
-export type WishResult = { status: "sent" } | { status: "rate_limited"; retry_after: number; shared: boolean } | null;
+// consent: the privacy notice version the guest ticked (T3.2c); the database refuses any other.
+export type Wish = { submission_id: string; display_name: string; body: string; lang: Lang; consent: number };
+export type WishResult =
+  | { status: "sent" }
+  | { status: "needs_consent" }
+  | { status: "rate_limited"; retry_after: number; shared: boolean }
+  | null;
 export async function postWish(cred: Cred, w: Wish, device: string, request: Request): Promise<WishResult> {
   const d = hmac(`device:${device}`);
   const i = hmac(`ip:${clientIp(request)}`);
   const [row] =
     typeof cred === "string"
-      ? await sql`select public.guest_guestbook_post(${cred}, ${w.submission_id}::uuid, ${d}, ${i}, ${w.display_name}, ${w.body}, ${w.lang}::public.lang) as r`
-      : await sql`select public.public_guestbook_post(${cred.page}, ${w.submission_id}::uuid, ${d}, ${i}, ${w.display_name}, ${w.body}, ${w.lang}::public.lang) as r`;
+      ? await sql`select public.guest_guestbook_post(${cred}, ${w.submission_id}::uuid, ${d}, ${i}, ${w.display_name}, ${w.body}, ${w.lang}::public.lang, ${w.consent}::int) as r`
+      : await sql`select public.public_guestbook_post(${cred.page}, ${w.submission_id}::uuid, ${d}, ${i}, ${w.display_name}, ${w.body}, ${w.lang}::public.lang, ${w.consent}::int) as r`;
   return row.r;
 }
 

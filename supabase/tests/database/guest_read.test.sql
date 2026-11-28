@@ -30,12 +30,12 @@ insert into public.items (id, page_id, kind, status, lang, title, event_date, da
 -- Published items carry the snapshot guests read (T2.2).
 update public.items i set status = 'published', published = public.item_snapshot(i) where i.id <> '00000000-0000-0000-0000-0000000000a3';
 
-insert into public.guestbook_entries (page_id, display_name, body, lang, status, submission_id, author_kind, token_version) values
-  ('00000000-0000-0000-0000-00000000000a', '[GUEST]', 'A approved', 'en', 'approved', gen_random_uuid(), 'token', 2),
-  ('00000000-0000-0000-0000-00000000000a', '[GUEST]', 'A pending', 'en', 'pending', gen_random_uuid(), 'token', 2),
-  ('00000000-0000-0000-0000-00000000000a', '[GUEST]', 'A rejected', 'en', 'rejected', gen_random_uuid(), 'token', 1),
-  ('00000000-0000-0000-0000-00000000000b', '[GUEST]', 'B approved', 'vi', 'approved', gen_random_uuid(), 'visitor', null),
-  ('00000000-0000-0000-0000-00000000000d', '[GUEST]', 'D approved', 'en', 'approved', gen_random_uuid(), 'visitor', null);
+insert into public.guestbook_entries (page_id, display_name, body, lang, status, submission_id, author_kind, token_version, consent_version) values
+  ('00000000-0000-0000-0000-00000000000a', '[GUEST]', 'A approved', 'en', 'approved', gen_random_uuid(), 'token', 2, 1),
+  ('00000000-0000-0000-0000-00000000000a', '[GUEST]', 'A pending', 'en', 'pending', gen_random_uuid(), 'token', 2, 1),
+  ('00000000-0000-0000-0000-00000000000a', '[GUEST]', 'A rejected', 'en', 'rejected', gen_random_uuid(), 'token', 1, 1),
+  ('00000000-0000-0000-0000-00000000000b', '[GUEST]', 'B approved', 'vi', 'approved', gen_random_uuid(), 'visitor', null, 1),
+  ('00000000-0000-0000-0000-00000000000d', '[GUEST]', 'D approved', 'en', 'approved', gen_random_uuid(), 'visitor', null, 1);
 
 -- Table rules (design 3 §3.1, §3.3; E12-E14, PRD §4.1).
 select lives_ok($$insert into public.items (page_id, kind, status, lang) values ('00000000-0000-0000-0000-00000000000a', 'home', 'draft', 'en')$$,

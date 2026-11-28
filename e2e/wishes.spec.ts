@@ -35,7 +35,7 @@ test.afterAll(async () => {
 const browser = (baseURL: string, ip: string) =>
   api.newContext({ baseURL, extraHTTPHeaders: { origin: new URL(baseURL).origin, "x-vegenus-guest": "1", "x-forwarded-for": ip } });
 const wish = (ctx: APIRequestContext, extra: object = {}, submission_id = randomUUID()) =>
-  ctx.post("/api/guest/wish", { data: { submission_id, display_name: "[GUEST]", body: "[WISH_TEXT]", lang: "en", page: name, ...extra } });
+  ctx.post("/api/guest/wish", { data: { submission_id, display_name: "[GUEST]", body: "[WISH_TEXT]", lang: "en", page: name, consent: 1, ...extra } });
 const entries = () => sql`select author_kind, status, token_version from public.guestbook_entries where page_id = ${pageId} order by created_at`;
 
 test("a visitor's wishes: one device cookie, a retry counted once, the 4th refused, another browser still welcome", async ({ baseURL }) => {
@@ -71,6 +71,18 @@ test("a visitor's wishes: one device cookie, a retry counted once, the 4th refus
   await second.dispose();
 });
 
+test("T3.2c: a post without consent to the current notice is refused, stores nothing and sets no device cookie", async ({ baseURL }) => {
+  const ctx = await browser(baseURL!, `198.51.103.${Math.floor(Math.random() * 250) + 1}`);
+  const before = (await entries()).length;
+  expect((await wish(ctx, { consent: undefined })).status()).toBe(400);
+  const old = await wish(ctx, { consent: 2 });
+  expect(old.status()).toBe(409);
+  expect(await old.json()).toEqual({ error: "needs_consent" });
+  expect(old.headersArray().some((h) => h.name.toLowerCase() === "set-cookie" && h.value.startsWith("vegenus_d="))).toBe(false);
+  expect(await entries()).toHaveLength(before);
+  await ctx.dispose();
+});
+
 test("the token path, the exchange's device cookie, and no wish where the credential does not open the page", async ({ baseURL }) => {
   const guest = await browser(baseURL!, `198.51.100.${Math.floor(Math.random() * 250) + 1}`);
   const exchanged = await guest.post("/api/guest/session", { data: { token } });
@@ -98,7 +110,7 @@ test("under concurrency: one entry per submission, the device limit across pages
   const made = [await makePage(), await makePage(), await makePage()];
   const [b, c, d] = made;
   const post = (page: string, sub: string, device: Buffer, ip: Buffer) =>
-    pool`select public.public_guestbook_post(${page}, ${sub}::uuid, ${device}, ${ip}, '[GUEST]', '[WISH_TEXT]', 'en') as r`.then(
+    pool`select public.public_guestbook_post(${page}, ${sub}::uuid, ${device}, ${ip}, '[GUEST]', '[WISH_TEXT]', 'en', 1) as r`.then(
       ([row]) => (row.r as { status: string } | null)?.status ?? "not_available",
     );
   const times = (n: number) => Array.from({ length: n }, (_, i) => i);
@@ -133,6 +145,7 @@ async function leaveWish(page: Page, text: string) {
   await page.getByRole("button", { name: "Write to us" }).click();
   await page.getByLabel("Display name").fill("[GUEST]");
   await page.getByLabel("Your wish").fill(text);
+  await page.getByRole("checkbox").check();
   await page.getByRole("button", { name: "Send wish" }).click();
 }
 for (const theme of THEMES) {
@@ -147,6 +160,21 @@ for (const theme of THEMES) {
     await page.setViewportSize({ width: 390, height: 844 });
     await page.getByLabel("Display name").fill("[GUEST]");
     await page.getByLabel("Your wish").fill("[WISH_TEXT]");
+    // T3.2c: unticked, Send asks for the box; P1 opens over the form in the theme and returns with the draft kept.
+    await page.getByRole("button", { name: "Send wish" }).click();
+    await expect(page.getByRole("checkbox")).toBeFocused();
+    await expect(page.getByText("Tick the box to send your wish.")).toBeVisible();
+    await page.getByRole("checkbox").check();
+    await page.getByRole("link", { name: "privacy notice" }).click();
+    const notice = page.getByRole("dialog", { name: "Privacy & cookies" });
+    await expect(notice).toBeVisible();
+    await checkSizes(page, `${theme} privacy notice over G6`);
+    await page.setViewportSize({ width: 390, height: 844 });
+    await page.keyboard.press("Escape");
+    await expect(notice).toHaveCount(0);
+    await expect(page.getByRole("link", { name: "privacy notice" })).toBeFocused();
+    await expect(page.getByRole("checkbox")).toBeChecked();
+    await expect(page.getByLabel("Your wish")).toHaveValue("[WISH_TEXT]");
     await page.getByRole("button", { name: "Send wish" }).click();
     await expect(page.getByRole("heading", { level: 2, name: "Wish sent!" })).toBeFocused();
     await checkSizes(page, `${theme} wish sent`);
@@ -167,12 +195,12 @@ for (const theme of THEMES) {
 // O7 for the signed-in owner (owner-<project>, page e4/e5 from e2e/global-setup.ts): O2's count opens the queue, a wish
 // is approved, and Back returns to Review wishes. Its wishes are removed afterwards.
 const OWNER_PAGES = { chromium: "00000000-0000-0000-0000-0000000000e4", webkit: "00000000-0000-0000-0000-0000000000e5" };
-test("O2's pending count opens O7; Approve moves the wish only once the server confirms", async ({ page }, info) => {
+test("O2's pending count opens O7; Approve moves the wish only once the server confirms; Delete removes one", async ({ page }, info) => {
   const project = info.project.name as keyof typeof OWNER_PAGES;
   const subs = [randomUUID(), randomUUID()];
-  await sql`insert into public.guestbook_entries (page_id, display_name, body, lang, submission_id, author_kind)
-    values (${OWNER_PAGES[project]}, '[GUEST_1]', '[WISH_1]', 'vi', ${subs[0]}, 'visitor'),
-           (${OWNER_PAGES[project]}, '[GUEST_2]', '[WISH_2]', 'en', ${subs[1]}, 'visitor')`;
+  await sql`insert into public.guestbook_entries (page_id, display_name, body, lang, submission_id, author_kind, consent_version)
+    values (${OWNER_PAGES[project]}, '[GUEST_1]', '[WISH_1]', 'vi', ${subs[0]}, 'visitor', 1),
+           (${OWNER_PAGES[project]}, '[GUEST_2]', '[WISH_2]', 'en', ${subs[1]}, 'visitor', 1)`;
   try {
     await page.setExtraHTTPHeaders({ "x-forwarded-for": `198.51.102.${Math.floor(Math.random() * 250) + 1}` });
     await page.goto("/login");
@@ -190,8 +218,21 @@ test("O2's pending count opens O7; Approve moves the wish only once the server c
     await card.getByRole("button", { name: /^Approve/ }).click();
     await expect(card).toHaveCount(0);
     expect((await sql`select status from public.guestbook_entries where submission_id = ${subs[0]}`)[0].status).toBe("approved");
+    // T3.2c: Delete asks first, then the row is gone at once (privacy design §6, test 9).
+    const other = page.locator("article").filter({ hasText: "[GUEST_2]" });
+    await expect(other).toContainText("Consent given");
+    await other.getByRole("button", { name: /^Delete/ }).click();
+    const confirm = page.getByRole("dialog", { name: /Delete this wish for good\?/ });
+    await expect(confirm).toBeVisible();
+    await checkSizes(page, "O7 delete confirm");
+    await page.setViewportSize({ width: 390, height: 844 });
+    await confirm.getByRole("button", { name: /^Delete/ }).click();
+    await expect(other).toHaveCount(0);
+    expect(await sql`select 1 from public.guestbook_entries where submission_id = ${subs[1]}`).toHaveLength(0);
+    // The queue is empty and this page has Wishes off, so the card is gone: focus goes to O2's heading.
     await page.getByRole("button", { name: /^Back/ }).click();
-    await expect(page.getByRole("button", { name: /^Review wishes/ })).toBeFocused();
+    await expect(page.locator("#wishes-card")).toHaveCount(0);
+    await expect(page.locator("#dashboard-title")).toBeFocused();
   } finally {
     await sql`delete from public.guestbook_entries where submission_id in ${sql(subs)}`;
   }

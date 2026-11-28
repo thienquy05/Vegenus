@@ -37,11 +37,12 @@ test("only the listed routes import server-db", () => {
 // T3.2a (design 3 §3.9): a wish reaches the database with HMAC keys only, never the raw device id or IP; the device key
 // follows the cookie, the IP key the client address.
 test("a wish carries keyed device and IP values, not the raw ones", async () => {
-  const wish = { submission_id: "00000000-0000-0000-0000-000000000101", display_name: "[GUEST]", body: "[WISH_TEXT]", lang: "en" as const };
+  const wish = { submission_id: "00000000-0000-0000-0000-000000000101", display_name: "[GUEST]", body: "[WISH_TEXT]", lang: "en" as const, consent: 1 };
   const keys = async (device: string, ip: string) => {
     await postWish({ page: "our-page" }, wish, device, from(ip));
     const values = calls.at(-1)!;
     expect(values).toContain("our-page");
+    expect(values.at(-1)).toBe(1); // T3.2c: the notice version the guest consented to
     expect(values.join("|")).not.toContain(device);
     expect(values.join("|")).not.toContain(ip);
     return values.filter((v) => Buffer.isBuffer(v)) as Buffer[];

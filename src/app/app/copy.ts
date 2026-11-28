@@ -147,6 +147,12 @@ export const COPY = {
   "wishes.caughtUp": ["All caught up", "Đã xử lý hết lời chúc."],
   "wishes.none": ["Nothing in this view.", "Không có mục nào trong chế độ xem này."],
   "wishes.more": ["Load more", "Tải thêm"],
+  // T3.2c (privacy design §6): Delete removes a wish at once, unlike Reject (kept 30 days).
+  "wishes.consentAt": ["Consent given {date} {time}", "Đã đồng ý lúc {time} {date}"],
+  "wishes.delete": ["Delete", "Xóa"],
+  "wishes.deleteTitle": ["Delete this wish for good?", "Xóa vĩnh viễn lời chúc này?"],
+  "wishes.deletedDone": ["Deleted.", "Đã xóa."],
+  "wishes.deleteFailed": ["Not deleted. The wish is still here.", "Chưa xóa được. Lời chúc vẫn còn đây."],
   "content.statusDone": ["Status updated.", "Đã cập nhật trạng thái."],
   "content.workingCopy": ["Working copy", "Bản đang sửa"],
   "content.kind": ["Kind", "Loại nội dung"],

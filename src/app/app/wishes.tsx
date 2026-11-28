@@ -11,16 +11,19 @@ import s from "./owner.module.css";
 // shortcut: every wish in full in one list at every size (no separate reading panel, no bulk select or undo from the
 // boards); add them if the queue grows past what one list reads well.
 type Status = "pending" | "approved" | "rejected";
-type Entry = { id: string; display_name: string; body: string; lang: string; created_at: string };
+type Entry = { id: string; display_name: string; body: string; lang: string; created_at: string; consent_at: string };
+type Change = "approved" | "rejected" | "deleted";
 type Load = "loading" | "ready" | "error" | "accessLost";
 const VIEWS: Status[] = ["pending", "approved", "rejected"];
 const PAGE = 50;
 const pad = (n: number) => String(n).padStart(2, "0");
 // The submission time on this device's clock, in a form both languages read.
-const when = (iso: string) => {
+const stamp = (iso: string) => {
   const d = new Date(iso);
-  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())} ${pad(d.getHours())}:${pad(d.getMinutes())}`;
+  return { date: `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`, time: `${pad(d.getHours())}:${pad(d.getMinutes())}` };
 };
+const when = (iso: string) => `${stamp(iso).date} ${stamp(iso).time}`;
+const DONE = { approved: "wishes.approvedDone", rejected: "wishes.rejectedDone", deleted: "wishes.deletedDone" } as const;
 
 export function Wishes({ onBack, onSignedOut }: { onBack: () => void; onSignedOut: () => void }) {
   const online = useOnline();
@@ -37,6 +40,18 @@ export function Wishes({ onBack, onSignedOut }: { onBack: () => void; onSignedOu
   const refreshed = useRef<"conflict" | "next" | null>(null);
   const heading = useRef<HTMLHeadingElement>(null);
   const list = useRef<HTMLElement>(null);
+  // Delete asks first (privacy design §6); the dialog follows this state.
+  const [doomed, setDoomed] = useState<{ entry: Entry; index: number } | null>(null);
+  const confirmBox = useRef<HTMLDialogElement>(null);
+  useEffect(() => {
+    if (doomed && !confirmBox.current?.open) confirmBox.current?.showModal();
+    if (!doomed && confirmBox.current?.open) confirmBox.current.close();
+  }, [doomed]);
+  const keep = () => {
+    const id = doomed?.entry.id;
+    flushSync(() => setDoomed(null));
+    document.getElementById(`deleted-${id}`)?.focus();
+  };
 
   // After a wish leaves, focus goes to the wish now in its place (else the one before it), else the empty heading.
   const focusAt = (index: number) => {
@@ -68,8 +83,6 @@ export function Wishes({ onBack, onSignedOut }: { onBack: () => void; onSignedOu
     return () => {
       live = false;
     };
-    // focusAt reads the DOM only
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [view, read, onSignedOut]);
 
   const show = (next: Status) => {
@@ -80,15 +93,19 @@ export function Wishes({ onBack, onSignedOut }: { onBack: () => void; onSignedOu
     setView(next);
     setRead((n) => n + 1);
   };
-  async function moderate(entry: Entry, to: Status, index: number) {
+  // Approve, Reject (moderate) or Delete (gone at once, T3.2c): the wish moves only once the server confirms.
+  async function change(entry: Entry, to: Change, index: number) {
     setBusy("saving");
     setStatus(null);
     setAlert(null);
-    const r = await post<{ status: Status }>("/api/owner/wishes/moderate", { id: entry.id, status: to, expected: view });
+    const r =
+      to === "deleted"
+        ? await post("/api/owner/wishes/delete", { id: entry.id })
+        : await post("/api/owner/wishes/moderate", { id: entry.id, status: to, expected: view });
     flushSync(() => setBusy(null)); // enabled again before focus returns below
     if (r.status === 200 && more && rows.length === 1) {
       // The shown page is done but more may wait: read the queue again rather than say "All caught up".
-      setStatus(to === "approved" ? "wishes.approvedDone" : "wishes.rejectedDone");
+      setStatus(DONE[to]);
       refreshed.current = "next";
       setLoad("loading");
       return setRead((n) => n + 1);
@@ -96,7 +113,7 @@ export function Wishes({ onBack, onSignedOut }: { onBack: () => void; onSignedOu
     if (r.status === 200) {
       flushSync(() => {
         setRows((all) => all.filter((x) => x.id !== entry.id));
-        setStatus(to === "approved" ? "wishes.approvedDone" : "wishes.rejectedDone");
+        setStatus(DONE[to]);
       });
       return focusAt(index);
     }
@@ -108,7 +125,7 @@ export function Wishes({ onBack, onSignedOut }: { onBack: () => void; onSignedOu
     }
     if (r.status === 401) return onSignedOut();
     if (r.status === 403) return setLoad("accessLost");
-    setAlert("wishes.failed");
+    setAlert(to === "deleted" ? "wishes.deleteFailed" : "wishes.failed");
     document.getElementById(`${to}-${entry.id}`)?.focus();
   }
   async function loadMore() {
@@ -221,22 +238,29 @@ export function Wishes({ onBack, onSignedOut }: { onBack: () => void; onSignedOu
                   <p className={s.small}>
                     {when(entry.created_at)} · {LANG_NAMES[entry.lang]}
                   </p>
+                  <p className={s.small}>
+                    <T k="wishes.consentAt" vars={stamp(entry.consent_at)} />
+                  </p>
                   <blockquote className={s.wishBody} lang={entry.lang}>
                     {entry.body}
                   </blockquote>
                   <div className={s.actions}>
                     {view !== "approved" && (
-                      <button type="button" id={`approved-${entry.id}`} className={s.primary} disabled={blocked} aria-describedby={reason} onClick={() => void moderate(entry, "approved", index)}>
+                      <button type="button" id={`approved-${entry.id}`} className={s.primary} disabled={blocked} aria-describedby={reason} onClick={() => void change(entry, "approved", index)}>
                         <L k="wishes.approve" />
                         <span className={s.announcer}>{` ${entry.display_name}`}</span>
                       </button>
                     )}
                     {view !== "rejected" && (
-                      <button type="button" id={`rejected-${entry.id}`} className={s.secondary} disabled={blocked} aria-describedby={reason} onClick={() => void moderate(entry, "rejected", index)}>
+                      <button type="button" id={`rejected-${entry.id}`} className={s.secondary} disabled={blocked} aria-describedby={reason} onClick={() => void change(entry, "rejected", index)}>
                         <L k="wishes.reject" />
                         <span className={s.announcer}>{` ${entry.display_name}`}</span>
                       </button>
                     )}
+                    <button type="button" id={`deleted-${entry.id}`} className={s.secondary} disabled={blocked} aria-describedby={reason} onClick={() => setDoomed({ entry, index })}>
+                      <L k="wishes.delete" />
+                      <span className={s.announcer}>{` ${entry.display_name}`}</span>
+                    </button>
                   </div>
                 </article>
               ))}
@@ -247,6 +271,38 @@ export function Wishes({ onBack, onSignedOut }: { onBack: () => void; onSignedOu
             )}
           </section>
         </div>
+        <dialog
+          ref={confirmBox}
+          className={s.dialog}
+          aria-labelledby="delete-title"
+          onCancel={(event) => {
+            event.preventDefault();
+            keep();
+          }}
+          onClose={() => setDoomed(null)} // the browser may close it without a cancel
+        >
+          {doomed && (
+            <div className={s.stack}>
+              <h2 id="delete-title">
+                <T k="wishes.deleteTitle" />
+              </h2>
+              <button type="button" className={s.secondary} onClick={keep}>
+                <L k="content.cancel" />
+              </button>
+              <button
+                type="button"
+                className={s.primary}
+                disabled={blocked}
+                onClick={() => {
+                  setDoomed(null);
+                  void change(doomed.entry, "deleted", doomed.index);
+                }}
+              >
+                <L k="wishes.delete" />
+              </button>
+            </div>
+          )}
+        </dialog>
       </main>
     </div>
   );

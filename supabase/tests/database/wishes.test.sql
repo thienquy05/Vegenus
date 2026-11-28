@@ -3,7 +3,7 @@
 -- a repeated submission_id returns the first result once. The owner moderates (O7). now() is fixed inside this
 -- transaction, so time passing is simulated by moving bucket window starts. Placeholder data only.
 begin;
-select plan(73);
+select plan(92);
 
 insert into auth.users (id, email) values
   ('00000000-0000-0000-0000-0000000000f1', 'owner@example.test'),
@@ -28,9 +28,9 @@ $$;
 create function pg_temp.k(label text) returns bytea language sql as $$ select sha256(convert_to(label, 'UTF8')) $$;
 -- The test runs as postgres (it cannot become vegenus_server); the grants are checked below, as in login_limit.
 create function pg_temp.post(tok text, sub uuid, dev text, ip text, name text = '[GUEST]', msg text = 'Congratulations') returns jsonb
-language sql as $$ select public.guest_guestbook_post(tok, sub, pg_temp.k(dev), pg_temp.k(ip), name, msg, 'en') $$;
+language sql as $$ select public.guest_guestbook_post(tok, sub, pg_temp.k(dev), pg_temp.k(ip), name, msg, 'en', 1) $$;
 create function pg_temp.visit(sel text, sub uuid, dev text, ip text) returns jsonb
-language sql as $$ select public.public_guestbook_post(sel, sub, pg_temp.k(dev), pg_temp.k(ip), '[VISITOR]', 'Best wishes', 'vi') $$;
+language sql as $$ select public.public_guestbook_post(sel, sub, pg_temp.k(dev), pg_temp.k(ip), '[VISITOR]', 'Best wishes', 'vi', 1) $$;
 create function pg_temp.hits(scope text, label text) returns int language sql as $$
   select coalesce(sum(count), 0)::int from public.rate_limit_hits where rate_limit_hits.scope = hits.scope and key_hash = pg_temp.k(label)
 $$;
@@ -39,14 +39,14 @@ create function pg_temp.entries(page uuid) returns bigint language sql as $$
 $$;
 
 -- Who may call the posting functions (design 3 §3.9, E36).
-select throws_ok($$ set local role anon; select public.guest_guestbook_post(repeat('A', 43), gen_random_uuid(), sha256('x'), sha256('y'), 'n', 'm', 'en') $$,
+select throws_ok($$ set local role anon; select public.guest_guestbook_post(repeat('A', 43), gen_random_uuid(), sha256('x'), sha256('y'), 'n', 'm', 'en', 1) $$,
   '42501', null, 'anon cannot call guest_guestbook_post');
 reset role;
-select throws_ok($$ set local role authenticated; select public.public_guestbook_post('our-page', gen_random_uuid(), sha256('x'), sha256('y'), 'n', 'm', 'en') $$,
+select throws_ok($$ set local role authenticated; select public.public_guestbook_post('our-page', gen_random_uuid(), sha256('x'), sha256('y'), 'n', 'm', 'en', 1) $$,
   '42501', null, 'authenticated cannot call public_guestbook_post');
 reset role;
-select ok(has_function_privilege('vegenus_server', 'public.guest_guestbook_post(text, uuid, bytea, bytea, text, text, public.lang)', 'execute')
-  and has_function_privilege('vegenus_server', 'public.public_guestbook_post(text, uuid, bytea, bytea, text, text, public.lang)', 'execute'),
+select ok(has_function_privilege('vegenus_server', 'public.guest_guestbook_post(text, uuid, bytea, bytea, text, text, public.lang, int)', 'execute')
+  and has_function_privilege('vegenus_server', 'public.public_guestbook_post(text, uuid, bytea, bytea, text, text, public.lang, int)', 'execute'),
   'vegenus_server can call both posting functions');
 
 -- A token wish: pending, labelled with the token version, the text trimmed and NFC (Q73).
@@ -74,7 +74,7 @@ select throws_ok($$ select pg_temp.post(repeat('A', 43), gen_random_uuid(), 'dev
 select throws_ok($$ select pg_temp.post(repeat('A', 43), gen_random_uuid(), 'dev9', 'ip9', E'two\nlines') $$, '22023', null, 'a name on two lines is refused');
 select throws_ok($$ select pg_temp.post(repeat('A', 43), gen_random_uuid(), 'dev9', 'ip9', '[GUEST]', E'bell\u0007') $$, '22023', null, 'a control character in the wish is refused');
 select throws_ok($$ select pg_temp.post(repeat('A', 43), gen_random_uuid(), 'dev9', 'ip9', E'\u202eevil') $$, '22023', null, 'a bidi control in the name is refused');
-select throws_ok($$ select public.guest_guestbook_post(repeat('A', 43), gen_random_uuid(), '\x00'::bytea, sha256('y'), 'n', 'm', 'en') $$,
+select throws_ok($$ select public.guest_guestbook_post(repeat('A', 43), gen_random_uuid(), '\x00'::bytea, sha256('y'), 'n', 'm', 'en', 1) $$,
   '22023', null, 'a key that is not a 32-byte HMAC is refused');
 select is(pg_temp.hits('wish_device', 'dev9'), 0, 'refused text charges nothing');
 select is(pg_temp.post(repeat('A', 43), '00000000-0000-0000-0000-000000000102', 'dev2', 'ip2', repeat(E'\U0001F468\u200d\U0001F469\u200d\U0001F467', 40),
@@ -179,14 +179,14 @@ select throws_ok($$ select public.owner_wish_moderate((select id from first), 'r
 
 -- O7 order and paging on page b: the queue oldest first, the histories newest first, the (created_at, id) cursor in
 -- each direction, ties on created_at broken by id.
-insert into public.guestbook_entries (id, page_id, display_name, body, lang, submission_id, author_kind, status, created_at) values
-  ('00000000-0000-0000-0000-0000000003b1', '00000000-0000-0000-0000-00000000000b', 'n', 'm', 'en', gen_random_uuid(), 'visitor', 'pending', '2026-01-02'),
-  ('00000000-0000-0000-0000-0000000003b2', '00000000-0000-0000-0000-00000000000b', 'n', 'm', 'en', gen_random_uuid(), 'visitor', 'pending', '2026-01-01'),
-  ('00000000-0000-0000-0000-0000000003b3', '00000000-0000-0000-0000-00000000000b', 'n', 'm', 'en', gen_random_uuid(), 'visitor', 'pending', '2026-01-01'),
-  ('00000000-0000-0000-0000-0000000003b4', '00000000-0000-0000-0000-00000000000b', 'n', 'm', 'en', gen_random_uuid(), 'visitor', 'pending', '2026-01-03'),
-  ('00000000-0000-0000-0000-0000000003a1', '00000000-0000-0000-0000-00000000000b', 'n', 'm', 'en', gen_random_uuid(), 'visitor', 'approved', '2026-01-01'),
-  ('00000000-0000-0000-0000-0000000003a2', '00000000-0000-0000-0000-00000000000b', 'n', 'm', 'en', gen_random_uuid(), 'visitor', 'approved', '2026-01-02'),
-  ('00000000-0000-0000-0000-0000000003a3', '00000000-0000-0000-0000-00000000000b', 'n', 'm', 'en', gen_random_uuid(), 'visitor', 'approved', '2026-01-02');
+insert into public.guestbook_entries (id, page_id, display_name, body, lang, submission_id, author_kind, status, created_at, consent_version) values
+  ('00000000-0000-0000-0000-0000000003b1', '00000000-0000-0000-0000-00000000000b', 'n', 'm', 'en', gen_random_uuid(), 'visitor', 'pending', '2026-01-02', 1),
+  ('00000000-0000-0000-0000-0000000003b2', '00000000-0000-0000-0000-00000000000b', 'n', 'm', 'en', gen_random_uuid(), 'visitor', 'pending', '2026-01-01', 1),
+  ('00000000-0000-0000-0000-0000000003b3', '00000000-0000-0000-0000-00000000000b', 'n', 'm', 'en', gen_random_uuid(), 'visitor', 'pending', '2026-01-01', 1),
+  ('00000000-0000-0000-0000-0000000003b4', '00000000-0000-0000-0000-00000000000b', 'n', 'm', 'en', gen_random_uuid(), 'visitor', 'pending', '2026-01-03', 1),
+  ('00000000-0000-0000-0000-0000000003a1', '00000000-0000-0000-0000-00000000000b', 'n', 'm', 'en', gen_random_uuid(), 'visitor', 'approved', '2026-01-01', 1),
+  ('00000000-0000-0000-0000-0000000003a2', '00000000-0000-0000-0000-00000000000b', 'n', 'm', 'en', gen_random_uuid(), 'visitor', 'approved', '2026-01-02', 1),
+  ('00000000-0000-0000-0000-0000000003a3', '00000000-0000-0000-0000-00000000000b', 'n', 'm', 'en', gen_random_uuid(), 'visitor', 'approved', '2026-01-02', 1);
 select pg_temp.act_as('00000000-0000-0000-0000-0000000000f2');
 select is(array(select right(id::text, 3) from public.owner_wishes('pending') where id::text like '%3b_'), array['3b2', '3b3', '3b1', '3b4'], 'the queue: oldest first, ties by id');
 select is(array(select right(id::text, 3) from public.owner_wishes('pending', '2026-01-01', '00000000-0000-0000-0000-0000000003b2') where id::text like '%3b_'),
@@ -210,6 +210,41 @@ select ok(not exists (select 1 from public.guestbook_entries where id = (select 
   and pg_temp.hits('wish_device', 'crowd1') = 3, 'it is gone; live buckets stay');
 select is(array[pg_temp.hits('wish_device', 'old'), pg_temp.hits('wish_ip', 'young'), pg_temp.hits('wish_page', 'old_day'), pg_temp.hits('wish_page', 'young_day')],
   array[0, 1, 0, 1], 'an expired device window and an ended page day go; windows still running stay');
+
+-- T3.2c: consent recorded with each wish (privacy design §4.1, §7) and O7 Delete (§6, test 9).
+select is(public.privacy_notice_version(), 1::smallint, 'the privacy notice is at version 1');
+select col_not_null('public', 'guestbook_entries', 'consent_version', 'every wish records the notice version it consented to');
+select col_not_null('public', 'guestbook_entries', 'consent_at', 'and when consent was given');
+select is(public.public_guestbook_post('our-page', '00000000-0000-0000-0000-000000000c01', pg_temp.k('cdev'), pg_temp.k('cip'), '[GUEST]', 'Hi', 'en', null),
+  '{"status": "needs_consent"}'::jsonb, 'no consent: needs consent');
+select is(public.public_guestbook_post('our-page', '00000000-0000-0000-0000-000000000c01', pg_temp.k('cdev'), pg_temp.k('cip'), '[GUEST]', 'Hi', 'en', 0),
+  '{"status": "needs_consent"}'::jsonb, 'consent to an older notice: needs consent again');
+select ok(not exists (select 1 from public.guestbook_entries where submission_id = '00000000-0000-0000-0000-000000000c01')
+  and pg_temp.hits('wish_device', 'cdev') = 0 and pg_temp.hits('wish_ip', 'cip') = 0, 'neither stores nor charges anything');
+select is(public.public_guestbook_post('our-page', '00000000-0000-0000-0000-000000000c01', pg_temp.k('cdev'), pg_temp.k('cip'), '[GUEST]', 'Hi', 'en', 1),
+  '{"status": "sent"}'::jsonb, 'consent to the current notice: sent');
+select results_eq($$ select consent_version, consent_at = now() from public.guestbook_entries where submission_id = '00000000-0000-0000-0000-000000000c01' $$,
+  $$ values (1::smallint, true) $$, 'the notice version and the time are stored with the wish');
+select is(public.public_guestbook_post('our-page', '00000000-0000-0000-0000-000000000c01', pg_temp.k('cdev'), pg_temp.k('cip'), '[GUEST]', 'Hi', 'en', 0),
+  '{"status": "sent"}'::jsonb, 'a resend of a stored wish answers its first result; its consent is never rewritten');
+create temp table doomed as select id from public.guestbook_entries
+  where submission_id = '00000000-0000-0000-0000-000000000c01' or id in ('00000000-0000-0000-0000-0000000003a1', '00000000-0000-0000-0000-0000000003b4');
+select set_config('request.jwt.claims', '', true);
+select throws_ok($$ select public.owner_wish_delete('00000000-0000-0000-0000-0000000003a1') $$, '42501', null, 'no signed-in user cannot delete a wish');
+select pg_temp.act_as('00000000-0000-0000-0000-0000000000f1');
+select is(public.owner_wish_delete('00000000-0000-0000-0000-0000000003a1'), null, 'another page''s wish is not found');
+select pg_temp.act_as('00000000-0000-0000-0000-0000000000f2');
+select ok((select bool_and(consent_at is not null) from public.owner_wishes('pending')), 'O7 reads when consent was given');
+select is(public.owner_wish_moderate('00000000-0000-0000-0000-0000000003b4', 'rejected', 'pending'), '{"status": "rejected"}'::jsonb, 'a rejected wish to delete');
+select is(public.owner_wish_delete((select id from public.guestbook_entries where submission_id = '00000000-0000-0000-0000-000000000c01')),
+  '{"status": "deleted"}'::jsonb, 'Delete removes a pending wish');
+select is(public.owner_wish_delete('00000000-0000-0000-0000-0000000003a1'), '{"status": "deleted"}'::jsonb, 'an approved one');
+select is(public.owner_wish_delete('00000000-0000-0000-0000-0000000003b4'), '{"status": "deleted"}'::jsonb, 'and a rejected one');
+select is((select count(*) from public.guestbook_entries where id in (select id from doomed)), 0::bigint,
+  'all three rows are gone at once, unlike Reject, which keeps a wish 30 days');
+select is(public.owner_wish_delete('00000000-0000-0000-0000-0000000003a1'), null, 'deleting it again finds nothing');
+select ok(has_function_privilege('authenticated', 'public.owner_wish_delete(uuid)', 'execute')
+  and not has_function_privilege('anon', 'public.owner_wish_delete(uuid)', 'execute'), 'only a signed-in user may call Delete');
 
 select * from finish();
 rollback;

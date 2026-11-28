@@ -2,6 +2,9 @@
 import { useCallback, useEffect, useRef, useState, useSyncExternalStore, type ChangeEvent, type FormEvent } from "react";
 import { counter } from "@/lib/home";
 import type { Cred, GuestMediaRef, GuestSummary, GuestVariant } from "@/lib/guest";
+import { PRIVACY } from "@/lib/privacy";
+import { PrivacyNotice } from "../privacy/notice";
+import p from "../privacy/privacy.module.css";
 import { pickLang, type CopyKey, type Lang } from "./copy";
 import s from "./guest.module.css";
 
@@ -396,6 +399,10 @@ function WishSheet(props: Props & { draft: Draft; setDraft: (draft: Draft) => vo
   const [sending, setSending] = useState(false);
   const [problem, setProblem] = useState<CopyKey | null>(null);
   const [limit, setLimit] = useState<{ now: number; wait: number; shared: boolean } | null>(null);
+  // T3.2c consent (privacy design §4.1): each wish its own, never remembered; P1 opens stacked over the form.
+  const [agreed, setAgreed] = useState(false);
+  const [consentError, setConsentError] = useState<CopyKey | null>(null);
+  const [reading, setReading] = useState(false);
   const focusTo = useRef<string | null>("#wish-name"); // where focus goes once the next render is in
   const live = useRef(true); // a late answer after the sheet is gone never touches a newer draft
   useEffect(() => {
@@ -432,14 +439,16 @@ function WishSheet(props: Props & { draft: Draft; setDraft: (draft: Draft) => vo
     if (sending || !online) return;
     const found = { name: problemOf("name", draft.name), body: problemOf("body", draft.body) };
     setErrors(found);
-    if (found.name || found.body) return dialog.current?.querySelector<HTMLElement>(found.name ? "#wish-name" : "#wish-body")?.focus();
+    setConsentError(agreed ? null : "wish.consentRequired");
+    const first = found.name ? "#wish-name" : found.body ? "#wish-body" : agreed ? null : "#wish-consent";
+    if (first) return dialog.current?.querySelector<HTMLElement>(first)?.focus();
     const sub = draft.sub ?? crypto.randomUUID();
     setDraft({ ...draft, sub });
     setSending(true);
     setProblem(null);
     let res: Response;
     try {
-      res = await send("/api/guest/wish", { submission_id: sub, display_name: draft.name, body: draft.body, lang }, cred);
+      res = await send("/api/guest/wish", { submission_id: sub, display_name: draft.name, body: draft.body, lang, consent: PRIVACY.version }, cred);
     } catch {
       if (!live.current) return;
       setSending(false);
@@ -455,6 +464,12 @@ function WishSheet(props: Props & { draft: Draft; setDraft: (draft: Draft) => vo
       return show("sent", "h2");
     }
     if (res.status === 404) return onGone();
+    if (res.status === 409 && r?.error === "needs_consent") {
+      // The notice changed while the form was open: nothing was stored or counted; tick again (privacy design §4.1).
+      focusTo.current = "#wish-consent";
+      setAgreed(false);
+      return setConsentError("wish.consentAgain");
+    }
     // A 429 without a wait is not ours (a platform limit): nothing was stored.
     if (res.status === 429 && Number(r?.retry_after) > 0) return setLimit({ now: Date.now(), wait: Number(r.retry_after), shared: r.shared === true });
     if (res.status === 429) return setProblem("wish.notSent");
@@ -495,7 +510,7 @@ function WishSheet(props: Props & { draft: Draft; setDraft: (draft: Draft) => vo
       </div>
     );
   };
-  return (
+  const sheet = (
     <dialog
       ref={dialog}
       className={s.sheet}
@@ -540,6 +555,38 @@ function WishSheet(props: Props & { draft: Draft; setDraft: (draft: Draft) => vo
         <form className={s.wishForm} noValidate onSubmit={submit}>
           {field("name", "wish.name", "wishes.namePlaceholder")}
           {field("body", "wish.body", "wishes.messagePlaceholder")}
+          <div className={s.field}>
+            <label className={s.consent}>
+              <input
+                type="checkbox"
+                id="wish-consent"
+                checked={agreed}
+                aria-invalid={consentError ? true : undefined}
+                aria-describedby="wish-consent-error"
+                onChange={(event) => {
+                  if (sending) return;
+                  setAgreed(event.target.checked);
+                  setConsentError(null);
+                }}
+              />
+              <span>{t("wish.consent", { owner })}</span>{" "}
+              {/* Inside the label but interactive, so it opens P1 without toggling the box. */}
+              <a
+                href="/privacy"
+                onClick={(event) => {
+                  event.preventDefault();
+                  setReading(true);
+                }}
+              >
+                {t("wish.consentLink")}
+              </a>
+            </label>
+            {consentError && (
+              <p id="wish-consent-error" className={s.error}>
+                {t(consentError)}
+              </p>
+            )}
+          </div>
           <p className={s.small}>{t("wish.privacy")}</p>
           {!online && <p role="status">{t("wish.offline")}</p>}
           {problem && <p role="alert">{t(problem)}</p>}
@@ -560,6 +607,50 @@ function WishSheet(props: Props & { draft: Draft; setDraft: (draft: Draft) => vo
           onView={() => onClose(true)}
         />
       )}
+    </dialog>
+  );
+  return (
+    <>
+      {sheet}
+      {reading && (
+        <NoticeSheet
+          lang={lang}
+          t={t}
+          onClose={() => {
+            focusTo.current = "a[href='/privacy']"; // back to the link, the draft and the box as they were
+            setReading(false);
+          }}
+        />
+      )}
+    </>
+  );
+}
+
+// P1 stacked over G6 in the page's theme (privacy design §3.1): Close and Escape return to the form. One way out
+// (owner, 2026-11-28): Back and Close would do the same here.
+function NoticeSheet({ lang, t, onClose }: { lang: Lang; t: T; onClose: () => void }) {
+  const ref = useRef<HTMLDialogElement>(null);
+  useEffect(() => {
+    const d = ref.current;
+    if (d && !d.open) d.showModal();
+  }, []);
+  return (
+    <dialog
+      ref={ref}
+      className={p.sheet}
+      aria-labelledby="privacy-title"
+      onCancel={(event) => {
+        event.preventDefault();
+        onClose();
+      }}
+      onClose={onClose}
+    >
+      <div className={p.sheetHead}>
+        <button type="button" className={s.secondary} onClick={onClose}>
+          {t("settings.close")}
+        </button>
+      </div>
+      <PrivacyNotice lang={lang} level={2} />
     </dialog>
   );
 }

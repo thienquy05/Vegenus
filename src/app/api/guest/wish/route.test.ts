@@ -11,7 +11,7 @@ const { POST } = await import("./route");
 const TOKEN = "A".repeat(43);
 const DEVICE = "D".repeat(43);
 const SUB = "00000000-0000-0000-0000-000000000101";
-const WISH = { submission_id: SUB, display_name: "[GUEST]", body: "[WISH_TEXT]", lang: "en" };
+const WISH = { submission_id: SUB, display_name: "[GUEST]", body: "[WISH_TEXT]", lang: "en", consent: 1 };
 const ask = (body: unknown, { origin = "http://localhost:3000", guest = "1", cookie = `vegenus_g=${TOKEN}` } = {}) =>
   POST(
     new NextRequest("http://localhost:3000/api/guest/wish", {
@@ -42,6 +42,11 @@ test.each([
   [{ ...WISH, lang: "fr" }],
   [{ ...WISH, display_name: "n".repeat(401) }],
   [{ ...WISH, body: "m".repeat(5001) }],
+  [{ ...WISH, consent: undefined }], // T3.2c: a crafted post without consent stores nothing (privacy design §8 test 2)
+  [{ ...WISH, consent: "1" }],
+  [{ ...WISH, consent: 1.5 }],
+  [{ ...WISH, consent: 0 }],
+  [{ ...WISH, consent: 1e300 }], // beyond smallint: a 400, not a 503 that invites retries
 ])("a malformed wish %j is a 400 and reaches no database", async (body) => {
   expect((await ask(body)).status).toBe(400);
   expect(postWish).not.toHaveBeenCalled();
@@ -116,4 +121,12 @@ test("text the database refuses is a 400; any other failure a retryable 503", as
   expect(await (await ask(WISH)).json()).toEqual({ error: "invalid" });
   vi.mocked(postWish).mockRejectedValue(new Error("db down"));
   expect((await ask(WISH)).status).toBe(503);
+});
+
+test("T3.2c: consent to an older notice is a 409 needs_consent, with no device cookie (nothing was charged)", async () => {
+  vi.mocked(postWish).mockResolvedValue({ status: "needs_consent" });
+  const res = await ask({ ...WISH, consent: 1 });
+  expect(res.status).toBe(409);
+  expect(await res.json()).toEqual({ error: "needs_consent" });
+  expect(deviceCookie(res)).toBeUndefined();
 });

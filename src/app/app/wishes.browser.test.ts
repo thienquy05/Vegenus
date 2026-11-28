@@ -16,7 +16,8 @@ vi.mock("next/navigation", () => {
 const id = (n: number) => `00000000-0000-0000-0000-${String(n).padStart(12, "0")}`;
 const wish = (n: number, status = "pending", more: object = {}) => ({
   id: id(n), display_name: `[GUEST_${n}]`, body: `[WISH_${n}]\n[LINE_2]`, lang: n % 2 ? "vi" : "en", status, author_kind: "visitor",
-  token_version: null, created_at: `2026-11-2${n % 10}T10:00:00.000000+00:00`, moderated_at: null, ...more,
+  token_version: null, created_at: `2026-11-2${n % 10}T10:00:00.000000+00:00`, moderated_at: null,
+  consent_at: `2026-11-2${n % 10}T10:00:00.000000+00:00`, ...more,
 });
 
 type Reply = { status: number; body?: unknown } | "network";
@@ -309,4 +310,72 @@ test("Try again after a failed read puts focus on the first wish once it loads",
   await userEvent.click(button("Try again"));
   await expect.poll(() => cards().length).toBe(1);
   await expect.poll(() => document.activeElement).toBe(button("Approve", cards()[0]));
+});
+
+// T3.2c (privacy design §6, test 9): when consent was given, and Delete on every wish, confirmed first, gone at once.
+const removed = () => calls.filter((c) => c.url === "/api/owner/wishes/delete");
+const confirmBox = () => host.querySelector("dialog[open]") as HTMLDialogElement | null;
+
+test("each wish says when consent was given, in the owner's local time", async () => {
+  serve({ "/api/owner/wishes": [entries(wish(1, "pending", { consent_at: "2026-11-21T10:05:00.000000+00:00" }))] });
+  mount();
+  await expect.poll(() => cards().length).toBe(1);
+  const local = new Date("2026-11-21T10:05:00Z");
+  const time = `${String(local.getHours()).padStart(2, "0")}:05`;
+  expect(cards()[0].textContent).toContain(`Consent given 2026-11-${String(local.getDate()).padStart(2, "0")} ${time}`);
+  expect(cards()[0].textContent).toContain(`Đã đồng ý lúc ${time}`);
+});
+
+test.each(["pending", "approved", "rejected"] as const)("Delete in the %s view asks first; Cancel keeps the wish and sends nothing", async (view) => {
+  serve({ "/api/owner/wishes": view === "pending" ? [entries(wish(1))] : [entries(), entries(wish(1, view))] });
+  mount();
+  if (view !== "pending") {
+    await expect.poll(() => host.querySelector("#wishes-empty")).not.toBeNull();
+    await userEvent.click(button(view === "approved" ? "Approved" : "Rejected"));
+  }
+  await expect.poll(() => cards().length).toBe(1);
+  const del = button("Delete", cards()[0]);
+  await userEvent.click(del);
+  await expect.poll(() => confirmBox()?.textContent ?? "").toContain("Delete this wish for good?");
+  expect(confirmBox()!.textContent).toContain("Xóa vĩnh viễn lời chúc này?");
+  await userEvent.click(button("Cancel", confirmBox()!));
+  await expect.poll(() => confirmBox()).toBeNull();
+  expect(removed()).toEqual([]);
+  expect(cards().length).toBe(1);
+  expect(document.activeElement).toBe(del);
+});
+
+test("Delete confirmed removes the wish at once, says Deleted and moves focus to the next wish", async () => {
+  serve({ "/api/owner/wishes": [entries(wish(1), wish(2))], "/api/owner/wishes/delete": [ok({ status: "deleted" })] });
+  mount();
+  await expect.poll(() => cards().length).toBe(2);
+  await userEvent.click(button("Delete", cards()[0]));
+  await expect.poll(() => confirmBox()).not.toBeNull();
+  await userEvent.click(button("Delete", confirmBox()!));
+  await expect.poll(() => cards().length).toBe(1);
+  expect(removed()[0].body).toEqual({ id: id(1) });
+  expect(confirmBox()).toBeNull();
+  expect(region("status")).toContain("Deleted.");
+  expect(cards()[0].contains(document.activeElement)).toBe(true);
+});
+
+test("Esc closes the confirm; a wish already gone (404) re-reads the list; a failure keeps the wish", async () => {
+  serve({
+    "/api/owner/wishes": [entries(wish(1), wish(2)), entries(wish(2))],
+    "/api/owner/wishes/delete": [{ status: 503 }, { status: 404 }],
+  });
+  mount();
+  await expect.poll(() => cards().length).toBe(2);
+  await userEvent.click(button("Delete", cards()[0]));
+  await expect.poll(() => confirmBox()).not.toBeNull();
+  await userEvent.keyboard("{Escape}");
+  await expect.poll(() => confirmBox()).toBeNull();
+  await userEvent.click(button("Delete", cards()[0]));
+  await userEvent.click(button("Delete", confirmBox()!));
+  await expect.poll(() => region("alert")).toContain("Not deleted.");
+  expect(cards().length).toBe(2);
+  await userEvent.click(button("Delete", cards()[0]));
+  await userEvent.click(button("Delete", confirmBox()!));
+  await expect.poll(() => region("alert")).toContain("The list has been refreshed.");
+  expect(cards().length).toBe(1);
 });

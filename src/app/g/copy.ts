@@ -25,7 +25,12 @@ export const COPY = {
   "wish.nameLong": ["Display name must be 40 characters or fewer.", "Tên hiển thị tối đa 40 ký tự."],
   "wish.bodyLong": ["Wish must be 500 characters or fewer.", "Lời chúc tối đa 500 ký tự."],
   "wish.characters": ["This has a character that can’t be sent, such as a tab or a hidden mark.", "Có ký tự không gửi được, như dấu tab hoặc ký tự ẩn."],
-  "wish.privacy": ["We briefly check your network address to prevent spam and never store the address.", "Chúng tôi kiểm tra nhanh địa chỉ mạng để ngăn spam và không lưu địa chỉ này."],
+  // T3.2c (privacy design §4.1): the HMAC of the address is kept 24 hours, so the old "never store" line went.
+  "wish.privacy": ["To stop spam, we keep a scrambled code made from your network address for 24 hours, never the address itself.", "Để chặn spam, chúng tôi giữ một mã đã mã hóa từ địa chỉ mạng của bạn trong 24 giờ, không lưu chính địa chỉ đó."],
+  "wish.consent": ["I agree that my name and wish are stored and shown on this page after approval by {owner}.", "Tôi đồng ý để tên và lời chúc của tôi được lưu và hiển thị trên trang này sau khi {owner} duyệt."],
+  "wish.consentLink": ["privacy notice", "thông báo quyền riêng tư"],
+  "wish.consentRequired": ["Tick the box to send your wish.", "Đánh dấu ô để gửi lời chúc."],
+  "wish.consentAgain": ["We've updated the privacy notice. Please tick again.", "Thông báo quyền riêng tư đã được cập nhật. Vui lòng đánh dấu lại."],
   "wish.send": ["Send wish", "Gửi lời chúc"],
   "wish.sending": ["Sending…", "Đang gửi…"],
   "wish.offline": ["You are offline. Reconnect to continue; your draft is still here.", "Bạn đang ngoại tuyến. Kết nối lại để tiếp tục; bản nháp vẫn còn ở đây."],
@@ -35,12 +40,12 @@ export const COPY = {
   "wish.keep": ["Keep writing", "Viết tiếp"],
   "wish.discard": ["Discard", "Bỏ nội dung"],
   "wish.sent": ["Wish sent", "Đã gửi lời chúc"],
-  "wish.sentBody": ["Thank you. Your wish will appear after {owner} approves it.", "Cảm ơn bạn. Lời chúc sẽ hiển thị sau khi {owner} duyệt."],
+  "wish.sentBody": ["Thank you. Your wish will appear after approval by {owner}.", "Cảm ơn bạn. Lời chúc sẽ hiển thị sau khi {owner} duyệt."],
   "wish.back": ["Back to wishes", "Về lời chúc"],
   // The daily-limit notice (canvas page 14 "Daily limit notice", Q75): no rule numbers, the exact come-back time.
   "limit.title": ["Thank you for your kind wishes", "Cảm ơn những lời chúc dịu dàng của bạn"],
   "limit.text": ["Your wishes are waiting for approval; come back after this pause to leave a little more kindness.", "Các lời chúc bạn đã gửi đang chờ duyệt; mời bạn trở lại khi khoảng nghỉ này kết thúc để gửi thêm yêu thương nhé."],
-  // Not the board's wording: on a shared network the guest may have sent nothing (T3.2b review; owner to confirm).
+  // Not the board's wording: on a shared network the guest may have sent nothing (T3.2b review; owner, Q162).
   "limit.textShared": ["This wish wasn’t sent. Come back after this pause to leave a little more kindness.", "Lời chúc này chưa được gửi. Mời bạn trở lại khi khoảng nghỉ này kết thúc để gửi thêm yêu thương nhé."],
   "limit.at": ["Come back at {time}.", "Mời bạn trở lại lúc {time}."],
   "limit.atNextDay": ["Come back at {time} · next day.", "Mời bạn trở lại lúc {time} · ngày kế tiếp."],

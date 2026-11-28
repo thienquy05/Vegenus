@@ -842,6 +842,12 @@ const wishButton = () => [...host.querySelectorAll("button")].find((b) => b.text
 const sheet = () => host.querySelector<HTMLDialogElement>("dialog[open]");
 const field = (id: "wish-name" | "wish-body") => host.querySelector<HTMLInputElement | HTMLTextAreaElement>(`#${id}`)!;
 const inSheet = (label: string) => [...(sheet()?.querySelectorAll("button") ?? [])].find((b) => b.textContent === label)!;
+const consent = () => host.querySelector<HTMLInputElement>("#wish-consent")!;
+// T3.2c: each wish needs the consent box ticked (never remembered); Send itself is unchanged.
+async function send() {
+  if (consent() && !consent().checked) await userEvent.click(consent());
+  await userEvent.click(inSheet("Send wish"));
+}
 async function openForm(more: Record<string, Reply[]> = {}, props: Partial<Parameters<typeof GuestApp>[0]> = {}) {
   serve({ "/api/guest/wishes": [ok({ entries: [] })], "/api/guest/wish": [SENT], ...more });
   mount({ section: "guestbook", ...props });
@@ -856,8 +862,8 @@ test("G6: Send checks the fields and focuses the first problem; a sent wish show
   expect(document.activeElement).toBe(field("wish-name"));
   expect(field("wish-name").placeholder).toBe("Your name");
   expect(field("wish-body").placeholder).toBe("A few words for us");
-  expect(sheet()!.textContent).toContain("We briefly check your network address to prevent spam and never store the address.");
-  await userEvent.click(inSheet("Send wish"));
+  expect(sheet()!.textContent).toContain("To stop spam, we keep a scrambled code made from your network address for 24 hours, never the address itself.");
+  await send();
   expect(sheet()!.textContent).toContain("Enter a display name.");
   expect(sheet()!.textContent).toContain("Write a wish.");
   expect(field("wish-name").getAttribute("aria-invalid")).toBe("true");
@@ -865,13 +871,13 @@ test("G6: Send checks the fields and focuses the first problem; a sent wish show
   expect(to("/api/guest/wish")).toHaveLength(0);
 
   await userEvent.fill(field("wish-name"), "  [GUEST]  ");
-  await userEvent.click(inSheet("Send wish"));
+  await send();
   expect(document.activeElement).toBe(field("wish-body"));
   await userEvent.fill(field("wish-body"), "[WISH_TEXT]");
-  await userEvent.click(inSheet("Send wish"));
+  await send();
   await expect.poll(() => sheet()?.querySelector("h2")?.textContent).toBe("Wish sent!");
   const [post] = to("/api/guest/wish");
-  expect(post.body).toEqual({ submission_id: expect.stringMatching(/^[0-9a-f-]{36}$/), display_name: "  [GUEST]  ", body: "[WISH_TEXT]", lang: "en" });
+  expect(post.body).toEqual({ submission_id: expect.stringMatching(/^[0-9a-f-]{36}$/), display_name: "  [GUEST]  ", body: "[WISH_TEXT]", lang: "en", consent: 1 });
   await expect.poll(() => document.activeElement).toBe(sheet()!.querySelector("h2")); // focus follows the render
   expect(sheet()!.textContent).toContain("Thank you! [PARTNER_A] & [PARTNER_B] will read it soon.");
   expect(sheet()!.textContent).not.toContain("[WISH_TEXT]");
@@ -885,7 +891,7 @@ test("G6: Send checks the fields and focuses the first problem; a sent wish show
   expect(field("wish-name").value).toBe("");
   await userEvent.fill(field("wish-name"), "[GUEST]");
   await userEvent.fill(field("wish-body"), "[WISH_TEXT]");
-  await userEvent.click(inSheet("Send wish"));
+  await send();
   await expect.poll(() => to("/api/guest/wish").length).toBe(2);
   expect(to("/api/guest/wish")[1].body.submission_id).not.toBe(post.body.submission_id);
 });
@@ -902,7 +908,7 @@ test("G6: counters are always visible and count what a person sees; over a cap e
   expect(sheet()!.textContent).toContain("41/40");
   await userEvent.fill(field("wish-body"), "m".repeat(501));
   expect(sheet()!.textContent).toContain("501/500");
-  await userEvent.click(inSheet("Send wish"));
+  await send();
   expect(sheet()!.textContent).toContain("Display name must be 40 characters or fewer.");
   expect(sheet()!.textContent).toContain("Wish must be 500 characters or fewer.");
   expect(field("wish-body").value).toHaveLength(501);
@@ -916,7 +922,7 @@ test("G6: the daily limit opens the notice with the come-back time; I understand
   await openForm({ "/api/guest/wish": [{ status: 429, body: { error: "rate_limited", retry_after: 3600, shared: true } }] });
   await userEvent.fill(field("wish-name"), "[GUEST]");
   await userEvent.fill(field("wish-body"), "[WISH_TEXT]");
-  await userEvent.click(inSheet("Send wish"));
+  await send();
   const notice = () => host.querySelector<HTMLElement>("[role=alertdialog]");
   await expect.poll(() => notice()?.querySelector("h2")?.textContent).toBe("Thank you for your kind wishes");
   expect(notice()!.textContent).toMatch(/Come back at \d{2}:\d{2}/);
@@ -935,14 +941,14 @@ test("G6: an uncertain answer keeps the draft and the submission id; sending aga
   await openForm({ "/api/guest/wish": ["network", { status: 503 }, SENT] });
   await userEvent.fill(field("wish-name"), "[GUEST]");
   await userEvent.fill(field("wish-body"), "[WISH_TEXT]");
-  await userEvent.click(inSheet("Send wish"));
+  await send();
   await expect.poll(() => sheet()!.textContent).toContain("We couldn’t confirm whether it was sent.");
   expect(to("/api/guest/wish")).toHaveLength(1); // no automatic resend
-  await userEvent.click(inSheet("Send wish"));
+  await send();
   await expect.poll(() => to("/api/guest/wish").length).toBe(2);
   expect(to("/api/guest/wish")[1].body.submission_id).toBe(to("/api/guest/wish")[0].body.submission_id);
   await userEvent.fill(field("wish-body"), "[WISH_TEXT_2]");
-  await userEvent.click(inSheet("Send wish"));
+  await send();
   await expect.poll(() => sheet()?.querySelector("h2")?.textContent).toBe("Wish sent!");
   expect(to("/api/guest/wish")[2].body.submission_id).not.toBe(to("/api/guest/wish")[0].body.submission_id);
 });
@@ -955,10 +961,10 @@ test("G6: text the server refuses is not sent and the draft stays; while sending
   await userEvent.click(wishButton());
   await userEvent.fill(field("wish-name"), "[GUEST]");
   await userEvent.fill(field("wish-body"), "[WISH_TEXT]");
-  await userEvent.click(inSheet("Send wish"));
+  await send();
   await expect.poll(() => sheet()!.textContent).toContain("Not sent. Your draft is still here.");
   vi.mocked(fetch).mockImplementationOnce(() => new Promise((resolve) => (release = () => resolve(new Response(JSON.stringify({ status: "sent" }))))));
-  await userEvent.click(inSheet("Send wish"));
+  await send();
   expect(inSheet("Sending…").getAttribute("aria-disabled")).toBe("true");
   inSheet("Sending…").click(); // a DOM click: Playwright will not click an aria-disabled button
   expect(vi.mocked(fetch).mock.calls.filter(([url]) => url === "/api/guest/wish")).toHaveLength(2);
@@ -1002,6 +1008,7 @@ test("G6: a visitor posts by the page's name in the language chosen in G8; acces
   await userEvent.click(vi_());
   await userEvent.fill(field("wish-name"), "[KHÁCH]");
   await userEvent.fill(field("wish-body"), "[LỜI_CHÚC]");
+  await userEvent.click(consent());
   await userEvent.click([...sheet()!.querySelectorAll("button")].find((b) => b.textContent === "Gửi lời chúc")!);
   await expect.poll(() => text()).toContain("Quyền truy cập không còn hiệu lực.");
   expect(to("/api/guest/wish")[0].body).toMatchObject({ lang: "vi", page: "our-page" });
@@ -1013,7 +1020,7 @@ async function hitLimit(body: object) {
   await openForm({ "/api/guest/wish": [{ status: 429, body }] });
   await userEvent.fill(field("wish-name"), "[GUEST]");
   await userEvent.fill(field("wish-body"), "[WISH_TEXT]");
-  await userEvent.click(inSheet("Send wish"));
+  await send();
 }
 const notice = () => host.querySelector<HTMLElement>("[role=alertdialog]");
 
@@ -1044,13 +1051,13 @@ test("G6 review: View the wishes keeps the draft and its submission id for the n
   await openForm({ "/api/guest/wish": [{ status: 429, body: { error: "rate_limited", retry_after: 600, shared: false } }, SENT] });
   await userEvent.fill(field("wish-name"), "[GUEST]");
   await userEvent.fill(field("wish-body"), "[WISH_TEXT]");
-  await userEvent.click(inSheet("Send wish"));
+  await send();
   await expect.poll(() => notice()).toBeTruthy();
   await userEvent.click([...notice()!.querySelectorAll("button")].find((b) => b.textContent === "View the wishes")!);
   expect(sheet()).toBeNull();
   await userEvent.click(wishButton());
   expect(field("wish-name").value).toBe("[GUEST]");
-  await userEvent.click(inSheet("Send wish"));
+  await send();
   await expect.poll(() => to("/api/guest/wish").length).toBe(2);
   expect(to("/api/guest/wish")[1].body.submission_id).toBe(to("/api/guest/wish")[0].body.submission_id);
 });
@@ -1078,15 +1085,15 @@ test("G6 review: a 429 without a wait, a 403, or a 200 that is not 'sent' never 
   await openForm({ "/api/guest/wish": [{ status: 429 }, { status: 403 }, ok({})] });
   await userEvent.fill(field("wish-name"), "[GUEST]");
   await userEvent.fill(field("wish-body"), "[WISH_TEXT]");
-  await userEvent.click(inSheet("Send wish"));
+  await send();
   await expect.poll(() => sheet()!.textContent).toContain("Not sent. Your draft is still here.");
   expect(notice()).toBeNull();
   await userEvent.fill(field("wish-body"), "[WISH_TEXT_2]");
-  await userEvent.click(inSheet("Send wish"));
+  await send();
   await expect.poll(() => to("/api/guest/wish").length).toBe(2);
   await expect.poll(() => sheet()!.textContent).toContain("Not sent. Your draft is still here.");
   await userEvent.fill(field("wish-body"), "[WISH_TEXT_3]");
-  await userEvent.click(inSheet("Send wish"));
+  await send();
   await expect.poll(() => sheet()!.textContent).toContain("We couldn’t confirm whether it was sent.");
   expect(sheet()!.querySelector("h2")?.textContent).toBe("Leave a wish");
 });
@@ -1097,14 +1104,14 @@ test("G6 review: characters the server refuses are explained on the field and ne
   expect(field("wish-body").getAttribute("aria-required")).toBe("true");
   await userEvent.fill(field("wish-name"), "[GUEST]");
   await userEvent.fill(field("wish-body"), "[WISH]\t[TEXT]");
-  await userEvent.click(inSheet("Send wish"));
+  await send();
   expect(sheet()!.textContent).toContain("This has a character that can’t be sent, such as a tab or a hidden mark.");
   expect(document.activeElement).toBe(field("wish-body"));
   expect(to("/api/guest/wish")).toHaveLength(0);
   // A line break is fine in the wish; a bidi control is not, in either field.
   await userEvent.fill(field("wish-body"), "[WISH]\n[TEXT]");
   await userEvent.fill(field("wish-name"), "\u202e[GUEST]");
-  await userEvent.click(inSheet("Send wish"));
+  await send();
   expect(document.activeElement).toBe(field("wish-name"));
   expect(to("/api/guest/wish")).toHaveLength(0);
 });
@@ -1115,7 +1122,7 @@ test("G6 review: while sending the text is read-only, and a late answer never wi
   await userEvent.fill(field("wish-name"), "[GUEST]");
   await userEvent.fill(field("wish-body"), "[WISH_TEXT]");
   vi.mocked(fetch).mockImplementationOnce(() => new Promise((resolve) => (release = () => resolve(new Response(JSON.stringify({ status: "sent" }))))));
-  await userEvent.click(inSheet("Send wish"));
+  await send();
   expect(field("wish-body").readOnly).toBe(true);
   await userEvent.click(inSheet("Close"));
   await userEvent.click(inSheet("Discard"));
@@ -1130,7 +1137,7 @@ test("G6 review: white space the server trims (a trailing tab) is not refused", 
   await openForm({ "/api/guest/wish": [SENT] });
   await userEvent.fill(field("wish-name"), "[GUEST]");
   await userEvent.fill(field("wish-body"), "[WISH_TEXT]\t");
-  await userEvent.click(inSheet("Send wish"));
+  await send();
   await expect.poll(() => to("/api/guest/wish").length).toBe(1);
 });
 
@@ -1140,7 +1147,7 @@ test("G6 review: a limit answer that arrives on the discard question returns foc
   await userEvent.fill(field("wish-name"), "[GUEST]");
   await userEvent.fill(field("wish-body"), "[WISH_TEXT]");
   vi.mocked(fetch).mockImplementationOnce(() => new Promise((resolve) => (release = () => resolve(new Response(JSON.stringify({ error: "rate_limited", retry_after: 600, shared: false }), { status: 429 })))));
-  await userEvent.click(inSheet("Send wish"));
+  await send();
   await userEvent.click(inSheet("Close"));
   expect(sheet()!.textContent).toContain("Discard this unsent draft?");
   release();
@@ -1153,6 +1160,85 @@ test("G6 review: the edges trimmed are the same set on both sides, so a trailing
   await openForm({ "/api/guest/wish": [SENT] });
   await userEvent.fill(field("wish-name"), "[GUEST]");
   await userEvent.fill(field("wish-body"), "[WISH_TEXT]\u2028");
+  await send();
+  await expect.poll(() => to("/api/guest/wish").length).toBe(1);
+});
+
+// T3.2c (privacy design §4.1, §3; tests 2, 4, 6): consent with each wish, and the notice stacked over G6.
+const privacy = () => host.querySelector<HTMLDialogElement>("dialog[open][aria-labelledby='privacy-title']");
+const noticeLink = () => sheet()!.querySelector<HTMLAnchorElement>("a[href='/privacy']")!;
+
+test("G6 consent: unticked by default; Send says so after the field errors and focuses the box; the wish carries the notice version", async () => {
+  await openForm();
+  expect(consent().checked).toBe(false);
+  const label = consent().closest("label")!;
+  expect(label.textContent).toContain("I agree that my name and wish are stored and shown on this page after approval by [PARTNER_A] & [PARTNER_B].");
+  expect(label.getBoundingClientRect().height).toBeGreaterThanOrEqual(44);
+  expect(noticeLink().getBoundingClientRect().height).toBeGreaterThanOrEqual(44); // a near miss must not tick the box
+  await userEvent.click(inSheet("Send wish"));
+  expect(document.activeElement).toBe(field("wish-name")); // the field errors come first
+  expect(sheet()!.textContent).toContain("Tick the box to send your wish.");
+  await userEvent.fill(field("wish-name"), "[GUEST]");
+  await userEvent.fill(field("wish-body"), "[WISH_TEXT]");
+  await userEvent.click(inSheet("Send wish"));
+  expect(document.activeElement).toBe(consent());
+  expect(consent().getAttribute("aria-invalid")).toBe("true");
+  expect(to("/api/guest/wish")).toHaveLength(0);
+  await userEvent.click(label.querySelector("span")!); // the whole label ticks it
+  expect(consent().checked).toBe(true);
+  expect(sheet()!.textContent).not.toContain("Tick the box to send your wish.");
   await userEvent.click(inSheet("Send wish"));
   await expect.poll(() => to("/api/guest/wish").length).toBe(1);
+  expect(to("/api/guest/wish")[0].body.consent).toBe(1);
+  await expect.poll(() => sheet()?.querySelector("h2")?.textContent).toBe("Wish sent!");
+  await userEvent.click(inSheet("Back to the wishes"));
+  await userEvent.click(wishButton());
+  expect(consent().checked).toBe(false); // each wish is its own consent
+});
+
+test("G6 consent: an updated notice (409) unticks the box, asks again, keeps the draft; ticking again sends", async () => {
+  await openForm({ "/api/guest/wish": [{ status: 409, body: { error: "needs_consent" } }, SENT] });
+  await userEvent.fill(field("wish-name"), "[GUEST]");
+  await userEvent.fill(field("wish-body"), "[WISH_TEXT]");
+  await send();
+  await expect.poll(() => sheet()!.textContent).toContain("We've updated the privacy notice. Please tick again.");
+  expect(consent().checked).toBe(false);
+  expect(document.activeElement).toBe(consent());
+  expect(field("wish-body").value).toBe("[WISH_TEXT]");
+  await send();
+  await expect.poll(() => sheet()?.querySelector("h2")?.textContent).toBe("Wish sent!");
+});
+
+test("P1 from G6: the link opens the notice over the form without ticking; Back and Escape return with the draft and box kept", async () => {
+  await openForm();
+  await userEvent.fill(field("wish-name"), "[GUEST]");
+  await userEvent.click(consent());
+  await userEvent.click(noticeLink());
+  await expect.poll(() => privacy()).not.toBeNull();
+  expect(consent().checked).toBe(true); // the link inside the label does not toggle the box
+  expect(privacy()!.querySelector("#privacy-title")?.textContent).toBe("Privacy & cookies");
+  expect(privacy()!.textContent).toContain("Last updated 2026-11-27");
+  expect(privacy()!.textContent).not.toMatch(/PARTNER/); // never says whose page it is (§3.3)
+  expect(privacy()!.querySelector("table caption")?.textContent).toBe("Cookies and browser storage");
+  expect(privacy()!.querySelectorAll("tbody th[scope=row]").length).toBeGreaterThan(0);
+  expect(privacy()!.textContent).toContain("vegenus_prefs");
+  const toc = [...privacy()!.querySelectorAll<HTMLAnchorElement>("nav a")];
+  expect(toc).toHaveLength(9);
+  await userEvent.click(toc[5]);
+  expect(document.activeElement?.textContent).toContain("How long");
+  expect(location.hash).toBe(""); // the guest address keeps its own fragment
+  await userEvent.keyboard("{Escape}");
+  await expect.poll(() => privacy()).toBeNull();
+  expect(sheet()).not.toBeNull();
+  expect(field("wish-name").value).toBe("[GUEST]");
+  expect(consent().checked).toBe(true);
+  expect(document.activeElement).toBe(noticeLink());
+  await userEvent.click(noticeLink());
+  await expect.poll(() => privacy()).not.toBeNull();
+  expect([...privacy()!.querySelectorAll("button")].map((b) => b.textContent)).toEqual(["Close"]); // one way out (owner)
+  await userEvent.click([...privacy()!.querySelectorAll("button")].find((b) => b.textContent === "Close")!);
+  await expect.poll(() => privacy()).toBeNull();
+  expect(sheet()).not.toBeNull();
+  expect(consent().checked).toBe(true);
+  expect(document.activeElement).toBe(noticeLink());
 });

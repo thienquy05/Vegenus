@@ -591,6 +591,33 @@
   accent-color: var(--accent);
 }
 
+/* G6 consent (privacy design §4.1): the whole label is the target, at least 44 px. */
+.consent {
+  display: flex;
+  align-items: flex-start;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+  min-height: 44px;
+  padding: var(--space-2) 0;
+  cursor: pointer;
+}
+.consent input {
+  width: 24px;
+  height: 24px;
+  margin: 0;
+  flex: none;
+  accent-color: var(--accent);
+}
+.consent span {
+  flex: 1 1 12rem;
+}
+.consent a {
+  display: inline-block;
+  min-height: 44px;
+  padding-block: 10px;
+  color: inherit;
+}
+
 /* G6 Leave a wish (guest UI §8): 48 px name field, 160 px message, inline errors under each field. */
 .wishForm {
   display: grid;

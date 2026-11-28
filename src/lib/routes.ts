@@ -9,6 +9,8 @@ export type RouteClass = "public" | "guest" | "visitor" | "owner" | "machine";
 export const ROUTES: Record<string, RouteClass> = {
   "/": "public",
   "/login": "public",
+  // P1 the privacy notice (T3.2c): fixed text, no credential, no page content.
+  "/privacy": "public",
   "/app": "owner",
   // The guest shell shows G-E1 or exchanges the fragment; the guest pages need the token cookie.
   "/g": "public",
@@ -38,6 +40,7 @@ export const ROUTES: Record<string, RouteClass> = {
   // Checks Origin, then the owner session; the database checks the page owner.
   "/api/owner/wishes": "owner",
   "/api/owner/wishes/moderate": "owner",
+  "/api/owner/wishes/delete": "owner",
   "/api/owner/token": "owner",
   "/api/owner/token/shown": "owner",
   "/api/owner/visibility": "owner",
@@ -78,6 +81,7 @@ export const HANDLER_METHODS: Record<string, string[]> = {
   "/api/guest/wish": ["POST"],
   "/api/owner/wishes": ["POST"],
   "/api/owner/wishes/moderate": ["POST"],
+  "/api/owner/wishes/delete": ["POST"],
   "/api/owner/token": ["POST"],
   "/api/owner/token/shown": ["POST"],
   "/api/owner/visibility": ["POST"],

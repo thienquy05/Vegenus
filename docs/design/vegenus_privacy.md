@@ -21,17 +21,17 @@ Secondary sources, 2026-10-29; each line is to be checked against the text of th
 
 ## 2. Storage table (shown on the notice, P1 §3.4)
 
-Cookie and storage names are the planned ones; the final names come from the code, and test 1 checks that the table matches what the browser actually holds.
+Cookie and storage names are the planned ones; the final names come from the code, and test 1 checks that the table matches what the browser actually holds. **The notice shows only the rows the site sets today (owner, 2026-11-28):** in T3.2c `vegenus_g`, `vegenus_d`, the owner's `sb-…-auth-token` and its parts, `vegenus_prefs` and the two guest-link rows, with no "Keep me signed in", invite-code, intro or Settings-reset wording; each other row (Member sign-in, code verifiers, `vegenus.seen`, `vegenus:intro:`, `vegenus_keep`) is added to the notice by the unit that builds its feature, with a notice version bump only if it needs new consent.
 
 | Name | Kind | Set by | Why | How long | Needed? |
 |---|---|---|---|---|---|
 | `vegenus_g` | Cookie, HttpOnly, Secure, SameSite=Lax | Our server, after a tap on the tag or a QR scan | Remembers the guest link so the page opens again without a new tap | 30 days (Q34b) | Strictly necessary (the service the guest asked for) |
-| `vegenus_d` (name to confirm) | Cookie, HttpOnly, Secure, SameSite=Lax | Our server, at token exchange, at the first Wishes load or post by a visitor with no token on a Published page (data model §3.9), or at the first invite-code check (G21, token flow §10.3) | A random ID used only for spam and guessing limits: 3 wishes per device per 24 hours and the per-device invite-code limit; identifies nothing outside this site | 24 hours from its last use (Q103) | Strictly necessary (security) |
+| `vegenus_d` | Cookie, HttpOnly, Secure, SameSite=Lax | Our server, at token exchange, at the first Wishes load or post by a visitor with no token on a Published page (data model §3.9), or at the first invite-code check (G21, token flow §10.3) | A random ID used only for spam and guessing limits: 3 wishes per device per 24 hours and the per-device invite-code limit; identifies nothing outside this site | 24 hours from its last use (Q103) | Strictly necessary (security) |
 | `sb-…-auth-token` (owner) | Cookie, HttpOnly, Secure, SameSite=Lax | Supabase Auth, through our server | Keeps the couple signed in | Until the browser closes (Q99); 30 days only if "Keep me signed in" is ticked (Q100) | Session: necessary. 30 days: by consent (the checkbox) |
 | `sb-…-auth-token` (Member, G25) | Same | Same | Keeps a registered guest signed in | Same rule as the owner | Same |
 | `sb-…-auth-token.0`, `.1` … | Same | Supabase Auth, when the session is too large for one cookie | Parts of the same sign-in cookie | Same as the cookie they split | Same |
 | `sb-…-auth-token-code-verifier`, `sb-…-auth-token-flow-[FLOW_ID]-code-verifier`, `sb-…-auth-token-flows-code-verifier` | Same | Supabase Auth (the three key patterns in the installed `@supabase/auth-js`), during Google sign-in (O1) and password reset (O1, G25) | Proves the sign-in or reset was started on this browser | Until the flow finishes; an abandoned flow's lifetime is confirmed in Phase 2 and written here | Strictly necessary (security) |
-| `vegenus.prefs` (local storage) | Browser storage, never sent to a server | The page | Language, view mode, reduce motion, intro animations, menu corner | Until cleared in the browser or reset in Settings | Strictly necessary (preferences the visitor sets) |
+| `vegenus_prefs` (local storage) | Browser storage, never sent to a server | The page | Language, view mode, reduce motion, intro animations, menu corner | Until cleared in the browser or reset in Settings | Strictly necessary (preferences the visitor sets) |
 | `vegenus.seen` (local storage) | Same | The page | Tour seen, invite card and updates card dismissed (so they are not shown again) | Same | Strictly necessary (preferences) |
 | `vegenus:intro:[PAGE_ID]:v1` (local storage) | Same | The page (guest motion §10.1.4) | Which section intros were already played, and the intro preference | Same | Strictly necessary (preferences) |
 | `vegenus_keep` (proposed name) | Cookie, HttpOnly, Secure, SameSite=Lax | Our server, only when "Keep me signed in" is ticked | Tells the server, on each session refresh, to keep the 30-day lifetime (§4.3) | 30 days, removed at logout | By consent (the checkbox) |
@@ -55,7 +55,7 @@ Cookie and storage names are the planned ones; the final names come from the cod
 
 ### 3.2 Layout
 
-Phone: full-height sheet, 16 px padding, 56 px heading row with Close (and Back when stacked), contents list of section links at the top, then sections; reading width the full sheet. Tablet: centered 640 px dialog, contents as a sticky list above the text. Laptop: centered 1040 px region, 240 px contents rail on the left (sticky) + 32 px gap + 720 px reading column. Standalone route: same compositions in the neutral set, with the page's bar replaced by a plain header ("Privacy / Quyền riêng tư") and a "Back / Quay lại" that uses history, or links to `/` when there is none.
+Phone: full-height sheet, 16 px padding, 56 px heading row with one Close (owner, 2026-11-28: one way out; Back only where it goes to a different previous screen), contents list of section links at the top, then sections; reading width the full sheet. Tablet: centered 640 px dialog, contents as a list above the text, in the normal flow, not sticky (Claude and Codex, 2026-11-28, delegated by the owner: a sticky list of nine 44 px links is about 450 px and would hide the heading a contents link focuses, WCAG 2.4.11; headings get a scroll margin for the focus outline). Laptop: centered 1040 px region, 240 px contents rail on the left (sticky) + 32 px gap + 720 px reading column. Standalone route: same compositions in the neutral set, with the page's bar replaced by a plain header ("Privacy / Quyền riêng tư") and a "Back / Quay lại" that uses history, or links to `/` when there is none.
 
 Body text 16 px, 1.6 line height, maximum 72 characters per line. The storage table (§2) is a real `<table>` on tablet and laptop and becomes labelled records on phone, at 320 px and at 200 % text. Language follows G8; the standalone route follows the stored G8 choice when one exists on the device, otherwise the browser language (Vietnamese when it starts with `vi`, English otherwise). No language switch on the page (Q67).
 
@@ -137,7 +137,7 @@ Unchecked checkbox between the password field and the Sign in button, with help 
 
 ### 4.4 G8 Settings: new row and a reset
 
-- Last group, "Privacy / Quyền riêng tư": row "Privacy & cookies / Quyền riêng tư & cookie" (opens P1) and button "Clear saved settings on this device / Xóa cài đặt đã lưu trên thiết bị này" (removes `vegenus.prefs`, `vegenus.seen` and the `vegenus:intro:` keys; the guest link cookie stays, because removing it would lock the guest out until the next tap). Confirmation inline: "Cleared. / Đã xóa." The device note keeps its existing wording.
+- Last group, "Privacy / Quyền riêng tư": row "Privacy & cookies / Quyền riêng tư & cookie" (opens P1) and button "Clear saved settings on this device / Xóa cài đặt đã lưu trên thiết bị này" (removes `vegenus_prefs`, `vegenus.seen` and the `vegenus:intro:` keys; the guest link cookie stays, because removing it would lock the guest out until the next tap). Confirmation inline: "Cleared. / Đã xóa." The device note keeps its existing wording.
 - States: clear failed (storage blocked) shows the existing persistence-failure line.
 
 ## 5. Requests from guests (no new guest screen)
@@ -169,13 +169,13 @@ Guests ask the couple directly (Q105); no request form and no contact address (a
 
 ## 8. Tests to write first
 
-1. **Storage audit (E2E, every guest and owner route, phone):** after a full visit (tap, read, wish, settings, sign-in with and without "Keep me signed in", Google sign-in and password reset, each finished and abandoned, once those flows exist) the browser's cookies and local storage contain exactly the §2 names, with the §2 lifetimes and flags; no third-party request sets a cookie; no request goes to an analytics host. RED first against the current app: `vegenus.prefs` does not exist yet, so the table and the browser differ.
+1. **Storage audit (E2E, every guest and owner route, phone):** after a full visit (tap, read, wish, settings, sign-in with and without "Keep me signed in", Google sign-in and password reset, each finished and abandoned, once those flows exist) the browser's cookies and local storage contain exactly the §2 names, with the §2 lifetimes and flags; no third-party request sets a cookie; no request goes to an analytics host. The prefs key is `vegenus_prefs` (the code's name, T3.2c).
 2. G6: Send with the box unticked shows the consent error and focuses the box; a crafted post without consent is refused by the server and stores nothing; a post with an old version returns "needs consent" and keeps the draft; the box is unticked again on the next wish.
 3. O1 and G25: unticked gives a cookie with no expiry (Q99 test stays); ticked gives `Max-Age` 30 days and a `session_keep` row with consent version and time; a refresh after ticking keeps the 30-day lifetime and does not extend it; a forged `vegenus_keep` cookie with no matching row gives a session-only cookie; logout removes the cookies and the row.
 4. P1: reachable at `/privacy` with no token, shows no partner name, no contact address and no page content, and is the same text as the in-page sheet; no language switch; opened from G6 and closed returns to G6 with the draft and checkbox kept; Esc, focus return, contents links, 320 px and 200 % without horizontal scroll; the storage table becomes records on phone.
 5. (Removed with O19, Q105.)
 6. Every P1, consent and Keep-me-signed-in string exists in EN and VI (fixed-text check), and the notice `[DATE]` matches `privacy_notice_version`.
-7. G8 "Clear saved settings" removes `vegenus.prefs`, `vegenus.seen` and every `vegenus:intro:` key and keeps `vegenus_g`.
+7. G8 "Clear saved settings" removes `vegenus_prefs`, `vegenus.seen` and every `vegenus:intro:` key and keeps `vegenus_g`.
 8. G24: Confirm with the account box unticked is refused by the server and keeps the password; ticking only the account box creates the account with updates off; both consents are recorded separately. G24 and G26 with an older notice version get "needs consent" and store nothing; a retry of a `confirming` registration keeps its first consent.
 9. O7: Delete on a pending, an approved and a rejected wish removes the row at once.
 
