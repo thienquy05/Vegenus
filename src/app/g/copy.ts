@@ -90,6 +90,12 @@ export const COPY = {
   "settings.notSetUp": ["not set up", "chưa thiết lập"],
   "settings.langNotSetEn": ["English hasn't been set up by the owner yet.", "Chủ trang chưa thiết lập tiếng Anh."],
   "settings.langNotSetVi": ["Vietnamese hasn't been set up by the owner yet.", "Chủ trang chưa thiết lập tiếng Việt."],
+  // T3.4 (guest UI §9 Mode, 3D approach §3.2). World joins once it is built and kept.
+  "settings.view": ["View", "Chế độ xem"],
+  "settings.page": ["Page", "Trang"],
+  "settings.static": ["Static", "Tĩnh"],
+  "settings.no3d": ["3D isn't available on this device.", "Thiết bị này không hỗ trợ 3D."],
+  "settings.reduceOn": ["Turn off Reduce motion to use 3D.", "Tắt Giảm chuyển động để dùng 3D."],
   "settings.motion": ["Reduce motion", "Giảm chuyển động"],
   "settings.usingDevice": ["Using device setting", "Theo cài đặt thiết bị"],
   "settings.useDevice": ["Use device setting", "Dùng cài đặt thiết bị"],

@@ -3,6 +3,7 @@ import { PREFS_KEY } from "@/lib/privacy";
 import { type CSSProperties, type ReactNode, useCallback, useEffect, useLayoutEffect, useRef, useState, useSyncExternalStore } from "react";
 import type { Cred, GuestSummary } from "@/lib/guest";
 import { chooseLang, say, type CopyKey, type Lang } from "./copy";
+import { chooseMode, hasWebgl2, type Mode } from "./mode";
 import { AlbumView, baseOf, HomeView, ListView, type Shortcut, useOnline } from "./views";
 import s from "./guest.module.css";
 import "../../../themes/a_dreamy/tokens.css";
@@ -22,7 +23,7 @@ const SUFFIX: Record<Section, string> = { home: "/home", memories: "/memories", 
 const pathOf = (base: string, x: Section) => (x === "home" && base !== "/g" ? base : base + SUFFIX[x]);
 const THEMES = ["a_dreamy", "b_cosmic", "c_cozy", "d_elegant"];
 
-type Prefs = { lang?: Lang; theme?: string; motion?: "reduce" | "full"; corner?: "left" | "right" };
+type Prefs = { lang?: Lang; theme?: string; motion?: "reduce" | "full"; corner?: "left" | "right"; mode?: Mode };
 const REDUCE = "(prefers-reduced-motion: reduce)";
 const noop = () => () => {};
 const watchMotion = (onChange: () => void) => {
@@ -39,6 +40,7 @@ export function readPrefs(): Prefs {
       theme: THEMES.includes(raw.theme) ? raw.theme : undefined,
       motion: ["reduce", "full"].includes(raw.motion) ? raw.motion : undefined,
       corner: ["left", "right"].includes(raw.corner) ? raw.corner : undefined,
+      mode: ["page", "static"].includes(raw.mode) ? raw.mode : undefined,
     };
   } catch {
     return {};
@@ -107,6 +109,15 @@ export function GuestApp(props: { summary: GuestSummary; section: Section; item?
   const theme = (prompting && preview) || prefs?.theme || suggested;
   const reduce = prefs?.motion ? prefs.motion === "reduce" : systemReduce;
   const corner = prefs?.corner ?? "left";
+  // Decided before any 3D is requested (3D approach §3.2), so a Static device never downloads it. One probe per visit,
+  // after the first content is on screen (principle 1: content first); Static, which requests nothing, until then.
+  const [webgl, setWebgl] = useState(false);
+  useEffect(() => {
+    const frame = requestAnimationFrame(() => setWebgl(hasWebgl2()));
+    return () => cancelAnimationFrame(frame);
+  }, []);
+  const device = browser ? (navigator as Navigator & { connection?: { saveData?: boolean }; deviceMemory?: number }) : undefined;
+  const { mode, locked } = chooseMode({ webgl, reduce, pick: prefs?.mode, saveData: device?.connection?.saveData, deviceMemory: device?.deviceMemory });
   const t = (key: CopyKey, vars?: Record<string, string | number>) => say(key, lang, vars);
   const online = useOnline();
   const onGone = useCallback(() => setGone(true), []);
@@ -138,7 +149,8 @@ export function GuestApp(props: { summary: GuestSummary; section: Section; item?
     html.lang = lang;
     if (reduce) html.dataset.motion = "reduce";
     else delete html.dataset.motion;
-  }, [ready, theme, lang, reduce]);
+    html.dataset.mode = mode;
+  }, [ready, theme, lang, reduce, mode]);
 
   const change = (next: Prefs) => {
     const merged = { ...prefs, ...next };
@@ -351,6 +363,22 @@ export function GuestApp(props: { summary: GuestSummary; section: Section; item?
             </p>
           )}
         </fieldset>
+        {themeCards("g8-theme", theme, (id) => change({ theme: id }))}
+        {/* Rules 1-2 force Static: Page stays visible, disabled, with the reason (3D approach §3.2). */}
+        <fieldset className={s.group} aria-describedby={locked ? "mode-notice" : undefined}>
+          <legend>{t("settings.view")}</legend>
+          {(["page", "static"] as const).map((m) => (
+            <label key={m} className={s.row}>
+              <input id={`mode-${m}`} type="radio" name="mode" disabled={m === "page" && !!locked} checked={mode === m} onChange={() => change({ mode: m })} />
+              <span>{t(m === "page" ? "settings.page" : "settings.static")}</span>
+            </label>
+          ))}
+          {locked && (
+            <p id="mode-notice" className={s.small}>
+              {t(locked === "no3d" ? "settings.no3d" : "settings.reduceOn")}
+            </p>
+          )}
+        </fieldset>
         <div className={s.group}>
           <label className={s.row}>
             <input id="reduce-motion" type="checkbox" checked={reduce} onChange={(event) => change({ motion: event.target.checked ? "reduce" : "full" })} />
@@ -364,7 +392,6 @@ export function GuestApp(props: { summary: GuestSummary; section: Section; item?
             <p className={s.small}>{t("settings.usingDevice")}</p>
           )}
         </div>
-        {themeCards("g8-theme", theme, (id) => change({ theme: id }))}
         <fieldset className={s.group}>
           <legend>{t("settings.corner")}</legend>
           {(["left", "right"] as const).map((c) => (
