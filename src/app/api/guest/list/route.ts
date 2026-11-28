@@ -12,10 +12,10 @@ export async function POST(request: NextRequest) {
   const after: unknown = req.body?.after ?? null;
   const cursor = after as { sort?: unknown; id?: unknown } | null;
   if (!SECTIONS.includes(section as ListSection) || (cursor && (!Number.isFinite(cursor.sort) || !isUuid(cursor.id)))) return answer(null, 400);
-  if (!req.token) return answer({ error: "not_available" }, 404);
+  if (!req.cred) return answer({ error: "not_available" }, 404);
   try {
-    const items = await guestList(req.token, section as ListSection, cursor as { sort: number; id: string } | null);
-    if (!items.length && !(await stillOpen(req.token, section as ListSection))) return answer({ error: "not_available" }, 404);
+    const items = await guestList(req.cred, section as ListSection, cursor as { sort: number; id: string } | null);
+    if (!items.length && !(await stillOpen(req.cred, section as ListSection))) return answer({ error: "not_available" }, 404);
     return answer({ items }, 200);
   } catch {
     return answer({ error: "unavailable" }, 503);

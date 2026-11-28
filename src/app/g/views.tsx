@@ -1,22 +1,24 @@
 "use client";
 import { useCallback, useEffect, useRef, useState, useSyncExternalStore } from "react";
 import { counter } from "@/lib/home";
-import type { GuestMediaRef, GuestSummary, GuestVariant } from "@/lib/guest";
+import type { Cred, GuestMediaRef, GuestSummary, GuestVariant } from "@/lib/guest";
 import { pickLang, type CopyKey, type Lang } from "./copy";
 import s from "./guest.module.css";
 
 type T = (key: CopyKey, vars?: Record<string, string | number>) => string;
-type Props = { summary: GuestSummary; lang: Lang; token?: string; t: T; onGone: () => void };
+type Props = { summary: GuestSummary; lang: Lang; cred?: Cred; t: T; onGone: () => void };
+// Where the views live: /g for a guest, /p/<name> for a visitor of a Published page (T3.1pc).
+export const baseOf = (cred?: Cred) => (typeof cred === "object" ? `/p/${cred.page}` : "/g");
 
 // Every guest read: the token cookie goes by itself; a visit run from memory (cookies blocked, E30) sends the token.
 // A 404 is the not-available answer: the token no longer opens the page (token flow §6).
 export class Gone extends Error {}
 export class NotFound extends Error {} // the item is gone while the page and section still open
-async function guestPost<R>(path: string, body: object, token?: string): Promise<R> {
+async function guestPost<R>(path: string, body: object, cred?: Cred): Promise<R> {
   const res = await fetch(path, {
     method: "POST",
     headers: { "content-type": "application/json", "x-vegenus-guest": "1" },
-    body: JSON.stringify(token ? { ...body, token } : body),
+    body: JSON.stringify(cred === undefined ? body : typeof cred === "string" ? { ...body, token: cred } : { ...body, page: cred.page }),
   });
   if (res.status === 404) throw (await res.json().catch(() => null))?.error === "not_found" ? new NotFound() : new Gone();
   if (!res.ok) throw new Error(String(res.status));
@@ -38,7 +40,7 @@ const RESIGN_MS = 240_000; // signed URLs last 5 minutes (Q29); one older than 4
 
 // Signed URLs for media ids (T3.1a). Each id is signed once, in requests of at most 100; refresh() signs again the ids
 // whose URLs are about to expire, so a guest who stays past 5 minutes still gets photos. A failure leaves photos out.
-function useMedia(ids: string[], variant: GuestVariant, token: string | undefined, onGone: () => void) {
+function useMedia(ids: string[], variant: GuestVariant, cred: Cred | undefined, onGone: () => void) {
   const [urls, setUrls] = useState<Record<string, string>>({});
   const asked = useRef(new Map<string, number>());
   const [online, setOnline] = useState(0); // counts reconnections: ids whose signing failed are asked again
@@ -48,7 +50,7 @@ function useMedia(ids: string[], variant: GuestVariant, token: string | undefine
         const chunk = want.slice(i, i + MEDIA_IDS);
         const at = Date.now();
         for (const id of chunk) asked.current.set(id, at);
-        guestPost<{ urls: Record<string, string> }>("/api/guest/media", { ids: chunk, variant }, token)
+        guestPost<{ urls: Record<string, string> }>("/api/guest/media", { ids: chunk, variant }, cred)
           .then((r) => setUrls((old) => ({ ...old, ...r.urls })))
           .catch((error) => {
             for (const id of chunk) asked.current.delete(id);
@@ -56,7 +58,7 @@ function useMedia(ids: string[], variant: GuestVariant, token: string | undefine
           });
       }
     },
-    [variant, token, onGone],
+    [variant, cred, onGone],
   );
   const key = ids.join(",");
   useEffect(() => {
@@ -93,11 +95,11 @@ const altOf = (m: GuestMediaRef, lang: Lang) => pickLang(lang, [[m.lang, m.alt],
 // shows no counter. Shortcuts are plain links to the enabled sections, opened like the menu does.
 export type Shortcut = { name: "memories" | "together" | "guestbook"; href: string };
 export function HomeView(props: Props & { shortcuts: Shortcut[]; onGo: (name: Shortcut["name"]) => void }) {
-  const { summary, lang, token, t, onGone, shortcuts, onGo } = props;
+  const { summary, lang, cred, t, onGone, shortcuts, onGo } = props;
   const word = (key: string, vars?: Record<string, string | number>) => wording(props, key, vars);
   const home = summary.home;
   const picks = home?.picks ?? [];
-  const { urls, refresh } = useMedia(picks.map((p) => p.id), "display", token, onGone);
+  const { urls, refresh } = useMedia(picks.map((p) => p.id), "display", cred, onGone);
   const [shown, setShown] = useState(0);
   const note = home && pickLang(lang, [[home.lang, home.body], [home.lang_alt, home.body_alt]]);
   const count = home ? counter(home.start_date, summary.timezone) : null;
@@ -181,7 +183,7 @@ function guestDate(date: string, precision: "day" | "month" | "year", lang: Lang
 const fold = (x: string) => x.normalize("NFD").replace(/\p{M}/gu, "").replace(/đ/gi, "d").toLowerCase();
 
 export function ListView(props: Props & { section: "memories" | "together" | "guestbook"; onOpen?: (id: string) => void }) {
-  const { section, lang, token, t, onGone, onOpen } = props;
+  const { section, lang, cred, t, onGone, onOpen } = props;
   const word = (key: string, vars?: Record<string, string | number>) => wording(props, key, vars);
   const online = useOnline();
   const wishes = section === "guestbook";
@@ -204,8 +206,8 @@ export function ListView(props: Props & { section: "memories" | "together" | "gu
     const last = rows.at(-1);
     const after = !last || attempt === 0 ? undefined : wishes ? { created_at: (last as Entry).created_at, id: last.id } : { sort: (last as Item).sort_order, id: last.id };
     const read = wishes
-      ? guestPost<{ entries: Entry[] }>("/api/guest/wishes", after ? { after } : {}, token).then((r) => r.entries)
-      : guestPost<{ items: Item[] }>("/api/guest/list", after ? { section, after } : { section }, token).then((r) => r.items);
+      ? guestPost<{ entries: Entry[] }>("/api/guest/wishes", after ? { after } : {}, cred).then((r) => r.entries)
+      : guestPost<{ items: Item[] }>("/api/guest/list", after ? { section, after } : { section }, cred).then((r) => r.items);
     read
       .then((page) => {
         if (!live) return;
@@ -242,7 +244,7 @@ export function ListView(props: Props & { section: "memories" | "together" | "gu
     (target as HTMLElement | null | undefined)?.focus();
   }, [state, more]);
 
-  const { urls: thumbs, refresh: rethumb } = useMedia(wishes ? [] : (rows as Item[]).flatMap((r) => r.media?.find((m) => m.kind === "photo")?.id ?? []), "thumb", token, onGone);
+  const { urls: thumbs, refresh: rethumb } = useMedia(wishes ? [] : (rows as Item[]).flatMap((r) => r.media?.find((m) => m.kind === "photo")?.id ?? []), "thumb", cred, onGone);
   const next = () => {
     if (state === "loading") return;
     clicked.current = true;
@@ -290,7 +292,7 @@ export function ListView(props: Props & { section: "memories" | "together" | "gu
             ) : (
               <a
                 className={s.cardLink}
-                href={`/g/memories/${row.id}`}
+                href={`${baseOf(cred)}/memories/${row.id}`}
                 aria-labelledby={`card-${row.id}`}
                 onClick={(event) => {
                   event.preventDefault();
@@ -317,7 +319,7 @@ export function ListView(props: Props & { section: "memories" | "together" | "gu
         <PlaceSheet
           item={(shown as Item[])[at]}
           lang={lang}
-          token={token}
+          cred={cred}
           t={t}
           onGone={onGone}
           count={shown.length}
@@ -367,11 +369,11 @@ function PlaceCard({ item, url, onExpired, lang, onOpen }: { item: Item; url: Re
 
 // G4 place sheet (Phase 3, Q150): a native modal; focus on its heading; previous and next wrap; Escape and Close return
 // focus to the place's card. The page's menu button hides under it (Q68, guest.module.css).
-function PlaceSheet(props: { item: Item; count: number; lang: Lang; token?: string; t: T; onGone: () => void; onStep: (by: number) => void; onClose: () => void }) {
-  const { item, count, lang, token, t, onGone, onStep, onClose } = props;
+function PlaceSheet(props: { item: Item; count: number; lang: Lang; cred?: Cred; t: T; onGone: () => void; onStep: (by: number) => void; onClose: () => void }) {
+  const { item, count, lang, cred, t, onGone, onStep, onClose } = props;
   const dialog = useRef<HTMLDialogElement>(null);
   const photo = item.media?.find((m) => m.kind === "photo");
-  const { urls, refresh } = useMedia(photo ? [photo.id] : [], "display", token, onGone);
+  const { urls, refresh } = useMedia(photo ? [photo.id] : [], "display", cred, onGone);
   const title = pickLang(lang, [[item.lang, item.title], [item.lang_alt, item.title_alt]]);
   const note = pickLang(lang, [[item.lang, item.body], [item.lang_alt, item.body_alt]]);
   const alt = photo && pickLang(lang, [[item.lang, photo.alt], [item.lang_alt, photo.alt_alt]]);
@@ -425,7 +427,7 @@ const PER_PAGE = 4; // photos on a photo page after the cover (approved album, p
 // shortcut: one page at a time at every size and no page-turn effect; the laptop spread and the turn come with the
 // motion work.
 export function AlbumView(props: Props & { id: string; onBack: () => void }) {
-  const { id, lang, token, t, onGone, onBack } = props;
+  const { id, lang, cred, t, onGone, onBack } = props;
   const [item, setItem] = useState<Item | null>(null);
   const [state, setState] = useState<"loading" | "ready" | "missing" | "error">("loading");
   const [attempt, setAttempt] = useState(0);
@@ -441,7 +443,7 @@ export function AlbumView(props: Props & { id: string; onBack: () => void }) {
 
   useEffect(() => {
     let live = true;
-    guestPost<{ item: Item }>("/api/guest/item", { id }, token)
+    guestPost<{ item: Item }>("/api/guest/item", { id }, cred)
       .then((r) => {
         if (!live) return;
         setItem(r.item);
@@ -455,7 +457,7 @@ export function AlbumView(props: Props & { id: string; onBack: () => void }) {
     return () => {
       live = false;
     };
-  }, [id, token, onGone, attempt]);
+  }, [id, cred, onGone, attempt]);
 
   // The heading (or the gone notice) takes focus once there is something to read (guest UI §5).
   useEffect(() => {
@@ -466,14 +468,13 @@ export function AlbumView(props: Props & { id: string; onBack: () => void }) {
   const photos = all.filter((m) => m.kind === "photo");
   const video = all.find((m) => m.kind === "video");
   const voice = all.find((m) => m.kind === "audio");
-  const { urls: shown, refresh: reshown } = useMedia(photos.map((m) => m.id), "display", token, onGone);
-  const { urls: poster, refresh: reposter } = useMedia(video ? [video.id] : [], "poster", token, onGone);
-  const { urls: videoUrl, refresh: revideo, retry: retryVideo } = useMedia(playVideo && video ? [video.id] : [], "video", token, onGone);
-  const { urls: voiceUrl, refresh: revoice, retry: retryVoice } = useMedia(playVoice && voice ? [voice.id] : [], "audio", token, onGone);
+  const { urls: shown, refresh: reshown } = useMedia(photos.map((m) => m.id), "display", cred, onGone);
+  const { urls: poster, refresh: reposter } = useMedia(video ? [video.id] : [], "poster", cred, onGone);
+  const { urls: videoUrl, refresh: revideo, retry: retryVideo } = useMedia(playVideo && video ? [video.id] : [], "video", cred, onGone);
+  const { urls: voiceUrl, refresh: revoice, retry: retryVoice } = useMedia(playVoice && voice ? [voice.id] : [], "audio", cred, onGone);
 
   const back = (
-    // eslint-disable-next-line @next/next/no-html-link-for-pages -- in-app navigation; the shell sets the address itself, like the menu
-    <a className={s.back} href="/g/memories" onClick={(event) => { event.preventDefault(); onBack(); }}>
+    <a className={s.back} href={`${baseOf(cred)}/memories`} onClick={(event) => { event.preventDefault(); onBack(); }}>
       {t("detail.back")}
     </a>
   );

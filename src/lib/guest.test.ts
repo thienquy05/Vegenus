@@ -108,3 +108,37 @@ test("guestItem returns the one row or null, and throws without the token", asyn
   rpc.mockResolvedValue({ data: null, error: { message: "boom" } });
   await expect(guestItem("tok", "i1")).rejects.toThrow(/^guest_item failed$/);
 });
+
+// T3.1pc (Q155): a visitor at /p/<name> reads a Published page by its name through the public_* functions, with the
+// same arguments as the guest_* ones; no token is involved.
+test("a Published page's name reads through the public_* functions", async () => {
+  vi.resetModules();
+  const rpc = vi.fn(async (name: string) => ({ data: name === "public_open" ? { sections: ["home"] } : name === "public_media" ? [] : [{ id: "i1" }], error: null }));
+  vi.doMock("@supabase/supabase-js", () => ({ createClient: () => ({ rpc }) }));
+  vi.doMock("./storage-admin", () => ({ signObjects: vi.fn() }));
+  const { guestOpen, guestList, guestWishes, guestItem, guestMedia } = await import("./guest");
+  const page = { page: "our-page" };
+  expect(await guestOpen(page)).toEqual({ sections: ["home"] });
+  await guestList(page, "memories", { sort: 1, id: "i0" });
+  await guestWishes(page, null);
+  expect(await guestItem(page, "i1")).toEqual({ id: "i1" });
+  expect(await guestMedia(page, ["m1"], "thumb")).toEqual({});
+  expect(rpc.mock.calls).toEqual([
+    ["public_open", { page_selector: "our-page" }],
+    ["public_list", { page_selector: "our-page", section: "memories", after_sort: 1, after_id: "i0" }],
+    ["public_guestbook_list", { page_selector: "our-page", after_created_at: null, after_id: null }],
+    ["public_item", { page_selector: "our-page", item_id: "i1" }],
+    ["public_media", { page_selector: "our-page", ids: ["m1"], variant: "thumb" }],
+  ]);
+});
+
+test("requireVisitor: a Published page by its exact name, else the ordinary not-found without asking the database", async () => {
+  vi.resetModules();
+  const rpc = vi.fn(async (_: string, args: { page_selector: string }) => ({ data: args.page_selector === "our-page" ? { sections: ["home"] } : null, error: null }));
+  vi.doMock("@supabase/supabase-js", () => ({ createClient: () => ({ rpc }) }));
+  const { requireVisitor } = await import("./guest");
+  expect(await requireVisitor("our-page")).toEqual({ sections: ["home"] });
+  await expect(requireVisitor("not-published")).rejects.toThrow();
+  for (const name of ["Our-Page", "a b", "x", "-our-page"]) await expect(requireVisitor(name)).rejects.toThrow();
+  expect(rpc).toHaveBeenCalledTimes(2);
+});

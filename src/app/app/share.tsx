@@ -17,7 +17,7 @@ const day = (iso: string, timeZone: string) => both((lang) => zoneFormat(iso, ti
 const clock = (iso: string, timeZone: string) => both((lang) => zoneFormat(iso, timeZone, lang, { timeStyle: "short" }));
 
 // O2: the link's state from the snapshot; a Token-only page without a link gets the strong call to action.
-export function ShareCard({ page, offline, onOpen }: { page: Page; offline: boolean; onOpen: (opener: string) => void }) {
+export function ShareCard({ page, offline, stale = false, onOpen }: { page: Page; offline: boolean; stale?: boolean; onOpen: (opener: string) => void }) {
   const link = page.link ?? null;
   const reason = offline ? "offline-reason" : undefined;
   const key: CopyKey = !link ? "dashboard.shareEmpty" : link.shown_at ? "dashboard.shareCreated" : "dashboard.shareUnshown";
@@ -27,7 +27,7 @@ export function ShareCard({ page, offline, onOpen }: { page: Page; offline: bool
         <T k="share.title" />
       </h3>
       <p id="share-state" className={link && !link.shown_at ? s.error : undefined}>
-        {offline && (
+        {(offline || stale) && (
           <>
             <T k="common.lastKnown" />
             {" · "}

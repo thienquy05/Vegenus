@@ -3,7 +3,7 @@ import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useRef, useState, type ReactNode, type RefObject } from "react";
 import type { Kind, Lang, Section } from "@/lib/content";
 import { cardState, counter, type Home, type HomeRead } from "@/lib/home";
-import { dashState, resumeStep, type Drafts, type Page } from "@/lib/setup";
+import { dashState, resumeStep, validPage, type Drafts, type Page } from "@/lib/setup";
 import { Content } from "./content";
 import type { CopyKey } from "./copy";
 import { HomeEditor } from "./home";
@@ -30,6 +30,8 @@ async function fetchPage(): Promise<Read> {
     if (res.status === 403) return { state: "accessLost" };
     if (!res.ok) return { state: "error" };
     const body = await res.json();
+    // T3.1p: the page validator O9 uses (CHECKS.md "Server needs"); a malformed page is unreadable, not a page.
+    if (body?.page !== null && !validPage(body?.page)) return { state: "error" };
     return { state: dashState(body.page), ...body };
   } catch {
     return { state: "error" };
@@ -72,9 +74,11 @@ type Props = {
   onShare?: (opener: string) => void;
   onVisibility?: () => void;
   onSettings?: () => void;
+  // T3.1p: the return read after O8 or O9 (or a back-forward restore) is running, or failed with the snapshot kept.
+  stale?: "pending" | "failed" | null;
 };
 
-export function Dashboard({ state, page, offline, onSetup, onRetry, onContent, status, headingRef, focused = false, home, now, onHome, onHomeRetry, attention, usageCard, said, onShare, onVisibility, onSettings }: Props) {
+export function Dashboard({ state, page, offline, onSetup, onRetry, onContent, status, headingRef, focused = false, home, now, onHome, onHomeRetry, attention, usageCard, said, onShare, onVisibility, onSettings, stale = null }: Props) {
   const h2 = headingRef as RefObject<HTMLHeadingElement | null> | undefined;
   const message = headingRef as RefObject<HTMLParagraphElement | null> | undefined;
   const reason = offline ? "offline-reason" : undefined;
@@ -163,6 +167,16 @@ export function Dashboard({ state, page, offline, onSetup, onRetry, onContent, s
             <T k={status} />
           </p>
         )}
+        {state === "done" && page && stale === "failed" && (
+          <section className={`${s.surface} ${s.narrow}`}>
+            <p id="return-error" className={s.error}>
+              <T k="common.readError" />
+            </p>
+            <button id="dashboard-retry" type="button" className={s.secondary} disabled={offline} aria-describedby={["return-error", reason].filter(Boolean).join(" ")} onClick={onRetry}>
+              <L k="common.tryAgain" />
+            </button>
+          </section>
+        )}
         {state === "done" && page && attention}
         {state === "done" && page && (
           <div className={s.dashboard}>
@@ -179,24 +193,33 @@ export function Dashboard({ state, page, offline, onSetup, onRetry, onContent, s
                 <T k="dashboard.visibility" />
               </h3>
               <p className={s.badge}>
-                {offline && (
+                {(offline || stale) && (
                   <>
                     <T k="common.lastKnown" />
                     {" · "}
                   </>
                 )}
-                <T k={page.visibility === "private" ? "visibility.private" : "visibility.token"} />
+                <T k={page.visibility === "private" ? "visibility.private" : page.visibility === "published" ? "visibility.published" : "visibility.token"} />
               </p>
+              {page.visibility === "published" && page.vanity_name && (
+                <p id="visibility-address">
+                  <code className={s.address}>{`${location.host}/p/${page.vanity_name}`}</code>
+                </p>
+              )}
               {onVisibility && (
                 <button
                   id="visibility-change"
                   type="button"
                   className={s.secondary}
                   disabled={offline}
-                  aria-describedby={["visibility-card-title", reason].filter(Boolean).join(" ")}
-                  onClick={onVisibility}
+                  aria-disabled={stale ? true : undefined}
+                  aria-labelledby="visibility-card-title visibility-change-label"
+                  aria-describedby={[stale === "failed" ? "return-error" : null, reason].filter(Boolean).join(" ") || undefined}
+                  onClick={stale ? undefined : onVisibility}
                 >
-                  <L k="review.change" />
+                  <span id="visibility-change-label">
+                    <L k="review.change" />
+                  </span>
                 </button>
               )}
             </section>
@@ -260,7 +283,7 @@ export function Dashboard({ state, page, offline, onSetup, onRetry, onContent, s
               </h3>
               <SectionList sections={page.sections} />
             </section>
-            {onShare && <ShareCard page={page} offline={offline} onOpen={onShare} />}
+            {onShare && <ShareCard page={page} offline={offline} stale={!!stale} onOpen={onShare} />}
             {home && <HomeCard home={home} now={now} offline={offline} onHome={onHome} onRetry={onHomeRetry} />}
             {usageCard}
           </div>
@@ -340,6 +363,7 @@ export default function Owner() {
   // snapshot (Q146 18).
   const opener = useRef<[string, string] | null>(null);
   const returning = useRef(false);
+  const [stale, setStale] = useState<"pending" | "failed" | null>(null);
   // The usage snapshot O2 and O10 share (owner UI O10): read on the dashboard like the Home card, and by O10 itself.
   const usage = useUsage(online);
   const usageOpener = useRef<string | null>(null); // the O2 control that opened O10, focused again on Back
@@ -421,7 +445,10 @@ export default function Owner() {
       focusHome.current = false;
       document.getElementById("home-card-title")?.focus();
     }
-    if (opener.current && view.name === "dashboard" && !returning.current) {
+    if (focusRetry.current && view.name === "dashboard") {
+      focusRetry.current = false;
+      document.getElementById("dashboard-retry")?.focus();
+    } else if (stale !== "failed" && opener.current && view.name === "dashboard" && !returning.current) {
       (document.getElementById(opener.current[0]) ?? document.getElementById(opener.current[1]))?.focus();
       opener.current = null;
     }
@@ -429,17 +456,52 @@ export default function Owner() {
       (document.getElementById(usageOpener.current) ?? document.getElementById("usage-card-title"))?.focus();
       usageOpener.current = null;
     }
-  }, [view, state, data]);
+  }, [view, state, data, stale]);
   const leave = (next: typeof view) => {
     homeRead.current++; // a read still in flight belongs to the dashboard just left
     usage.leave();
     setHome({ state: "loading" });
     setView(next);
   };
+  const pageRead = useRef(0); // the latest owner read; an older answer is ignored
+  const focusRetry = useRef(false);
   const read = () => {
+    const n = ++pageRead.current;
+    setStale(null);
     setState("loading");
-    void fetchPage().then(apply);
+    void fetchPage().then((r) => n === pageRead.current && apply(r));
   };
+  // T3.1p (owner UI O2 Visibility row): a kept snapshot says Last known while this read runs, and beside Try again when it
+  // fails; any other answer (a page, none, 403, 401) is applied as usual, so no stale page outlives it.
+  const kept = state === "done" && !!data.page;
+  const revalidate = () => {
+    returning.current = true;
+    setStale(kept ? "pending" : null);
+    const n = ++pageRead.current;
+    void fetchPage().then((r) => {
+      if (n !== pageRead.current) return;
+      returning.current = false;
+      if (r.state === "error" && kept) {
+        focusRetry.current = true;
+        return setStale("failed");
+      }
+      setStale(null);
+      if (r.state === "signedOut") {
+        setData({ page: null, drafts: null }); // no page data while sign-in takes over (owner UI O2)
+        setState("loading");
+      }
+      apply(r);
+    });
+  };
+  const restore = useRef<() => void>(() => {});
+  useEffect(() => {
+    restore.current = onDashboard ? revalidate : () => {}; // a restore of another view is that view's own
+  });
+  useEffect(() => {
+    const shown = (e: PageTransitionEvent) => e.persisted && restore.current();
+    addEventListener("pageshow", shown);
+    return () => removeEventListener("pageshow", shown);
+  }, []);
 
   useEffect(() => {
     void fetchPage().then(apply);
@@ -539,11 +601,7 @@ export default function Owner() {
     if (from) return setView({ ...from, back: true } as View);
     setStatus(null);
     setView({ name: "dashboard" });
-    returning.current = true;
-    void fetchPage().then((r) => {
-      returning.current = false;
-      apply(r);
-    });
+    revalidate();
   };
   if (view.name === "share") {
     return (
@@ -660,7 +718,9 @@ export default function Owner() {
         setHome({ state: "loading" });
         readHome(true);
       }}
+      stale={stale}
       onRetry={() => {
+        if (stale === "failed") return revalidate(); // the kept snapshot stays drawn; focus follows the result
         focusResult.current = true;
         setAsked(true);
         read();

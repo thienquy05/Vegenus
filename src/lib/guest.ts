@@ -2,10 +2,11 @@
 // re-checks it on every call through guest_open, so a rotated token or a Private page fails on the next request.
 import { createClient } from "@supabase/supabase-js";
 import { cookies } from "next/headers";
-import { redirect } from "next/navigation";
+import { notFound, redirect } from "next/navigation";
 import { NextResponse, type NextRequest } from "next/server";
 import { sameOrigin } from "./auth";
 import { signObjects } from "./storage-admin";
+import { normalizeVanity, vanityReason } from "./vanity";
 
 export const GUEST_COOKIE = "vegenus_g";
 
@@ -43,8 +44,18 @@ const anon = () =>
     auth: { persistSession: false, autoRefreshToken: false },
   });
 
-export async function guestOpen(token: string): Promise<GuestSummary | null> {
-  const { data, error } = await anon().rpc("guest_open", { token });
+// Who reads (T3.1pc, Q155): a guest token (guest_* functions), or a visitor naming a Published page at /p/<name>
+// (public_* functions, same arguments after the first).
+export type Cred = string | { page: string };
+const read = (name: string, cred: Cred, args: object = {}) =>
+  typeof cred === "string"
+    ? anon().rpc(`guest_${name}`, { token: cred, ...args })
+    : anon().rpc(`public_${name}`, { page_selector: cred.page, ...args });
+export const isPageName = (value: unknown): value is string =>
+  typeof value === "string" && vanityReason(value) === null && normalizeVanity(value) === value;
+
+export async function guestOpen(cred: Cred): Promise<GuestSummary | null> {
+  const { data, error } = await read("open", cred);
   if (error) throw new Error("guest_open failed");
   return data as GuestSummary | null;
 }
@@ -57,6 +68,14 @@ export async function requireGuest(): Promise<GuestSummary> {
   return summary;
 }
 
+// Every /p/<name> page starts with this: a Published page by its exact name, else the ordinary not-found (owner UI
+// "Guest side"; an unknown name and a page that is not Published look the same).
+export async function requireVisitor(name: string): Promise<GuestSummary> {
+  const summary = isPageName(name) ? await guestOpen({ page: name }) : null;
+  if (!summary) notFound();
+  return summary;
+}
+
 // Variants a guest may load; the full-size original never (guest_media refuses it too).
 export const GUEST_VARIANTS = ["thumb", "display", "poster", "video", "audio"] as const;
 export type GuestVariant = (typeof GUEST_VARIANTS)[number];
@@ -65,8 +84,8 @@ const MEDIA_SECONDS = 300; // Q29
 // Signed URLs by media id for the ids guest_media admits (design 1 §5, owner 2026-11-26): the database runs the
 // publication checks as anon and returns the paths; only those are signed. An id that does not qualify, or a file
 // Storage cannot sign, is absent. A database or Storage failure throws; no message holds the token.
-export async function guestMedia(token: string, ids: string[], variant: GuestVariant): Promise<Record<string, string>> {
-  const { data, error } = await anon().rpc("guest_media", { token, ids, variant });
+export async function guestMedia(cred: Cred, ids: string[], variant: GuestVariant): Promise<Record<string, string>> {
+  const { data, error } = await read("media", cred, { ids, variant });
   if (error || !data) throw new Error("guest_media failed");
   const rows = data as { media_id: string; bucket: string; path: string }[];
   const urls: Record<string, string> = {};
@@ -85,20 +104,23 @@ export async function guestMedia(token: string, ids: string[], variant: GuestVar
 
 // Guest route handlers (T3.1): same origin and the guest header, else null (403). The token comes from the body when
 // the visit runs from memory (cookies blocked, design 1 §4, E30), which may still send an old cookie it cannot replace,
-// else from the HttpOnly cookie.
+// else from the HttpOnly cookie. A visitor at /p/<name> sends the page's name instead (T3.1pc), which wins over any old
+// cookie; a name that is not a valid normalized one reads nothing.
 export async function guestRequest(request: NextRequest) {
   if (!sameOrigin(request) || request.headers.get("x-vegenus-guest") !== "1") return null;
   const body = await request.json().catch(() => null);
   const cookie = request.cookies.get(GUEST_COOKIE)?.value;
-  const token = isToken(body?.token) ? (body.token as string) : isToken(cookie) ? cookie : null;
-  return { body, token };
+  const cred: Cred | null =
+    body?.page !== undefined ? (isPageName(body.page) ? { page: body.page } : null)
+    : isToken(body?.token) ? (body.token as string) : isToken(cookie) ? cookie : null;
+  return { body, cred };
 }
 
 // An empty answer is either nothing published or a token that no longer opens the page (rotated, Private, page gone):
 // only the second is the not-available answer, so an open visit learns that access is gone (token flow §6). A section
 // turned off is the same answer as for its address (E5).
-export async function stillOpen(token: string, section?: string) {
-  const summary = await guestOpen(token);
+export async function stillOpen(cred: Cred, section?: string) {
+  const summary = await guestOpen(cred);
   return summary !== null && (!section || summary.sections.includes(section as GuestSummary["sections"][number]));
 }
 
@@ -112,24 +134,22 @@ export function guestAnswer(body: object | null, status: number) {
 // A section's published items (design 1 §5 guest_list), 50 per page after the (sort_order, id) cursor. Empty for a
 // dead token, a page that is not live or a disabled section (E5, E6). Throws on a database failure.
 export type ListSection = "memories" | "together";
-export async function guestList(token: string, section: ListSection, after: { sort: number; id: string } | null) {
-  const { data, error } = await anon().rpc("guest_list", { token, section, after_sort: after?.sort ?? null, after_id: after?.id ?? null });
+export async function guestList(cred: Cred, section: ListSection, after: { sort: number; id: string } | null) {
+  const { data, error } = await read("list", cred, { section, after_sort: after?.sort ?? null, after_id: after?.id ?? null });
   if (error || !data) throw new Error("guest_list failed");
   return data as Record<string, unknown>[];
 }
 
 // Approved wishes, newest first, 50 per page before the (created_at, id) cursor (Q34d: never a pending one).
-export async function guestWishes(token: string, after: { created_at: string; id: string } | null) {
-  const { data, error } = await anon().rpc("guest_guestbook_list", {
-    token, after_created_at: after?.created_at ?? null, after_id: after?.id ?? null,
-  });
+export async function guestWishes(cred: Cred, after: { created_at: string; id: string } | null) {
+  const { data, error } = await read("guestbook_list", cred, { after_created_at: after?.created_at ?? null, after_id: after?.id ?? null });
   if (error || !data) throw new Error("guest_guestbook_list failed");
   return data as Record<string, unknown>[];
 }
 
 // One published item for G3 (T3.1c), or null when the token, page, section or publication does not admit it.
-export async function guestItem(token: string, id: string) {
-  const { data, error } = await anon().rpc("guest_item", { token, item_id: id });
+export async function guestItem(cred: Cred, id: string) {
+  const { data, error } = await read("item", cred, { item_id: id });
   if (error || !data) throw new Error("guest_item failed");
   return ((data as Record<string, unknown>[])[0] ?? null) as Record<string, unknown> | null;
 }

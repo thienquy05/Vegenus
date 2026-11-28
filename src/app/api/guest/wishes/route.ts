@@ -12,10 +12,10 @@ export async function POST(request: NextRequest) {
   const cursor = (req.body?.after ?? null) as { created_at?: unknown; id?: unknown } | null;
   const at = cursor?.created_at;
   if (req.body === null || (cursor && (typeof at !== "string" || !TIMESTAMP.test(at) || !isUuid(cursor.id)))) return answer(null, 400);
-  if (!req.token) return answer({ error: "not_available" }, 404);
+  if (!req.cred) return answer({ error: "not_available" }, 404);
   try {
-    const entries = await guestWishes(req.token, cursor as { created_at: string; id: string } | null);
-    if (!entries.length && !(await stillOpen(req.token, "guestbook"))) return answer({ error: "not_available" }, 404);
+    const entries = await guestWishes(req.cred, cursor as { created_at: string; id: string } | null);
+    if (!entries.length && !(await stillOpen(req.cred, "guestbook"))) return answer({ error: "not_available" }, 404);
     return answer({ entries }, 200);
   } catch {
     return answer({ error: "unavailable" }, 503);

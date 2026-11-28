@@ -15,7 +15,7 @@ vi.mock("next/navigation", () => {
 const PAGE = {
   version: 2, theme: "a_dreamy" as string | null, default_lang: "en", label_a: "[PARTNER_A]", label_b: "[PARTNER_B]",
   timezone: "Asia/Ho_Chi_Minh", visibility: "token_only", setup_completed: true, sections: ["home", "memories"],
-  link: null, storage_used_bytes: 0, storage_budget_bytes: 1000,
+  link: null, storage_used_bytes: 0, storage_budget_bytes: 1000, vanity_name: null,
 };
 type Fields = Partial<typeof PAGE>;
 const snapshot = (fields: Fields = {}) => ({ ...PAGE, ...fields });

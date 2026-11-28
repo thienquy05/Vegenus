@@ -22,7 +22,7 @@ const USAGE: Usage = {
   last_success_at: ago(9), last_success_corrections: 0, has_run: true,
 };
 const MISSED = { last_attempt_at: ago(30), last_success_at: ago(30) };
-const PAGE = { version: 2, theme: "a_dreamy", default_lang: "en", label_a: "[PARTNER_A]", label_b: "[PARTNER_B]", timezone: "UTC", visibility: "token_only", setup_completed: true, sections: [] };
+const PAGE = { version: 2, theme: "a_dreamy", default_lang: "en", label_a: "[PARTNER_A]", label_b: "[PARTNER_B]", timezone: "UTC", visibility: "token_only", setup_completed: true, sections: [], vanity_name: null, link: null, storage_used_bytes: 0, storage_budget_bytes: 1 };
 
 type Reply = { status: number; body?: unknown } | "network";
 let calls: string[] = [];

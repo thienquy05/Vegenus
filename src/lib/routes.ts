@@ -3,7 +3,8 @@
 // The class names the handler check the route starts with: requireOwner(), requireMachine(), and for guest
 // pages requireGuest() (a guest route handler checks the token itself, since requireGuest() redirects);
 // `public` routes need none.
-export type RouteClass = "public" | "guest" | "owner" | "machine";
+// `visitor` pages (T3.1pc) start with requireVisitor(): a Published page by name, else the ordinary not-found.
+export type RouteClass = "public" | "guest" | "visitor" | "owner" | "machine";
 
 export const ROUTES: Record<string, RouteClass> = {
   "/": "public",
@@ -16,6 +17,12 @@ export const ROUTES: Record<string, RouteClass> = {
   "/g/memories/[id]": "guest",
   "/g/together": "guest",
   "/g/wishes": "guest",
+  // A Published page at its name (Q155): no credential; anything else is the ordinary not-found.
+  "/p/[name]": "visitor",
+  "/p/[name]/memories": "visitor",
+  "/p/[name]/memories/[id]": "visitor",
+  "/p/[name]/together": "visitor",
+  "/p/[name]/wishes": "visitor",
   // Login, logout and the token exchange check Origin themselves; logout without a session only clears cookies.
   "/api/owner/login": "public",
   "/api/owner/logout": "public",
@@ -100,6 +107,11 @@ export function safeNext(next: string | undefined): string {
 // refuses a dynamic route without one.
 export const CRAWL_URLS: Record<string, string> = {
   "/g/memories/[id]": "/g/memories/00000000-0000-0000-0000-000000000000",
+  "/p/[name]": "/p/no-such-page",
+  "/p/[name]/memories": "/p/no-such-page/memories",
+  "/p/[name]/memories/[id]": "/p/no-such-page/memories/00000000-0000-0000-0000-000000000000",
+  "/p/[name]/together": "/p/no-such-page/together",
+  "/p/[name]/wishes": "/p/no-such-page/wishes",
 };
 
 // Every request entry point the build emits, read from the .next manifests. The proxy is not listed:

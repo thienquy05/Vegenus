@@ -4,6 +4,11 @@
 -- flags the draft was based on. Rotation itself: token_rotation.test.sql. Placeholder data only.
 begin;
 select plan(44);
+-- T3.1p: the save takes the draft's base; build it from the caller's current snapshot.
+create function pg_temp.cur() returns jsonb language sql as $cur$
+  select jsonb_build_object('visibility', p -> 'visibility', 'vanity_name', p -> 'vanity_name',
+    'has_link', p -> 'link' <> 'null'::jsonb) from public.owner_page() p
+$cur$;
 
 insert into auth.users (id, email) values
   ('00000000-0000-0000-0000-0000000000f1', 'owner@example.test'),
@@ -95,19 +100,19 @@ select is((select shown_at from public.guest_tokens where page_id = '00000000-00
 select throws_ok($$ select public.owner_token_shown(null) $$, '22023', null, 'a missing version is refused');
 
 -- owner_set_visibility: the snapshot, and a retry of a committed save applies nothing (Q146 20, 35).
-create temp table v1 as select public.owner_set_visibility('private', '00000000-0000-0000-0000-0000000000c1') as snap;
+create temp table v1 as select public.owner_set_visibility('private', null, pg_temp.cur(), '00000000-0000-0000-0000-0000000000c1') as snap;
 select is((select snap from v1), public.owner_page(), 'a visibility save answers the owner_page() snapshot');
 select is((select snap ->> 'visibility' from v1), 'private', 'the snapshot shows the saved visibility');
-select is(public.owner_set_visibility('token_only', '00000000-0000-0000-0000-0000000000c2') ->> 'visibility', 'token_only',
+select is(public.owner_set_visibility('token_only', null, pg_temp.cur(), '00000000-0000-0000-0000-0000000000c2') ->> 'visibility', 'token_only',
   'a new request id saves');
-select is(public.owner_set_visibility('private', '00000000-0000-0000-0000-0000000000c1'), public.owner_page(),
+select is(public.owner_set_visibility('private', null, pg_temp.cur(), '00000000-0000-0000-0000-0000000000c1'), public.owner_page(),
   'a retry of a committed save answers the current snapshot');
 select is(public.owner_page() ->> 'visibility', 'token_only', 'a retry of a committed save does not apply it twice');
 -- Each save kind has its own request ids: an id a visibility save used never answers for a sections save (review T2.6a).
 select is(public.owner_save_sections('{home,memories}', '{home,together}', '00000000-0000-0000-0000-0000000000c2') -> 'sections',
   '["home", "together"]'::jsonb, 'a sections save with an id a visibility save used is applied');
 update public.page_sections set enabled = section in ('home', 'memories') where page_id = '00000000-0000-0000-0000-00000000000a';
-select throws_ok($$ select public.owner_set_visibility('private', null) $$, '22023', null, 'a visibility save needs a request id');
+select throws_ok($$ select public.owner_set_visibility('private', null, pg_temp.cur(), null) $$, '22023', null, 'a visibility save needs a request id');
 
 -- owner_save_sections: base flags as the precondition, home always on, zodiac untouched (Q146 20, 21, 35).
 create temp table s1 as select public.owner_save_sections('{memories,home}', '{home,together,guestbook}', '00000000-0000-0000-0000-0000000000d1') as snap;

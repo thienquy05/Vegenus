@@ -114,7 +114,7 @@ export function GuestEntry() {
   }
   // Cookies blocked: the visit runs from memory and every read carries the token (E30).
   return (
-    <GuestApp summary={state.summary} section="home" token={state.token}>
+    <GuestApp summary={state.summary} section="home" cred={state.token}>
       {!state.remembered && <p role="status" lang="en">This visit won’t be remembered. Tap the tag again next time.</p>}
     </GuestApp>
   );

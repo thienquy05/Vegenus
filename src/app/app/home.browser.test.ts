@@ -26,7 +26,7 @@ const SAVED: Home = {
   published: { start_date: "2026-11-01" }, published_at: "2026-11-02T00:00:00Z", timezone: "UTC", unpublished_changes: false,
   picks: [pick(C1, "Beach"), pick(C2, "Hill"), pick(C3, null)],
 };
-const PAGE = { version: 2, theme: "a_dreamy", default_lang: "en", label_a: "[PARTNER_A]", label_b: "[PARTNER_B]", timezone: "UTC", visibility: "token_only", setup_completed: true, sections: [] };
+const PAGE = { version: 2, theme: "a_dreamy", default_lang: "en", label_a: "[PARTNER_A]", label_b: "[PARTNER_B]", timezone: "UTC", visibility: "token_only", setup_completed: true, sections: [], vanity_name: null, link: null, storage_used_bytes: 0, storage_budget_bytes: 1 };
 const DRAFTS = { "home.greeting": { en: "Hello from {partner_a}.", vi: "Chào từ {partner_a}." }, "home.days": { en: "Together for {days} days.", vi: "Bên nhau {days} ngày." } };
 const NOW = new Date("2026-11-21T12:00:00Z"); // Day 21 of a 2026-11-01 start in UTC
 
