@@ -167,8 +167,11 @@
     filter: blur(6px);
   }
 }
+/* Static uses 0 ms for every duration, as Reduce motion does (guest motion §6). */
 :global(html[data-motion="reduce"]) .shell *,
-:global(html[data-motion="reduce"]) .page {
+:global(html[data-motion="reduce"]) .page,
+:global(html[data-mode="static"]) .shell *,
+:global(html[data-mode="static"]) .page {
   transition: none !important;
   animation: none !important;
 }

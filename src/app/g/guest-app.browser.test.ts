@@ -5,6 +5,7 @@ import { page, userEvent } from "vitest/browser";
 import type { GuestSummary } from "@/lib/guest";
 import { daysTogether } from "@/lib/counter";
 import { GuestApp } from "./guest-app";
+import { hasWebgl2 } from "./mode";
 
 // T3.1b guest shell in a real browser: theme and language, the circular menu (theme system §2), G1 Home (screens G1,
 // owner UI "Guest Home states"), G2 Memories, G5 Wishes read-only and G8 Settings (guest UI §6, §7, §9). fetch answers
@@ -99,9 +100,12 @@ afterEach(() => {
   vi.restoreAllMocks();
   document.documentElement.removeAttribute("data-theme");
   document.documentElement.removeAttribute("data-motion");
+  document.documentElement.removeAttribute("data-mode");
   vi.useRealTimers();
   delete (navigator as { onLine?: boolean }).onLine;
   delete (navigator as { languages?: readonly string[] }).languages;
+  delete (navigator as { connection?: unknown }).connection;
+  document.documentElement.style.removeProperty("--dur-slow");
 });
 const phone = (...languages: string[]) => Object.defineProperty(navigator, "languages", { configurable: true, get: () => languages });
 const text = () => host.textContent ?? "";
@@ -291,6 +295,134 @@ test("G8: language applies at once and is saved on this device; menu corner and 
   expect(menu().hidden).toBe(false);
   expect(menu().dataset.corner).toBe("right");
   expect(document.activeElement).toBe(menu());
+});
+
+// T3.4 (3D approach §3.2, guest UI §9 Mode): G8's View group. Page where 3D is available, Static applies at once and is
+// saved; Reduce motion or no WebGL 2 forces Static and shows Page disabled with the reason. The WebGL 2 probe is stubbed.
+const webgl = (ok: boolean) =>
+  vi.spyOn(HTMLCanvasElement.prototype, "getContext").mockImplementation(((kind: string) => (kind === "webgl2" && ok ? { getExtension: () => null } : null)) as never);
+async function openSettings() {
+  await expect.poll(() => menu()).toBeTruthy();
+  await userEvent.click(menu());
+  await userEvent.click(item(document.documentElement.lang === "vi" ? "Cài đặt" : "Settings"));
+  await expect.poll(() => host.querySelector("dialog[open]")).toBeTruthy();
+  return host.querySelector<HTMLDialogElement>("dialog[open]")!;
+}
+const byId = (id: string) => host.querySelector<HTMLInputElement>(`#${id}`)!;
+
+test("G8 View: Page where 3D is available; Static applies at once, is saved and kept on the next visit", async () => {
+  webgl(true);
+  serve();
+  mount();
+  const dialog = await openSettings();
+  expect(dialog.querySelector("fieldset:has(#mode-page) legend")?.textContent).toBe("View");
+  expect(document.documentElement.dataset.mode).toBe("page");
+  expect(byId("mode-page").checked).toBe(true);
+  await userEvent.click(byId("mode-static"));
+  expect(document.documentElement.dataset.mode).toBe("static");
+  expect(JSON.parse(localStorage.getItem("vegenus_prefs")!)).toMatchObject({ mode: "static" });
+  root!.unmount();
+  host.remove();
+  delete document.documentElement.dataset.mode; // the next visit must set it again from the saved pick
+  mount();
+  await expect.poll(() => document.documentElement.dataset.mode).toBe("static");
+  await openSettings();
+  expect(byId("mode-static").checked).toBe(true);
+});
+
+test("G8 View: Reduce motion forces Static and disables Page with its reason; turning it off brings the pick back", async () => {
+  webgl(true);
+  // Data saver on: without the kept pick this device would get Static, so Page afterwards proves the pick came back.
+  Object.defineProperty(navigator, "connection", { configurable: true, get: () => ({ saveData: true }) });
+  localStorage.setItem("vegenus_prefs", JSON.stringify({ mode: "page", motion: "full" }));
+  serve();
+  mount();
+  const dialog = await openSettings();
+  await userEvent.click(byId("reduce-motion"));
+  expect(document.documentElement.dataset.mode).toBe("static");
+  expect(byId("mode-static").checked).toBe(true);
+  expect(byId("mode-page").disabled).toBe(true);
+  const group = dialog.querySelector("fieldset:has(#mode-page)")!;
+  expect(document.getElementById(group.getAttribute("aria-describedby")!)?.textContent).toBe("Turn off Reduce motion to use 3D.");
+  expect(JSON.parse(localStorage.getItem("vegenus_prefs")!)).toMatchObject({ mode: "page" }); // the pick is kept
+  await userEvent.click(byId("reduce-motion"));
+  expect(document.documentElement.dataset.mode).toBe("page");
+  expect(byId("mode-page").disabled).toBe(false);
+  expect(group.hasAttribute("aria-describedby")).toBe(false);
+});
+
+test("G8 View: without WebGL 2 the view is Static and Page is disabled with its reason, in Vietnamese too", async () => {
+  webgl(false);
+  localStorage.setItem("vegenus_prefs", JSON.stringify({ mode: "page", lang: "vi" }));
+  serve();
+  mount();
+  const dialog = await openSettings();
+  expect(document.documentElement.dataset.mode).toBe("static");
+  expect(byId("mode-page").disabled).toBe(true);
+  expect(byId("mode-static").checked).toBe(true);
+  const group = dialog.querySelector("fieldset:has(#mode-page)")!;
+  expect(group.querySelector("legend")?.textContent).toBe("Chế độ xem");
+  expect(group.textContent).toContain("Trang");
+  expect(group.textContent).toContain("Tĩnh");
+  expect(document.getElementById(group.getAttribute("aria-describedby")!)?.textContent).toBe("Thiết bị này không hỗ trợ 3D.");
+});
+
+test("Static (guest motion: 0 ms) turns off transitions like Reduce motion, without changing layout", async () => {
+  webgl(true);
+  document.documentElement.style.setProperty("--dur-slow", "300ms"); // pinned, so the check does not depend on the theme
+  const stepBack = () => getComputedStyle(host.querySelector("main")!.parentElement!).transitionDuration;
+  localStorage.setItem("vegenus_prefs", JSON.stringify({ mode: "page", motion: "full" }));
+  serve();
+  mount();
+  await expect.poll(() => document.documentElement.dataset.mode).toBe("page");
+  expect(stepBack()).toContain("0.3s"); // Page keeps the motion
+  root!.unmount();
+  host.remove();
+  localStorage.setItem("vegenus_prefs", JSON.stringify({ mode: "static", motion: "full" }));
+  mount();
+  await expect.poll(() => document.documentElement.dataset.mode).toBe("static");
+  expect(document.documentElement.dataset.motion).toBeUndefined();
+  expect(stepBack()).toBe("0s");
+  expect(menu().getBoundingClientRect().height).toBe(56);
+});
+
+// Review (T3.4): the probe releases its context and never throws; it runs after the first content is shown (3D approach
+// principle 1, content first), not inside the first render.
+test("the WebGL 2 probe releases its context, and a throwing getContext means no WebGL", () => {
+  const loseContext = vi.fn();
+  vi.spyOn(HTMLCanvasElement.prototype, "getContext").mockReturnValue({ getExtension: () => ({ loseContext }) } as never);
+  expect(hasWebgl2()).toBe(true);
+  expect(loseContext).toHaveBeenCalledOnce();
+  vi.spyOn(HTMLCanvasElement.prototype, "getContext").mockImplementation(() => {
+    throw new Error("blocked");
+  });
+  expect(hasWebgl2()).toBe(false);
+});
+
+test("the WebGL 2 probe runs after the page's content is on screen", async () => {
+  const contentShown: boolean[] = [];
+  vi.spyOn(HTMLCanvasElement.prototype, "getContext").mockImplementation(((kind: string) => {
+    if (kind === "webgl2") contentShown.push(!!host.querySelector("h1"));
+    return kind === "webgl2" ? { getExtension: () => null } : null;
+  }) as never);
+  serve();
+  mount();
+  await expect.poll(() => document.documentElement.dataset.mode).toBe("page");
+  expect(contentShown.length).toBeGreaterThan(0);
+  expect(contentShown.every(Boolean)).toBe(true);
+});
+
+test("the WebGL 2 probe waits for the first frame to be painted, and Static holds until then", async () => {
+  const frames: FrameRequestCallback[] = [];
+  vi.stubGlobal("requestAnimationFrame", (cb: FrameRequestCallback) => frames.push(cb));
+  const probe = webgl(true);
+  serve();
+  mount();
+  await expect.poll(() => heading()).toBeTruthy();
+  await expect.poll(() => document.documentElement.dataset.mode).toBe("static");
+  expect(probe.mock.calls.filter(([kind]) => kind === "webgl2")).toHaveLength(0);
+  frames.splice(0).forEach((cb) => cb(performance.now()));
+  await expect.poll(() => document.documentElement.dataset.mode).toBe("page");
 });
 
 // T3.3 (editable copy §4 "Language availability", E54): the saved choice, else the phone language, used only when the
@@ -581,7 +713,7 @@ test("G8: the Theme group follows Language, applies and saves at once, and the s
   await expect.poll(() => menu()).toBeTruthy();
   await userEvent.click(menu());
   await userEvent.click(item("Settings"));
-  expect([...prompt()!.querySelectorAll("legend")].map((l) => l.textContent)).toEqual(["Language", "Theme", "Menu corner"]);
+  expect([...prompt()!.querySelectorAll("legend")].map((l) => l.textContent)).toEqual(["Language", "Theme", "View", "Menu corner"]);
   expect(radio("c_cozy").checked).toBe(true);
   await userEvent.click(radio("a_dreamy"));
   expect(document.documentElement.dataset.theme).toBe("a_dreamy");
